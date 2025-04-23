@@ -21,6 +21,22 @@ use App\Helpers\SessionHelper;
         [x-cloak] { display: none; } /* Untuk Alpine.js jika dipakai */
         .sidebar-link.active { background-color: #4f46e5; color: white; } /* Indigo-600 */
         .sidebar-link:not(.active):hover { background-color: #eef2ff; color: #3730a3; } /* Indigo-50 / Indigo-800 */
+
+        /* Styling untuk Flash Message Overlap */
+        .flash-message-overlap {
+            position: fixed;
+            top: 1.25rem; /* Sekitar 20px */
+            right: 1.25rem; /* Sekitar 20px */
+            z-index: 1000; /* Pastikan di atas elemen lain */
+            max-width: 24rem; /* Lebar maks 384px */
+            width: 90%; /* Lebar relatif untuk layar kecil */
+            pointer-events: none; /* Biarkan klik "menembus" area kosong */
+        }
+        .flash-message-overlap > div { /* Target div di dalamnya */
+             pointer-events: auto; /* Pesan flash bisa diklik jika perlu */
+             margin-bottom: 0.75rem; /* Jarak antar pesan jika muncul >1 */
+             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
     </style>
     <script> var APP_BASE_URL = "<?= UrlHelper::baseUrl() ?>"; </script>
 </head>

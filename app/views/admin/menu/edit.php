@@ -1,26 +1,24 @@
 <?php
 use App\Helpers\SanitizeHelper;
 use App\Helpers\UrlHelper;
-use App\Helpers\SessionHelper;
-use App\Helpers\NumberHelper; // Tidak perlu di sini
+use App\Helpers\SessionHelper; // Untuk getFlashData & displayFlash
 
 // Data dari MenuController
 $categories = $categories ?? [];
 $menuItem = $menuItem ?? null; // Data item asli dari DB
-// Ambil old input dari flash data (jika ada, karena gagal update sebelumnya)
+// === PERBAIKAN: Ambil oldInput dari FlashData ===
 $oldInputFromSession = SessionHelper::getFlashData('old_input');
+// ============================================
 
 if (!$menuItem && !$oldInputFromSession) {
-     // Jika tidak ada data asli DAN tidak ada old input, tampilkan error
      echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded" role="alert">Item menu tidak ditemukan atau data tidak valid.</div>';
-     // Sebaiknya redirect dari Controller jika $menuItem benar-benar null
-     return; // Hentikan render view
+     return;
 }
 
 // Prioritaskan old input dari session jika ada, jika tidak gunakan data asli dari $menuItem
 $formData = $oldInputFromSession ?? $menuItem;
-$pageTitle = "Edit Item Menu: " . SanitizeHelper::html($menuItem['name'] ?? 'Error'); // Ambil nama asli untuk judul
-$formActionId = $menuItem['id'] ?? ($formData['id'] ?? null); // Pastikan ID untuk action form ada
+$pageTitle = "Edit Item Menu: " . SanitizeHelper::html($menuItem['name'] ?? 'Error'); // Judul dari data asli
+$formActionId = $menuItem['id'] ?? ($formData['id'] ?? null); // Pastikan ID ada
 
 if (!$formActionId) {
      echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded" role="alert">Error: ID Item tidak ditemukan untuk form action.</div>';
@@ -37,7 +35,7 @@ if (!$formActionId) {
         </a>
     </div>
 
-    <?php SessionHelper::displayFlash('error', 'mb-4 p-4 rounded-md text-sm border', ['error' => 'bg-red-100 border-red-300 text-red-800']); ?>
+    <?php SessionHelper::displayFlash('error'); ?>
 
     <div class="bg-white p-6 rounded-lg shadow-md border border-slate-200">
         <form action="<?= UrlHelper::baseUrl('/admin/menu/update/' . $formActionId) ?>" method="POST" enctype="multipart/form-data" novalidate>
@@ -79,7 +77,7 @@ if (!$formActionId) {
 
             <div class="mb-4 border-t pt-4 mt-4 border-slate-200">
                  <label class="block text-sm font-medium text-slate-700 mb-2">Gambar Item</label>
-                <?php $currentImagePath = $menuItem['image_path'] ?? null; // Ambil dari data asli $menuItem ?>
+                <?php $currentImagePath = $menuItem['image_path'] ?? null; ?>
                 <?php if (!empty($currentImagePath)): ?>
                     <div class="mb-3 p-2 border border-dashed border-slate-300 rounded-md inline-block">
                          <p class="text-xs text-slate-500 mb-1">Gambar Saat Ini:</p>
@@ -95,7 +93,7 @@ if (!$formActionId) {
                  <label for="image" class="block text-sm font-medium text-slate-700 mb-1 mt-3">Ganti/Upload Gambar Baru (Opsional)</label>
                 <input type="file" id="image" name="image" accept="image/jpeg,image/png,image/webp,image/avif"
                        class="block w-full text-sm text-slate-500 border border-slate-300 rounded-lg cursor-pointer focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-l-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
-                <p class="text-xs text-slate-500 mt-1">Biarkan kosong jika tidak ingin mengganti gambar. Format: JPG, PNG, WEBP, AVIF. Maks 1MB.</p>
+                <p class="text-xs text-slate-500 mt-1">Biarkan kosong jika tidak ingin mengganti gambar.</p>
             </div>
 
             <div class="mb-6 border-t pt-4 mt-4 border-slate-200">

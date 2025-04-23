@@ -1,12 +1,14 @@
 <?php
+// Menggunakan Helper yang relevan
 use App\Helpers\SanitizeHelper;
 use App\Helpers\UrlHelper;
-use App\Helpers\SessionHelper;
+use App\Helpers\SessionHelper; // Untuk getFlashData & displayFlash
 
 // Data dari MenuController
 $categories = $categories ?? [];
-// Ambil old input dari flash data, lalu hapus otomatis oleh getFlashData
+// === PERBAIKAN: Ambil oldInput dari FlashData ===
 $oldInput = SessionHelper::getFlashData('old_input') ?? [];
+// ============================================
 // $pageTitle sudah diatur layout
 ?>
 
@@ -19,7 +21,7 @@ $oldInput = SessionHelper::getFlashData('old_input') ?? [];
         </a>
     </div>
 
-    <?php SessionHelper::displayFlash('error', 'mb-4 p-4 rounded-md text-sm border', ['error' => 'bg-red-100 border-red-300 text-red-800']); ?>
+    <?php SessionHelper::displayFlash('error'); // Helper akan cari kunci 'error' ?>
 
     <div class="bg-white p-6 rounded-lg shadow-md border border-slate-200">
         <form action="<?= UrlHelper::baseUrl('/admin/menu/store') ?>" method="POST" enctype="multipart/form-data" novalidate>
@@ -73,7 +75,7 @@ $oldInput = SessionHelper::getFlashData('old_input') ?? [];
                  <label for="is_available" class="flex items-center">
                      <input type="checkbox" id="is_available" name="is_available" value="1"
                             class="h-4 w-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
-                            <?= (isset($oldInput['is_available']) || !isset($oldInput['is_available']) && empty($oldInput)) ? 'checked' : '' // Default checked jika baru atau old input dicentang ?>
+                            <?= (isset($oldInput['is_available']) || !isset($oldInput) || empty($oldInput)) ? 'checked' : '' // Default checked jika baru atau old input dicentang ?>
                      >
                      <span class="ml-2 text-sm text-slate-700">Item Tersedia</span>
                  </label>

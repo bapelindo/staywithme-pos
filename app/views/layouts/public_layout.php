@@ -9,9 +9,7 @@ use App\Helpers\SessionHelper;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= isset($pageTitle) ? SanitizeHelper::html($pageTitle) . ' - ' : '' ?>Stay With Me Cafe</title>
-
     <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
@@ -25,6 +23,22 @@ use App\Helpers\SessionHelper;
         ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
         ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+
+        /* Styling untuk Flash Message Overlap */
+        .flash-message-overlap {
+            position: fixed;
+            top: 1.25rem; /* Sekitar 20px */
+            right: 1.25rem; /* Sekitar 20px */
+            z-index: 1000; /* Pastikan di atas elemen lain */
+            max-width: 24rem; /* Lebar maks 384px */
+            width: 90%; /* Lebar relatif untuk layar kecil */
+            pointer-events: none; /* Biarkan klik "menembus" area kosong */
+        }
+        .flash-message-overlap > div { /* Target div di dalamnya */
+             pointer-events: auto; /* Pesan flash bisa diklik jika perlu */
+             margin-bottom: 0.75rem; /* Jarak antar pesan jika muncul >1 */
+             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
     </style>
 
     <script>
