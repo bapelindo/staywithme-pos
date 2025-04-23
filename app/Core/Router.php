@@ -126,20 +126,27 @@ class Router {
         // 2. Handle jika tidak ada rute cocok (404 Not Found)
         if ($match === false) {
             http_response_code(404);
-            $errorViewPath = '../app/Views/public/errors/404.php'; // Sesuaikan path jika perlu
-             if(file_exists($errorViewPath)) {
-                 $message = "URL yang diminta tidak ditemukan.";
-                 // Ekstrak data jika view 404 membutuhkannya
-                 extract(['message' => $message]);
-                 require_once $errorViewPath;
+            $viewPath = '../app/Views/public/errors/404.php'; // Path ke view 404
+            $layoutPath = '../app/Views/layouts/public_layout.php'; // Path ke layout publik
+
+             if(file_exists($viewPath) && file_exists($layoutPath)) {
+                 // Siapkan data untuk view dan layout
+                 $data = ['message' => "URL yang diminta tidak ditemukan.", 'pageTitle' => "404 - Tidak Ditemukan"];
+                 extract($data); // Ekstrak variabel $message dan $pageTitle
+
+                 // Muat layout, yang akan memuat $viewPath di dalamnya
+                 require_once $layoutPath;
+
              } else {
-                 // Fallback jika view 404 tidak ada
+                 // Fallback jika view 404 atau layout tidak ada
+                 if (!file_exists($layoutPath)) error_log("Layout file not found: " . $layoutPath);
+                 if (!file_exists($viewPath)) error_log("404 View file not found: " . $viewPath);
+
                  header('Content-Type: text/plain; charset=utf-8');
-                 echo "404 Not Found";
+                 echo "404 Not Found - Resource or required layout file missing.";
              }
             exit;
         }
-
         // 3. Bangun nama kelas Controller lengkap
         $controllerClassName = 'App\\Controllers\\' . $match['controller'];
         $actionName = $match['action'];
