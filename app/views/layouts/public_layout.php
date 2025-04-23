@@ -42,7 +42,7 @@ use App\Helpers\SessionHelper;
     </style>
 
     <script>
-        var APP_BASE_URL = "<?= UrlHelper::baseUrl() ?>";
+        var APP_BASE_URL = "<?= rtrim(UrlHelper::baseUrl(), '/') ?>"; // Gunakan rtrim()
     </script>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased">

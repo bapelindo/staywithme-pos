@@ -34,7 +34,7 @@ $pageTitle = "Pesan Menu - Meja " . SanitizeHelper::html($table['table_number'])
                             <div class="bg-white rounded-xl shadow-md overflow-hidden border border-slate-200 hover:shadow-lg transition-shadow duration-300 flex flex-col group">
                                 <?php
                                     $imagePath = $item['image_path'] ?? 'images/default_menu.png'; // Gambar default
-                                    $imageUrl = UrlHelper::asset(SanitizeHelper::html($imagePath));
+                                    $imageUrl = UrlHelper::baseUrl(SanitizeHelper::html($imagePath));
                                 ?>
                                 <div class="h-48 overflow-hidden">
                                     <img src="<?= $imageUrl ?>" alt="<?= SanitizeHelper::html($item['name']) ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-in-out">
@@ -90,7 +90,7 @@ $pageTitle = "Pesan Menu - Meja " . SanitizeHelper::html($table['table_number'])
         </div>
     </div>
 
-</div><script src="<?= UrlHelper::asset('js/customer-menu.js') ?>" defer></script>
+</div><script src="<?= UrlHelper::baseUrl('js/customer-menu.js') ?>" defer></script>
 <script>
     // JS sederhana untuk toggle cart view
     document.addEventListener('DOMContentLoaded', () => {

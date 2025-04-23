@@ -28,7 +28,7 @@ $readyOrders = $readyOrders ?? [];
         /* Animasi untuk item baru */
         .new-item-animate { animation: newItemPulse 1s ease-out; }
         @keyframes newItemPulse { 0% { transform: scale(0.9); opacity: 0.5; } 70% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
-        .cds-empty { grid-column: 1 / -1; text-align: center; font-size: 1.5rem; color: #6b7280; /* Lighter gray */ margin-top: 3rem; }
+        .cds-empty { grid-column: 1 / -1; text-align: center; font-size: 1.5rem; color: #6b7280; /* Lighter gray */ margin-top: 3rem; } /* Pastikan ini ada jika menggunakan grid */
 
         /* Warna Kolom Spesifik */
         .cds-preparing .cds-header { border-color: #f59e0b; color: #fbbf24; } /* Amber */
@@ -42,7 +42,10 @@ $readyOrders = $readyOrders ?? [];
         ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
         ::-webkit-scrollbar-track { background: #1f2937; border-radius: 5px; }
     </style>
-     <script>var APP_BASE_URL = "<?= App\Helpers\UrlHelper::baseUrl() ?>";</script>
+<script>
+    var APP_BASE_URL = "<?= rtrim(UrlHelper::baseUrl(), '/') ?>";
+    var CDS_AUDIO_URL = "<?= UrlHelper::baseUrl('assets/audio/cds_new_order.mp3') ?>";
+</script>
 </head>
 <body>
 
@@ -50,25 +53,21 @@ $readyOrders = $readyOrders ?? [];
         <div class="cds-column cds-preparing">
             <h2 class="cds-header">PROCESSING</h2>
             <div id="preparing-list" class="cds-list">
-                <?php if (empty($preparingOrders)): ?>
-                    <p class="cds-empty">Waiting for orders...</p>
-                <?php else: ?>
+                <?php if (!empty($preparingOrders)): // Render initial items if available ?>
                     <?php foreach ($preparingOrders as $order): ?>
                         <div class="cds-list-item" data-order-number="<?= SanitizeHelper::html($order['order_number']) ?>">
-                            <?= SanitizeHelper::html(str_replace('STW-', '', $order['order_number'])) // Tampilkan nomor saja, tanpa prefix? ?>
+                            <?= SanitizeHelper::html(str_replace('STW-', '', $order['order_number'])) ?>
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>
-            <p class="cds-empty" style="display: <?= empty($preparingOrders) ? 'block' : 'none'; ?>;">Waiting for orders...</p>
+            <p id="preparing-empty-message" class="cds-empty col-span-full" style="display: <?= empty($preparingOrders) ? 'block' : 'none'; ?>;">Waiting for orders...</p>
         </div>
 
         <div class="cds-column cds-ready">
              <h2 class="cds-header">READY</h2>
              <div id="ready-list" class="cds-list">
-                <?php if (empty($readyOrders)): ?>
-                     <p class="cds-empty">No orders ready.</p>
-                <?php else: ?>
+                <?php if (!empty($readyOrders)): // Render initial items if available ?>
                     <?php foreach ($readyOrders as $order): ?>
                         <div class="cds-list-item" data-order-number="<?= SanitizeHelper::html($order['order_number']) ?>">
                              <?= SanitizeHelper::html(str_replace('STW-', '', $order['order_number'])) ?>
@@ -76,11 +75,11 @@ $readyOrders = $readyOrders ?? [];
                     <?php endforeach; ?>
                  <?php endif; ?>
              </div>
-              <p class="cds-empty" style="display: <?= empty($readyOrders) ? 'block' : 'none'; ?>;">No orders ready.</p>
+              <p id="ready-empty-message" class="cds-empty col-span-full" style="display: <?= empty($readyOrders) ? 'block' : 'none'; ?>;">No orders ready.</p>
         </div>
     </div>
 
-    <script src="<?= App\Helpers\UrlHelper::asset('js/customer-cds.js') ?>" defer></script>
+    <script src="<?= App\Helpers\UrlHelper::baseUrl('js/customer-cds.js') ?>" defer></script>
 
 </body>
 </html>

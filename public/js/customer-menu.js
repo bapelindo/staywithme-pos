@@ -1,6 +1,7 @@
 // File: public/assets/js/customer-menu.js
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Seleksi semua elemen penting di sini
     const cartSection = document.getElementById('cart-section');
     const cartItemsContainer = document.getElementById('cart-items');
     const cartTotalElement = document.getElementById('cart-total');
@@ -8,6 +9,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const cartEmptyMessage = cartItemsContainer?.querySelector('.cart-empty-message');
     const orderMessageElement = document.getElementById('order-message');
     const tableIdInput = document.getElementById('table-id'); // Input hidden berisi table ID
+    const cartItemCountElement = document.getElementById('cart-item-count'); // *** Seleksi elemen count di sini ***
+    const cartHeader = document.getElementById('cart-header'); // Untuk toggle
+    const cartContent = document.getElementById('cart-content'); // Untuk toggle
+    const cartToggleIcon = document.getElementById('cart-toggle-icon'); // Untuk toggle
 
     // --- State Keranjang ---
     let cart = loadCart(); // Load cart dari localStorage saat halaman dimuat
@@ -32,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         saveCart();
         updateCartUI();
-        showCartTemporarily(); // Tampilkan cart sebentar saat item ditambahkan
+        showCartTemporarily(); // Panggil fungsi untuk buka cart saat item ditambah
     }
 
     function updateQuantity(itemId, change) {
@@ -74,14 +79,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Update Tampilan Keranjang ---
     function updateCartUI() {
-        if (!cartItemsContainer || !cartTotalElement || !placeOrderBtn || !cartEmptyMessage) {
-            console.error("Elemen keranjang tidak ditemukan!");
+        // Pastikan semua elemen ada sebelum digunakan
+        if (!cartItemsContainer || !cartTotalElement || !placeOrderBtn || !cartEmptyMessage || !cartItemCountElement) {
+            console.error("Elemen keranjang penting tidak ditemukan di updateCartUI!");
             return;
         }
 
         cartItemsContainer.innerHTML = ''; // Kosongkan item lama
         let total = calculateTotal();
+        // Hitung jumlah jenis item unik
         let itemCount = Object.keys(cart).length;
+
+        // *** PERBAIKAN: Update text content untuk jumlah item ***
+        cartItemCountElement.textContent = itemCount;
+        // ********************************************************
 
         if (itemCount === 0) {
             cartEmptyMessage.style.display = 'block';
@@ -90,10 +101,10 @@ document.addEventListener('DOMContentLoaded', () => {
             cartEmptyMessage.style.display = 'none';
             placeOrderBtn.disabled = false;
 
-            // Urutkan item berdasarkan nama atau urutan penambahan jika perlu
+            // Render item keranjang
             Object.values(cart).forEach(item => {
                 const itemElement = document.createElement('div');
-                itemElement.className = 'cart-item py-2 border-b border-gray-100 flex items-start';
+                itemElement.className = 'cart-item py-2 border-b border-gray-100 flex items-start'; // Sesuaikan class jika perlu
                 itemElement.innerHTML = `
                     <div class="flex-grow pr-2">
                         <p class="text-sm font-medium text-gray-800">${item.name}</p>
@@ -112,13 +123,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         cartTotalElement.textContent = formatCurrency(total);
 
-        // Tambahkan event listener ke tombol +/- dan input notes di dalam keranjang
+        // Tambahkan kembali event listener ke tombol +/- dan input notes
         addCartItemEventListeners();
     }
 
+    // Fungsi untuk menambahkan listener ke elemen dinamis di keranjang
     function addCartItemEventListeners() {
         document.querySelectorAll('.quantity-change').forEach(button => {
-             // Hapus listener lama sebelum menambah yg baru untuk cegah duplikasi
+             // Hapus listener lama sebelum menambah yg baru (mencegah duplikasi)
              button.replaceWith(button.cloneNode(true));
         });
          document.querySelectorAll('.quantity-change').forEach(button => {
@@ -134,33 +146,44 @@ document.addEventListener('DOMContentLoaded', () => {
              input.replaceWith(input.cloneNode(true));
         });
          document.querySelectorAll('.item-notes-input').forEach(input => {
-             input.addEventListener('change', (e) => { // 'change' lebih baik dari 'input' agar tidak trigger terus menerus
+             input.addEventListener('change', (e) => {
                  const itemId = input.dataset.itemId;
                  updateItemNotes(itemId, e.target.value);
              });
          });
     }
 
+    // --- Fungsi untuk menampilkan/menyembunyikan cart ---
+    let isCartOpen = false;
+    function toggleCart(forceOpen = false) {
+        if (!cartHeader || !cartContent || !cartSection || !cartToggleIcon) return;
 
-    let cartTimeout;
-    function showCartTemporarily(duration = 3000) {
-        if(cartSection) {
-            // cartSection.style.transform = 'scale(1)'; // Ganti cara menampilkan/menyembunyikan jika perlu
-            cartSection.style.opacity = '1';
-            cartSection.style.pointerEvents = 'auto';
+        if (forceOpen) {
+            isCartOpen = true;
+        } else {
+             isCartOpen = !isCartOpen;
+        }
 
-            clearTimeout(cartTimeout); // Reset timer jika sudah ada
-             // Sembunyikan lagi setelah durasi tertentu (jika diperlukan)
-             /*
-            cartTimeout = setTimeout(() => {
-                // cartSection.style.transform = 'scale(0.9)';
-                cartSection.style.opacity = '0';
-                cartSection.style.pointerEvents = 'none';
-            }, duration);
-             */
+        if (isCartOpen) {
+            cartSection.style.transform = 'translateY(0)';
+            cartContent.style.maxHeight = '400px'; // Sesuaikan max-height
+            cartToggleIcon.style.transform = 'rotate(0deg)';
+        } else {
+            cartContent.style.maxHeight = '0px';
+            cartToggleIcon.style.transform = 'rotate(180deg)';
+            // Beri jeda sebelum translate agar transisi max-height selesai
+            setTimeout(() => {
+                 if (!isCartOpen) cartSection.style.transform = `translateY(calc(100% - ${cartHeader.offsetHeight}px))`; // Gunakan tinggi header dinamis
+            }, 300);
         }
     }
 
+    // Fungsi dipanggil saat item ditambah
+    function showCartTemporarily() {
+        if (!isCartOpen) {
+             toggleCart(true); // Paksa buka cart
+        }
+    }
 
     // --- Event Listeners Halaman Menu ---
     document.querySelectorAll('.add-to-cart-btn').forEach(button => {
@@ -177,6 +200,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // Listener untuk toggle cart header
+     if (cartHeader) {
+        cartHeader.addEventListener('click', () => toggleCart());
+     }
+
 
     // --- Fungsi Kirim Pesanan ---
     async function sendOrder() {
@@ -195,45 +224,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const orderData = {
             table_id: parseInt(tableIdInput.value),
-            // Format items sesuai kebutuhan backend (OrderController::placeOrder)
             items: Object.values(cart).map(item => ({
                 menu_item_id: parseInt(item.id),
                 quantity: item.quantity,
-                notes: item.notes ?? '' // Pastikan notes dikirim
+                notes: item.notes ?? ''
             })),
-            // Tambahkan catatan umum jika ada inputnya di UI
-            // notes: document.getElementById('general-order-notes')?.value ?? null
         };
 
         try {
-            // Ambil BASE_URL dari global JS variable jika ada, atau hardcode (kurang ideal)
-            const baseUrl = window.APP_BASE_URL || ''; // Anda perlu mendefinisikan ini di layout PHP
-            const response = await fetch(`${baseUrl}/order/place`, {
+            const baseUrl = window.APP_BASE_URL || '';
+            // *** Pastikan URL Fetch Benar (Tanpa Double Slash) ***
+            const fetchUrl = `${baseUrl}/order/place`; // Harusnya baseUrl sudah tanpa slash akhir
+            console.log("Sending order to:", fetchUrl); // Debug URL
+
+            const response = await fetch(fetchUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    // Tambahkan header CSRF token jika backend memerlukannya
                 },
                 body: JSON.stringify(orderData)
             });
 
+            // Cek status sebelum mencoba parse JSON
+            if (!response.ok) {
+                 // Coba baca response text jika bukan JSON (misal error HTML)
+                 const errorText = await response.text();
+                 console.error('Server response error text:', errorText);
+                 throw new Error(`Server error: ${response.status} ${response.statusText}. Response: ${errorText.substring(0, 100)}...`);
+            }
+
             const result = await response.json();
 
-            if (response.ok && result.success) {
+            if (result.success) {
                 showOrderMessage('Pesanan berhasil! Mengalihkan...', 'success');
-                cart = {}; // Kosongkan cart state
-                saveCart(); // Hapus dari localStorage
+                cart = {};
+                saveCart();
                 updateCartUI();
 
-                // Redirect ke halaman status setelah beberapa saat
                 setTimeout(() => {
                     if (result.redirect_url) {
                         window.location.href = result.redirect_url;
                     } else {
                          showOrderMessage('Pesanan berhasil, tapi URL status tidak ditemukan.', 'warning');
-                         placeOrderBtn.textContent = 'Pesan Lagi?'; // Atau state lain
-                         placeOrderBtn.disabled = false;
+                         placeOrderBtn.textContent = 'Pesan Sekarang'; // Kembalikan teks tombol
+                         placeOrderBtn.disabled = false; // Aktifkan lagi
                     }
                 }, 1500);
 
@@ -243,7 +278,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error('Error placing order:', error);
-            showOrderMessage(`Error: ${error.message}`, 'error');
+            // Tampilkan pesan error yang lebih informatif jika memungkinkan
+            let displayError = 'Terjadi kesalahan saat mengirim pesanan.';
+            if (error instanceof SyntaxError) {
+                 displayError = 'Format respons server tidak valid.';
+            } else if (error.message) {
+                 // Coba tampilkan pesan error dari server jika ada
+                 if (error.message.includes('Server error:')) {
+                    displayError = `Gagal mengirim pesanan. Server: ${error.message.split('.')[1] || 'Unknown Error'}`;
+                 } else {
+                    displayError = `Error: ${error.message}`;
+                 }
+            }
+            showOrderMessage(displayError, 'error');
             placeOrderBtn.disabled = false;
             placeOrderBtn.textContent = 'Pesan Sekarang';
         }
@@ -252,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function showOrderMessage(message, type = 'info') {
         if (orderMessageElement) {
             orderMessageElement.textContent = message;
-            orderMessageElement.className = 'mt-2 text-sm text-center'; // Reset class
+            orderMessageElement.className = 'mt-3 text-sm text-center font-medium'; // Reset class + tambah font-medium
             if (type === 'success') {
                 orderMessageElement.classList.add('text-green-600');
             } else if (type === 'error') {
@@ -273,9 +320,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Inisialisasi ---
     updateCartUI(); // Tampilkan cart saat halaman pertama kali dimuat
 
-    // Jika keranjang tidak kosong, tampilkan saat load
-    if (Object.keys(cart).length > 0) {
-       // showCartTemporarily(100); // Tampilkan sebentar saja
+    // Inisialisasi posisi cart (sedikit terlihat)
+    if (cartSection && cartHeader) {
+        setTimeout(() => { // Beri sedikit waktu agar offsetHeight benar
+             cartSection.style.transform = `translateY(calc(100% - ${cartHeader.offsetHeight}px))`;
+        }, 100);
     }
 
 });

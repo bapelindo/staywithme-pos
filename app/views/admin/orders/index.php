@@ -58,7 +58,7 @@ $statusTexts = [
                     <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Aksi</th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-slate-200">
+            <tbody id="admin-orders-table-body" class="bg-white divide-y divide-slate-200">
                 <?php if (empty($orders)): ?>
                     <tr>
                         <td colspan="6" class="px-6 py-10 text-center text-slate-500 text-sm">
@@ -67,7 +67,7 @@ $statusTexts = [
                     </tr>
                 <?php else: ?>
                     <?php foreach ($orders as $order): ?>
-                        <tr>
+                        <tr data-order-id="<?= $order['id'] ?>">
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600">
                                 <?= SanitizeHelper::html($order['order_number']) ?>
                             </td>

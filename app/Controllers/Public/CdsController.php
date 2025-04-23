@@ -22,7 +22,7 @@ class CdsController extends Controller {
             'readyOrders' => $readyOrders,
             'pageTitle' => 'Status Pesanan - Stay With Me Cafe'
             // Jangan pakai layout utama jika ini untuk layar penuh
-        ], 'admin_layout');
+        ], null);
     }
 
     /**

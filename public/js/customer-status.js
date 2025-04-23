@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const orderId = orderIdInput.value;
     let currentStatus = statusElement.textContent.trim().toLowerCase().replace(/ /g, '_'); // Ambil status awal dari HTML
     let pollingInterval;
-    const POLLING_RATE = 8000; // Check setiap 8 detik
+    const POLLING_RATE = 5000; // Check setiap 8 detik
 
     const statusStyles = { // Mapping status ke kelas Tailwind (sesuaikan dengan View)
         'pending': 'bg-blue-100 text-blue-800',

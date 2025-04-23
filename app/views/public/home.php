@@ -15,7 +15,7 @@ $pageTitle = "Selamat Datang";
             Tidak perlu menunggu pelayan, cukup pindai QR Code di meja Anda untuk melihat menu lengkap kami dan lakukan pemesanan langsung dari smartphone Anda. Cepat, mudah, dan nyaman!
         </p>
         <div class="flex justify-center">
-             <img src="<?= UrlHelper::asset('images/qr-code-scan.svg') // Ganti dengan ilustrasi yang menarik ?>" alt="Scan QR Code" class="w-full max-w-xs h-auto object-contain">
+             <img src="<?= UrlHelper::baseUrl('images/qr-code-scan.svg') // Ganti dengan ilustrasi yang menarik ?>" alt="Scan QR Code" class="w-full max-w-xs h-auto object-contain">
         </div>
          <p class="mt-6 text-sm text-slate-500">
             Temukan QR Code di meja Anda dan mulai memesan sekarang!

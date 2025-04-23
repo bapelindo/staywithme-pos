@@ -40,8 +40,10 @@ $pageTitle = $pageTitle ?? 'Kitchen Display System';
         }
         .kds-header h1 { font-size: 1.5rem; font-weight: 600; }
     </style>
-    <script> var APP_BASE_URL = "<?= UrlHelper::baseUrl() ?>"; </script>
-     <audio id="kds_notification_sound" src="<?= UrlHelper::asset('audio/kds_new_order.mp3') ?>" preload="auto"></audio>
+<script>
+    var APP_BASE_URL = "<?= rtrim(UrlHelper::baseUrl(), '/') ?>";
+    var KDS_AUDIO_URL = "<?= UrlHelper::baseUrl('assets/audio/kds_new_order.mp3') ?>";
+</script>
 </head>
 <body class="antialiased">
 
@@ -98,16 +100,8 @@ $pageTitle = $pageTitle ?? 'Kitchen Display System';
          Tidak ada pesanan yang perlu disiapkan saat ini.
      </p>
 
-    <script src="<?= UrlHelper::asset('js/admin-kds.js') ?>" defer></script>
-    <script>
-         // Fungsi play sound dipanggil dari admin-kds.js
-         function playNotificationSound() {
-             const audio = document.getElementById('kds_notification_sound');
-             if (audio) {
-                 audio.play().catch(e => console.warn("Gagal play KDS sound:", e));
-             }
-         }
-    </script>
+    <script src="<?= UrlHelper::baseUrl('js/admin-kds.js') ?>" defer></script>
+    
 
 </body>
 </html>

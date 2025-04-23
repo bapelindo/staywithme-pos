@@ -9,13 +9,16 @@ use App\Helpers\SanitizeHelper;
 use App\Helpers\SessionHelper;
 
 class AuthController extends Controller {
+    public function redirectToLogin(): void {
+        UrlHelper::redirect('/admin/login');
+    }
 
     public function showLoginForm() {
         if (AuthHelper::isLoggedIn()) {
             UrlHelper::redirect('/admin/dashboard');
         }
         $error = SessionHelper::getFlash('login_error'); // Ambil error dari session flash
-        $this->view('admin.auth.login', ['pageTitle' => 'Admin Login', 'error' => $error]);
+        $this->view('admin.auth.login', ['pageTitle' => 'Admin Login', 'error' => $error], null);
     }
 
     public function login() {

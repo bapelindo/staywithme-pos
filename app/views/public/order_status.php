@@ -56,7 +56,7 @@ $statusInfo = $order ? getStatusInfo($order['status']) : getStatusInfo('unknown'
                                 <?php foreach ($order['items'] as $item): ?>
                                     <li class="py-4 flex items-center space-x-4">
                                          <?php
-                                            $itemImage = UrlHelper::asset(SanitizeHelper::html($item['image_path'] ?? 'images/default_menu.png'));
+                                            $itemImage = UrlHelper::baseUrl(SanitizeHelper::html($item['image_path'] ?? 'images/default_menu.png'));
                                          ?>
                                         <img src="<?= $itemImage ?>" alt="" class="w-12 h-12 rounded object-cover flex-shrink-0">
                                         <div class="flex-1 min-w-0">
@@ -112,4 +112,4 @@ $statusInfo = $order ? getStatusInfo($order['status']) : getStatusInfo('unknown'
     <?php endif; ?>
 </div>
 
-<script src="<?= App\Helpers\UrlHelper::asset('js/customer-status.js') ?>" defer></script>
+<script src="<?= App\Helpers\UrlHelper::baseUrl('js/customer-status.js') ?>" defer></script>

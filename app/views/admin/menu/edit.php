@@ -81,7 +81,7 @@ if (!$formActionId) {
                 <?php if (!empty($currentImagePath)): ?>
                     <div class="mb-3 p-2 border border-dashed border-slate-300 rounded-md inline-block">
                          <p class="text-xs text-slate-500 mb-1">Gambar Saat Ini:</p>
-                        <img src="<?= UrlHelper::asset(SanitizeHelper::html($currentImagePath)) ?>" alt="Gambar saat ini" class="h-20 w-auto rounded border border-slate-200">
+                        <img src="<?= UrlHelper::baseUrl(SanitizeHelper::html($currentImagePath)) ?>" alt="Gambar saat ini" class="h-20 w-auto rounded border border-slate-200">
                         <label class="flex items-center mt-1.5">
                              <input type="checkbox" name="remove_image" value="1" class="h-4 w-4 text-red-600 border-slate-300 rounded focus:ring-red-500">
                              <span class="ml-1.5 text-xs text-red-700">Hapus gambar saat ini</span>

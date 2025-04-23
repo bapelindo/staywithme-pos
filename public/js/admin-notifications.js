@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // return;
     }
 
-    const POLLING_RATE_NOTIF = 20000; // Check setiap 20 detik
+    const POLLING_RATE_NOTIF = 5000; // Check setiap 20 detik
     let lastSeenId = 0; // ID order terakhir yang sudah dinotifikasi
     let notificationAudio;
 
@@ -105,8 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
              if (!notificationAudio) {
                   // Ganti dengan path file audio Anda
-                  notificationAudio = new Audio('/assets/audio/admin_notification.mp3');
-             }
+                notificationAudio = new Audio(`${window.APP_BASE_URL || ''}/assets/audio/admin_new_order.mp3`); // Contoh path
+            }
              if (notificationAudio.paused) {
                   notificationAudio.play().catch(e => console.warn("Gagal memainkan suara notifikasi:", e));
              }

@@ -1,6 +1,8 @@
 <?php
 // File: app/routes.php
 
+use App\Helpers\UrlHelper;
+
 /**
  * File Definisi Rute Aplikasi Stay With Me POS
  *
@@ -34,7 +36,8 @@ $router->addRoute('GET', '/cds/get_orders', 'Public\\CdsController@getOrders'); 
 // =============================================
 // == Rute Otentikasi Admin ==
 // =============================================
-
+$router->addRoute('GET', '/admin', 'Admin\\AuthController@redirectToLogin');
+// Halaman utama admin (redirect ke login jika belum login)
 $router->addRoute('GET', '/admin/login', 'Admin\\AuthController@showLoginForm'); // Tampilkan form login
 $router->addRoute('POST', '/admin/login', 'Admin\\AuthController@login');       // Proses login
 $router->addRoute('GET', '/admin/logout', 'Admin\\AuthController@logout');      // Proses logout (Idealnya POST)

@@ -38,7 +38,9 @@ use App\Helpers\SessionHelper;
              box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
     </style>
-    <script> var APP_BASE_URL = "<?= UrlHelper::baseUrl() ?>"; </script>
+    <script>
+        var APP_BASE_URL = "<?= rtrim(UrlHelper::baseUrl(), '/') ?>"; // Gunakan rtrim()
+    </script>
 </head>
 <body class="bg-slate-100">
 
@@ -148,7 +150,8 @@ use App\Helpers\SessionHelper;
         </div>
     </div>
 
-    <script src="<?= UrlHelper::asset('js/admin-main.js') ?>" defer></script>
-    <script src="<?= UrlHelper::asset('js/admin-notifications.js') ?>" defer></script>
+    <script src="<?= UrlHelper::baseUrl('js/admin-main.js') ?>" defer></script>
+    <script src="<?= UrlHelper::baseUrl('js/admin-notifications.js') ?>" defer></script>
+    <script src="<?= UrlHelper::baseUrl('js/admin-orders.js') ?>" defer></script>
     </body>
 </html>

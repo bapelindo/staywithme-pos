@@ -95,29 +95,55 @@ class OrderController extends Controller {
     /**
      * Endpoint AJAX untuk Polling pesanan baru (status 'received').
      * Digunakan untuk notifikasi di dashboard admin atau OSS.
+     * **Modifikasi: Kembalikan juga total_amount dan format data**
      */
     public function getNewOrders() {
         AuthHelper::requireRole(['admin', 'staff']); // Hanya admin & staff
 
-        // Ambil ID order terakhir yang dilihat dari parameter GET (jika ada)
         $lastSeenId = isset($_GET['lastSeenId']) ? SanitizeHelper::integer($_GET['lastSeenId']) : 0;
 
         $orderModel = new Order();
-        // Ambil order baru dengan status 'received' yang ID nya lebih besar dari lastSeenId
-        $newOrders = $orderModel->getNewOrdersSince($lastSeenId, 'received'); // Perlu method getNewOrdersSince
+        // Ambil order baru dengan status 'received' (atau sesuaikan jika perlu status lain)
+        $newOrders = $orderModel->getNewOrdersSince($lastSeenId, 'received');
 
-        // Hanya kirim data minimal
-        $ordersData = array_map(fn($order) => [
-            'id' => $order['id'],
-            'order_number' => $order['order_number'],
-            'table_number' => $order['table_number'], // Perlu join di model
-            'order_time' => DateHelper::timeAgo($order['order_time']) // Format waktu
-        ], $newOrders);
+        // Hanya kirim data yang relevan dan format jika perlu
+        $ordersData = array_map(function($order) {
+            return [
+                'id' => $order['id'],
+                'order_number' => $order['order_number'],
+                'table_number' => $order['table_number'],
+                'order_time_full' => DateHelper::formatIndonesian($order['order_time'], 'full'), // Format lengkap
+                'order_time_ago' => DateHelper::timeAgo($order['order_time']), // Format relatif
+                'total_amount' => NumberHelper::formatCurrencyIDR($order['total_amount']), // Format mata uang
+                'status' => $order['status'],
+                'status_text' => SanitizeHelper::html($this->getStatusText($order['status'])), // Helper text (opsional)
+                'status_class' => $this->getStatusClass($order['status']) // Helper class (opsional)
+            ];
+        }, $newOrders);
 
         return $this->jsonResponse([
             'success' => true,
             'new_orders' => $ordersData
         ]);
+    }
+
+    // Helper kecil untuk status (bisa juga ditaruh di helper terpisah)
+    private function getStatusText(string $status): string {
+        $map = [
+            'pending' => 'Pending', 'received' => 'Diterima', 'preparing' => 'Disiapkan',
+            'ready' => 'Siap', 'served' => 'Disajikan', 'paid' => 'Lunas', 'cancelled' => 'Batal'
+        ];
+        return $map[$status] ?? ucfirst($status);
+    }
+
+    private function getStatusClass(string $status): string {
+        $map = [
+            'pending' => 'bg-gray-100 text-gray-600', 'received' => 'bg-blue-100 text-blue-700',
+            'preparing' => 'bg-yellow-100 text-yellow-700 animate-pulse', 'ready' => 'bg-teal-100 text-teal-700',
+            'served' => 'bg-green-100 text-green-700', 'paid' => 'bg-indigo-100 text-indigo-700',
+            'cancelled' => 'bg-red-100 text-red-700',
+        ];
+        return $map[$status] ?? 'bg-gray-100 text-gray-600';
     }
 
     /**

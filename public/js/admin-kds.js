@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    const POLLING_RATE_KDS = 7000; // Check setiap 7 detik
+    const POLLING_RATE_KDS = 5000; // Check setiap 7 detik
     let currentOrderIds = new Set(); // Menyimpan ID order yang sedang ditampilkan
     let notificationAudio; // Untuk suara notifikasi
 
@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             if (!notificationAudio) {
                  // Ganti dengan path file audio Anda
-                 notificationAudio = new Audio('/assets/audio/kds_new_order.mp3'); // Suara berbeda?
+                 notificationAudio = new Audio(window.KDS_AUDIO_URL); // Suara berbeda?
             }
             if (notificationAudio.paused) {
                  notificationAudio.play().catch(e => console.warn("Gagal memainkan suara KDS:", e));

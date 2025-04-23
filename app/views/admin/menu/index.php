@@ -45,7 +45,7 @@ $menuItems = $menuItems ?? [];
                     <?php foreach ($menuItems as $item): ?>
                         <tr>
                             <td class="px-4 py-2 whitespace-nowrap text-sm text-center align-middle">
-                                <?php $imgUrl = UrlHelper::asset(SanitizeHelper::html($item['image_path'] ?? 'images/default_menu_thumb.png')); ?>
+                                <?php $imgUrl = UrlHelper::baseUrl(SanitizeHelper::html($item['image_path'] ?? 'images/default_menu_thumb.png')); ?>
                                 <img src="<?= $imgUrl ?>" alt="<?= SanitizeHelper::html($item['name']) ?>" class="h-12 w-16 object-cover rounded-md inline-block border border-slate-200">
                             </td>
                             <td class="px-6 py-4 align-middle whitespace-nowrap text-sm font-medium text-slate-900">
@@ -86,4 +86,4 @@ $menuItems = $menuItems ?? [];
     </div>
 </div>
 
-<script src="<?= UrlHelper::asset('js/admin-menu.js') ?>" defer></script>
+<script src="<?= UrlHelper::baseUrl('js/admin-menu.js') ?>" defer></script>

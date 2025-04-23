@@ -97,14 +97,16 @@ class KdsController extends Controller {
         $orderId = SanitizeHelper::integer($data['order_id']);
         $newStatus = SanitizeHelper::string($data['new_status']);
 
-        // Status yang boleh di-set DARI KDS: preparing, ready
-        $allowedStatuses = ['preparing', 'ready'];
+        // *** PERUBAHAN DI SINI: Tambahkan 'cancelled' ***
+        // Status yang boleh di-set DARI KDS: preparing, ready, cancelled
+        $allowedStatuses = ['preparing', 'ready', 'cancelled']; // <-- Tambahkan 'cancelled'
 
          if ($orderId <= 0 || !in_array($newStatus, $allowedStatuses)) {
+             // Pesan error ini mungkin perlu disesuaikan jika Anda mengizinkan lebih banyak status
              return $this->jsonResponse(['success' => false, 'message' => 'ID Pesanan atau status tidak valid untuk KDS.'], 400);
          }
 
-         // Ambil order saat ini untuk validasi transisi (misal, hanya bisa dari received ke preparing)
+         // Ambil order saat ini untuk validasi transisi
          $orderModel = new Order();
          $currentOrder = $orderModel->findById($orderId);
 
@@ -112,19 +114,30 @@ class KdsController extends Controller {
               return $this->jsonResponse(['success' => false, 'message' => 'Pesanan tidak ditemukan.'], 404);
          }
 
+         // *** PERUBAHAN (OPSIONAL): Definisikan transisi ke 'cancelled' ***
          // Validasi transisi sederhana
          $validTransitions = [
              'received' => ['preparing'],
-             'preparing' => ['ready']
-             // Tambahkan transisi lain jika perlu (misal: bisa batal dari preparing?)
+             'preparing' => ['ready', 'cancelled'] // <-- Izinkan batal dari 'preparing'
+             // Tambahkan transisi lain jika perlu (misal: bisa batal dari 'received'?)
+             // 'received' => ['preparing', 'cancelled'],
          ];
 
-         if (!isset($validTransitions[$currentOrder['status']]) || !in_array($newStatus, $validTransitions[$currentOrder['status']])) {
-             return $this->jsonResponse([
-                 'success' => false,
-                 'message' => "Tidak bisa mengubah status dari '{$currentOrder['status']}' ke '{$newStatus}'."
-             ], 400);
-         }
+         // Hanya lakukan validasi transisi jika status baru BUKAN 'cancelled'
+         // atau jika Anda ingin membatasi pembatalan hanya dari status tertentu
+         if ($newStatus !== 'cancelled' && (!isset($validTransitions[$currentOrder['status']]) || !in_array($newStatus, $validTransitions[$currentOrder['status']]))) {
+              return $this->jsonResponse([
+                  'success' => false,
+                  'message' => "Tidak bisa mengubah status dari '{$currentOrder['status']}' ke '{$newStatus}'."
+              ], 400);
+          }
+          // Jika Anda INGIN memvalidasi status asal pembatalan:
+         else if ($newStatus === 'cancelled' && (!isset($validTransitions[$currentOrder['status']]) || !in_array('cancelled', $validTransitions[$currentOrder['status']]))) {
+               return $this->jsonResponse([
+                   'success' => false,
+                   'message' => "Tidak bisa membatalkan pesanan dari status '{$currentOrder['status']}'."
+               ], 400);
+           }
 
 
          // Update status menggunakan Order Model
@@ -132,8 +145,10 @@ class KdsController extends Controller {
              // TODO: Push notification jika pakai WebSocket
               return $this->jsonResponse(['success' => true, 'message' => 'Status pesanan berhasil diperbarui.']);
          } else {
-              return $this->jsonResponse(['success' => false, 'message' => 'Gagal memperbarui status pesanan.'], 500);
+              // Kemungkinan gagal karena rowCount() == 0 di model jika status sudah sama, atau error DB
+              return $this->jsonResponse(['success' => false, 'message' => 'Gagal memperbarui status pesanan di database.'], 500);
          }
     }
+
 }
 ?>

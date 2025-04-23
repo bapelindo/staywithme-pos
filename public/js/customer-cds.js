@@ -3,17 +3,18 @@
 document.addEventListener('DOMContentLoaded', () => {
     const preparingListElement = document.getElementById('preparing-list');
     const readyListElement = document.getElementById('ready-list');
-    const preparingEmptyMessage = preparingListElement?.nextElementSibling; // Asumsi elemen <p> setelah list
-    const readyEmptyMessage = readyListElement?.nextElementSibling;
+    // ** PERUBAHAN DI SINI: Gunakan getElementById **
+    const preparingEmptyMessage = document.getElementById('preparing-empty-message');
+    const readyEmptyMessage = document.getElementById('ready-empty-message');
 
-    if (!preparingListElement || !readyListElement) {
-        console.error('Elemen daftar CDS (preparing/ready) tidak ditemukan. Polling tidak aktif.');
+    if (!preparingListElement || !readyListElement || !preparingEmptyMessage || !readyEmptyMessage) {
+        console.error('Elemen daftar CDS (preparing/ready) atau pesan kosong tidak ditemukan. Polling tidak aktif.');
         return;
     }
 
     let currentPreparing = [];
     let currentReady = [];
-    const POLLING_RATE_CDS = 10000; // Check setiap 10 detik
+    const POLLING_RATE_CDS = 5000; // Check setiap 10 detik
 
     function updateList(listElement, emptyMessageElement, newOrderNumbers) {
         const currentOrderElements = listElement.querySelectorAll('.cds-list-item');
@@ -35,7 +36,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const newItem = document.createElement('div');
                 newItem.className = 'cds-list-item';
                 newItem.dataset.orderNumber = num;
-                newItem.textContent = num;
+                 // ** PERUBAHAN: Tampilkan hanya nomor, tanpa prefix **
+                newItem.textContent = num.replace('STW-', ''); // Atau gunakan regex jika prefix bisa bervariasi
                 listElement.appendChild(newItem);
 
                  // Efek highlight singkat untuk item baru
@@ -54,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const finalItemCount = listElement.querySelectorAll('.cds-list-item').length;
         if (emptyMessageElement) {
              emptyMessageElement.style.display = (finalItemCount === 0) ? 'block' : 'none';
-             // Jika pakai grid, pastikan pesan kosong mengisi kolom
+             // ** PERUBAHAN: Pastikan class grid juga diatur **
              if (finalItemCount === 0) emptyMessageElement.classList.add('col-span-full');
              else emptyMessageElement.classList.remove('col-span-full');
         }
@@ -67,8 +69,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // atau coba mainkan langsung (mungkin diblok browser)
         try {
             if (!notificationAudio) {
-                // Ganti dengan path file audio Anda
-                 notificationAudio = new Audio('/assets/audio/cds_notification.mp3');
+                // Ganti dengan path file audio Anda jika ada
+                notificationAudio = new Audio(window.CDS_AUDIO_URL);  // Contoh path
             }
             // Hanya mainkan jika belum ada yg sedang dimainkan (cegah tumpang tindih)
             if (notificationAudio.paused) {
@@ -102,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const newReadyNumbers = result.ready.map(order => order.number);
 
                 // Update list hanya jika ada perubahan untuk mengurangi DOM manipulation
+                // ** PERUBAHAN: Bandingkan string JSON untuk deteksi perubahan array **
                 if (JSON.stringify(newPreparingNumbers) !== JSON.stringify(currentPreparing)) {
                     updateList(preparingListElement, preparingEmptyMessage, newPreparingNumbers);
                     currentPreparing = newPreparingNumbers;

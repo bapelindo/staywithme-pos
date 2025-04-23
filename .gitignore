@@ -1,4 +1,4 @@
 /vendor/
 .env
 *.log
-/public/qrcodes/
+/public/assets/uploads/

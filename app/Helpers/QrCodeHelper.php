@@ -1,36 +1,34 @@
 <?php
+// File: app/Helpers/QrCodeHelper.php (Perbaikan Final v2 - RoundBlockSizeMode)
 namespace App\Helpers;
 
+// Import kelas-kelas yang dibutuhkan DENGAN BENAR
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Encoding\Encoding;
-use Endroid\QrCode\ErrorCorrectionLevel;
-use Endroid\QrCode\RoundBlockSizeMode;
+use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelHigh;
+use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelInterface;
+use Endroid\QrCode\RoundBlockSizeMode\RoundBlockSizeModeMargin; // <-- Import kelas spesifik ini
+// HAPUS atau jangan gunakan: use Endroid\QrCode\RoundBlockSizeMode;
 use Endroid\QrCode\Writer\PngWriter;
 use Endroid\QrCode\Writer\SvgWriter;
-use Endroid\QrCode\Writer\Result\ResultInterface; // Import ResultInterface
-use Exception; // Import Exception
+use Endroid\QrCode\Writer\Result\ResultInterface;
+use Exception;
+use App\Helpers\SanitizeHelper;
 
 /**
  * Class QrCodeHelper
- *
  * Membantu membuat QR Code menggunakan library endroid/qr-code.
  */
 class QrCodeHelper {
 
     /**
      * Menghasilkan data QR Code sebagai objek ResultInterface.
-     *
-     * @param string $data Data yang akan di-encode (biasanya URL).
-     * @param int $size Ukuran gambar QR Code dalam piksel.
-     * @param string $format 'png' atau 'svg'.
-     * @param ErrorCorrectionLevel $errorCorrectionLevel Tingkat koreksi error.
-     * @return ResultInterface|null Objek hasil QR Code atau null jika error.
      */
     public static function generate(
         string $data,
         int $size = 200,
         string $format = 'png',
-        ErrorCorrectionLevel $errorCorrectionLevel = ErrorCorrectionLevel::High
+        ErrorCorrectionLevelInterface $errorCorrectionLevel = new ErrorCorrectionLevelHigh()
     ): ?ResultInterface {
         try {
             $writer = ($format === 'svg') ? new SvgWriter() : new PngWriter();
@@ -42,14 +40,15 @@ class QrCodeHelper {
                 ->encoding(new Encoding('UTF-8'))
                 ->errorCorrectionLevel($errorCorrectionLevel)
                 ->size($size)
-                ->margin(10) // Margin di sekitar QR code
-                ->roundBlockSizeMode(RoundBlockSizeMode::Margin);
-                // ->logoPath(__DIR__.'/path/to/logo.png') // Opsional: Path ke logo
-                // ->logoResizeToWidth(50)
+                ->margin(10)
+                // === PERBAIKAN DI SINI: Gunakan instance baru ===
+                ->roundBlockSizeMode(new RoundBlockSizeModeMargin())
+                // ================================================
+                ; // Akhir dari chain method builder
 
             return $builder->build();
 
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
              error_log("QR Code generation failed: " . $e->getMessage());
              return null;
         }
@@ -57,41 +56,36 @@ class QrCodeHelper {
 
     /**
      * Menampilkan gambar QR Code (PNG atau SVG) langsung ke browser.
-     *
-     * @param string $data Data yang akan di-encode.
-     * @param int $size Ukuran gambar.
-     * @param string $format 'png' atau 'svg'.
      */
-    public static function display(string $data, int $size = 200, string $format = 'png'): void {
-        $result = self::generate($data, $size, $format);
+    public static function display(string $data, int $size = 250, string $format = 'png'): void {
+        // Buat instance baru dari ErrorCorrectionLevelHigh saat memanggil generate
+        $result = self::generate($data, $size, $format, new ErrorCorrectionLevelHigh());
 
         if ($result) {
+            if (ob_get_level()) ob_end_clean();
             header('Content-Type: ' . $result->getMimeType());
             echo $result->getString();
-            exit; // Hentikan eksekusi setelah output gambar
+            exit;
         } else {
-            // Handle error, mungkin tampilkan gambar placeholder atau pesan error
             http_response_code(500);
-            echo "Gagal membuat QR Code.";
+            header('Content-Type: text/plain');
+            // Tampilkan pesan error yang lebih spesifik jika memungkinkan,
+            // tapi untuk sekarang ini cukup.
+            echo "Error: Gagal membuat QR Code.";
             exit;
         }
     }
 
     /**
      * Menghasilkan tag <img> dengan data URI QR code (format PNG).
-     * Berguna untuk menyematkan QR code langsung di HTML tanpa file terpisah.
-     *
-     * @param string $data Data yang akan di-encode.
-     * @param int $size Ukuran gambar.
-     * @param string $alt Teks alternatif untuk tag img.
-     * @return string Tag <img> HTML atau string kosong jika gagal.
      */
     public static function getImgTagPngDataUri(string $data, int $size = 150, string $alt = 'QR Code'): string {
-        $result = self::generate($data, $size, 'png');
+        $result = self::generate($data, $size, 'png', new ErrorCorrectionLevelHigh());
         if ($result) {
-            return '<img src="' . $result->getDataUri() . '" alt="' . SanitizeHelper::html($alt) . '" width="' . $size . '" height="' . $size . '">';
+             $safeAlt = SanitizeHelper::html($alt);
+            return "<img src=\"{$result->getDataUri()}\" alt=\"{$safeAlt}\" width=\"{$size}\" height=\"{$size}\">";
         }
-        return ''; // Gagal generate
+        return '';
     }
 }
 ?>
