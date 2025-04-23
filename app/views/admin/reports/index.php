@@ -1,21 +1,21 @@
 <?php
+// File: app/Views/admin/reports/index.php (Cleaned)
+
 use App\Helpers\SanitizeHelper;
 use App\Helpers\UrlHelper;
 use App\Helpers\NumberHelper;
+use App\Helpers\DateHelper; // Make sure the 'use' statement is present
 
-// Data dari ReportController
+// Data from ReportController
 $startDate = $startDate ?? date('Y-m-01'); // Default awal bulan ini
 $endDate = $endDate ?? date('Y-m-d');   // Default hari ini
 $summary = $summary ?? ['total_orders' => 0, 'total_revenue' => 0, 'average_order_value' => 0];
 $popularItems = $popularItems ?? [];
 // $pageTitle diatur layout
 
-// !! PENTING: Data untuk grafik harus disiapkan oleh ReportController !!
-// Controller perlu query data (misal penjualan harian) dan menyiapkannya
-// dalam format yang bisa dibaca Chart.js, lalu dikirim ke view ini.
-// Contoh: $salesDataForChart = ['labels' => ['Tgl1', 'Tgl2', ...], 'revenue' => [100, 120, ...], 'orders' => [5, 7, ...]];
-$salesDataForChart = $salesDataForChart ?? ['labels'=>[], 'revenue'=>[], 'orders'=>[]]; // Data untuk grafik penjualan
-$popularItemsForChart = $popularItemsForChart ?? ['labels' => array_column($popularItems, 'menu_item_name'), 'quantities' => array_column($popularItems, 'total_quantity')]; // Data utk grafik item populer
+// Data untuk grafik dari ReportController
+$salesDataForChart = $salesDataForChart ?? ['labels'=>[], 'revenue'=>[], 'orders'=>[]];
+$popularItemsForChart = $popularItemsForChart ?? ['labels' => array_column($popularItems, 'menu_item_name'), 'quantities' => array_column($popularItems, 'total_quantity')];
 
 $todayDate = date('Y-m-d'); // Untuk batas max date input
 ?>
@@ -45,7 +45,17 @@ $todayDate = date('Y-m-d'); // Untuk batas max date input
             </button>
         </div>
     </form>
-    <p class="text-xs text-slate-500 mt-2">Menampilkan laporan untuk periode: <?= SanitizeHelper::html(DateHelper::formatIndonesian($startDate, 'dateonly')) ?> s/d <?= SanitizeHelper::html(DateHelper::formatIndonesian($endDate, 'dateonly')) ?></p>
+    <p class="text-xs text-slate-500 mt-2">Menampilkan laporan untuk periode:
+    <?php
+        // Safely call DateHelper, handle potential null from error
+        $formattedStartDate = '[Invalid Date]';
+        $formattedEndDate = '[Invalid Date]';
+        if (class_exists('App\\Helpers\\DateHelper')) {
+             $formattedStartDate = DateHelper::formatIndonesian($startDate, 'dateonly') ?? $formattedStartDate;
+             $formattedEndDate = DateHelper::formatIndonesian($endDate, 'dateonly') ?? $formattedEndDate;
+        }
+     ?>
+     <?= SanitizeHelper::html($formattedStartDate) ?> s/d <?= SanitizeHelper::html($formattedEndDate) ?></p>
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
@@ -87,7 +97,17 @@ $todayDate = date('Y-m-d'); // Untuk batas max date input
 </div>
 
 <div class="bg-white shadow-md rounded-lg overflow-hidden border border-slate-200">
-    <h3 class="text-lg font-semibold text-slate-700 p-5 border-b border-slate-200">Detail Item Terlaris (<?= SanitizeHelper::html(DateHelper::formatIndonesian($startDate, 'dateonly')) ?> - <?= SanitizeHelper::html(DateHelper::formatIndonesian($endDate, 'dateonly')) ?>)</h3>
+    <h3 class="text-lg font-semibold text-slate-700 p-5 border-b border-slate-200">Detail Item Terlaris (
+        <?php
+            // Safely call DateHelper
+             $detailStartDate = '[Invalid Date]';
+             $detailEndDate = '[Invalid Date]';
+             if (class_exists('App\\Helpers\\DateHelper')) {
+                 $detailStartDate = DateHelper::formatIndonesian($startDate, 'dateonly') ?? $detailStartDate;
+                 $detailEndDate = DateHelper::formatIndonesian($endDate, 'dateonly') ?? $detailEndDate;
+             }
+        ?>
+        <?= SanitizeHelper::html($detailStartDate) ?> - <?= SanitizeHelper::html($detailEndDate) ?>)</h3>
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-slate-200">
             <thead class="bg-slate-50">

@@ -1,27 +1,27 @@
-// File: public/assets/js/customer-menu.js
+// File: public/assets/js/customer-menu.js (Cart does NOT auto-open on add)
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Seleksi semua elemen penting di sini
+    // Seleksi semua elemen penting
     const cartSection = document.getElementById('cart-section');
     const cartItemsContainer = document.getElementById('cart-items');
     const cartTotalElement = document.getElementById('cart-total');
     const placeOrderBtn = document.getElementById('place-order-btn');
     const cartEmptyMessage = cartItemsContainer?.querySelector('.cart-empty-message');
     const orderMessageElement = document.getElementById('order-message');
-    const tableIdInput = document.getElementById('table-id'); // Input hidden berisi table ID
-    const cartItemCountElement = document.getElementById('cart-item-count'); // *** Seleksi elemen count di sini ***
-    const cartHeader = document.getElementById('cart-header'); // Untuk toggle
-    const cartContent = document.getElementById('cart-content'); // Untuk toggle
-    const cartToggleIcon = document.getElementById('cart-toggle-icon'); // Untuk toggle
+    const tableIdInput = document.getElementById('table-id');
+    const cartItemCountElement = document.getElementById('cart-item-count');
+    const cartHeader = document.getElementById('cart-header');
+    const cartContent = document.getElementById('cart-content');
+    const cartToggleIcon = document.getElementById('cart-toggle-icon');
 
     // --- State Keranjang ---
-    let cart = loadCart(); // Load cart dari localStorage saat halaman dimuat
+    let cart = loadCart();
+    let isCartOpen = false;
 
     // --- Fungsi Keranjang ---
-
     function loadCart() {
         const storedCart = localStorage.getItem('staywithme_cart');
-        return storedCart ? JSON.parse(storedCart) : {}; // { itemId: { id, name, price, quantity, notes } }
+        return storedCart ? JSON.parse(storedCart) : {};
     }
 
     function saveCart() {
@@ -33,18 +33,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (cart[itemId]) {
             cart[itemId].quantity += 1;
         } else {
-            cart[itemId] = { ...item, quantity: 1, notes: '' }; // notes default kosong
+            cart[itemId] = { ...item, quantity: 1, notes: '' };
         }
         saveCart();
         updateCartUI();
-        showCartTemporarily(); // Panggil fungsi untuk buka cart saat item ditambah
+        // We still want feedback, so flash the header
+        flashCartHeader();
     }
 
     function updateQuantity(itemId, change) {
         if (cart[itemId]) {
             cart[itemId].quantity += change;
             if (cart[itemId].quantity <= 0) {
-                delete cart[itemId]; // Hapus item jika kuantitas 0 atau kurang
+                delete cart[itemId];
             }
             saveCart();
             updateCartUI();
@@ -55,7 +56,6 @@ document.addEventListener('DOMContentLoaded', () => {
          if (cart[itemId]) {
             cart[itemId].notes = notes.trim();
             saveCart();
-            // Tidak perlu update UI penuh jika hanya notes
          }
      }
 
@@ -68,53 +68,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function formatCurrency(amount) {
-        // Gunakan Intl.NumberFormat untuk format Rupiah yang lebih baik
         return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0, // Tidak pakai desimal untuk Rupiah
-            maximumFractionDigits: 0
+            style: 'currency', currency: 'IDR',
+            minimumFractionDigits: 0, maximumFractionDigits: 0
         }).format(amount);
     }
 
     // --- Update Tampilan Keranjang ---
     function updateCartUI() {
-        // Pastikan semua elemen ada sebelum digunakan
         if (!cartItemsContainer || !cartTotalElement || !placeOrderBtn || !cartEmptyMessage || !cartItemCountElement) {
-            console.error("Elemen keranjang penting tidak ditemukan di updateCartUI!");
-            return;
+            console.error("Cart elements missing in updateCartUI!"); return;
         }
 
-        cartItemsContainer.innerHTML = ''; // Kosongkan item lama
+        cartItemsContainer.innerHTML = ''; // Clear old items
         let total = calculateTotal();
-        // Hitung jumlah jenis item unik
         let itemCount = Object.keys(cart).length;
 
-        // *** PERBAIKAN: Update text content untuk jumlah item ***
         cartItemCountElement.textContent = itemCount;
-        // ********************************************************
 
         if (itemCount === 0) {
             cartEmptyMessage.style.display = 'block';
             placeOrderBtn.disabled = true;
+             // Close the cart if it becomes empty and is open
+             if (isCartOpen) {
+                 toggleCart(false);
+             }
         } else {
             cartEmptyMessage.style.display = 'none';
             placeOrderBtn.disabled = false;
 
-            // Render item keranjang
             Object.values(cart).forEach(item => {
                 const itemElement = document.createElement('div');
-                itemElement.className = 'cart-item py-2 border-b border-gray-100 flex items-start'; // Sesuaikan class jika perlu
+                itemElement.className = 'cart-item py-2 border-b border-slate-100 flex items-start';
                 itemElement.innerHTML = `
                     <div class="flex-grow pr-2">
-                        <p class="text-sm font-medium text-gray-800">${item.name}</p>
+                        <p class="text-sm font-medium text-slate-800">${SanitizeHelper.html(item.name)}</p>
                         <p class="text-xs text-indigo-600">${formatCurrency(item.price)}</p>
-                        <input type="text" placeholder="Catatan item..." value="${item.notes ?? ''}" data-item-id="${item.id}" class="item-notes-input mt-1 text-xs p-1 border rounded w-full" maxlength="100">
+                        <input type="text" placeholder="Catatan item..." value="${SanitizeHelper.html(item.notes ?? '')}" data-item-id="${item.id}" class="item-notes-input mt-1 text-xs p-1 border rounded w-full" maxlength="100">
                     </div>
-                    <div class="flex items-center space-x-1.5">
-                        <button class="quantity-change bg-gray-200 text-gray-600 hover:bg-gray-300 rounded-full w-5 h-5 text-xs leading-none" data-item-id="${item.id}" data-change="-1">-</button>
-                        <span class="text-sm font-medium w-4 text-center">${item.quantity}</span>
-                        <button class="quantity-change bg-gray-200 text-gray-600 hover:bg-gray-300 rounded-full w-5 h-5 text-xs leading-none" data-item-id="${item.id}" data-change="1">+</button>
+                    <div class="flex items-center space-x-1.5 flex-shrink-0">
+                        <button class="quantity-change bg-slate-200 text-slate-600 hover:bg-slate-300 rounded-full w-5 h-5 text-sm leading-none flex items-center justify-center" data-item-id="${item.id}" data-change="-1">-</button>
+                        <span class="text-sm font-medium w-5 text-center">${item.quantity}</span>
+                        <button class="quantity-change bg-slate-200 text-slate-600 hover:bg-slate-300 rounded-full w-5 h-5 text-sm leading-none flex items-center justify-center" data-item-id="${item.id}" data-change="1">+</button>
                     </div>
                 `;
                 cartItemsContainer.appendChild(itemElement);
@@ -122,105 +117,108 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         cartTotalElement.textContent = formatCurrency(total);
-
-        // Tambahkan kembali event listener ke tombol +/- dan input notes
-        addCartItemEventListeners();
+        addCartItemEventListeners(); // Re-attach listeners
     }
 
-    // Fungsi untuk menambahkan listener ke elemen dinamis di keranjang
+    // --- Add Listeners to Dynamic Cart Elements ---
     function addCartItemEventListeners() {
-        document.querySelectorAll('.quantity-change').forEach(button => {
-             // Hapus listener lama sebelum menambah yg baru (mencegah duplikasi)
+        // Use event delegation on the container is generally better, but re-attaching is simpler here
+        cartItemsContainer.querySelectorAll('.quantity-change').forEach(button => {
              button.replaceWith(button.cloneNode(true));
         });
-         document.querySelectorAll('.quantity-change').forEach(button => {
-            button.addEventListener('click', () => {
-                const itemId = button.dataset.itemId;
-                const change = parseInt(button.dataset.change);
+         cartItemsContainer.querySelectorAll('.quantity-change').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const btn = e.currentTarget;
+                const itemId = btn.dataset.itemId;
+                const change = parseInt(btn.dataset.change);
                 updateQuantity(itemId, change);
             });
         });
 
-        document.querySelectorAll('.item-notes-input').forEach(input => {
-             // Hapus listener lama
+        cartItemsContainer.querySelectorAll('.item-notes-input').forEach(input => {
              input.replaceWith(input.cloneNode(true));
         });
-         document.querySelectorAll('.item-notes-input').forEach(input => {
+         cartItemsContainer.querySelectorAll('.item-notes-input').forEach(input => {
              input.addEventListener('change', (e) => {
-                 const itemId = input.dataset.itemId;
-                 updateItemNotes(itemId, e.target.value);
+                 const inputEl = e.currentTarget;
+                 const itemId = inputEl.dataset.itemId;
+                 updateItemNotes(itemId, inputEl.value);
+             });
+             input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault(); input.blur();
+                }
              });
          });
     }
 
-    // --- Fungsi untuk menampilkan/menyembunyikan cart ---
-    let isCartOpen = false;
-    function toggleCart(forceOpen = false) {
+    // --- Cart Visibility and Feedback ---
+    function toggleCart(forceState = null) {
         if (!cartHeader || !cartContent || !cartSection || !cartToggleIcon) return;
+        const targetOpenState = (forceState === null) ? !isCartOpen : forceState;
+        if (targetOpenState === isCartOpen) return; // No change needed
 
-        if (forceOpen) {
-            isCartOpen = true;
-        } else {
-             isCartOpen = !isCartOpen;
-        }
-
+        isCartOpen = targetOpenState;
         if (isCartOpen) {
             cartSection.style.transform = 'translateY(0)';
-            cartContent.style.maxHeight = '400px'; // Sesuaikan max-height
+            cartContent.style.maxHeight = '400px';
             cartToggleIcon.style.transform = 'rotate(0deg)';
         } else {
             cartContent.style.maxHeight = '0px';
             cartToggleIcon.style.transform = 'rotate(180deg)';
-            // Beri jeda sebelum translate agar transisi max-height selesai
             setTimeout(() => {
-                 if (!isCartOpen) cartSection.style.transform = `translateY(calc(100% - ${cartHeader.offsetHeight}px))`; // Gunakan tinggi header dinamis
+                 if (!isCartOpen) {
+                    cartSection.style.transform = `translateY(calc(100% - ${cartHeader.offsetHeight}px))`;
+                 }
             }, 300);
         }
     }
 
-    // Fungsi dipanggil saat item ditambah
-    function showCartTemporarily() {
-        if (!isCartOpen) {
-             toggleCart(true); // Paksa buka cart
+    function flashCartHeader() {
+        if (cartHeader) {
+            cartHeader.classList.remove('bg-indigo-50', 'hover:bg-indigo-100');
+            cartHeader.classList.add('bg-indigo-200', 'transition-colors', 'duration-200');
+            setTimeout(() => {
+                cartHeader.classList.remove('bg-indigo-200');
+                cartHeader.classList.add('bg-indigo-50', 'hover:bg-indigo-100');
+            }, 300);
         }
     }
 
-    // --- Event Listeners Halaman Menu ---
+    // --- Event Listeners Setup ---
     document.querySelectorAll('.add-to-cart-btn').forEach(button => {
         button.addEventListener('click', () => {
             const item = {
                 id: button.dataset.id,
                 name: button.dataset.name,
-                price: parseFloat(button.dataset.price) // Pastikan ini angka
+                price: parseFloat(button.dataset.price)
             };
             if (!isNaN(item.price)) {
-                addToCart(item);
+                addToCart(item); // This now only adds item and flashes header
+                                 // It NO LONGER forces the cart open
             } else {
-                console.error('Harga item tidak valid:', button.dataset.price);
+                console.error('Invalid item price:', button.dataset.price);
             }
         });
     });
 
-    // Listener untuk toggle cart header
-     if (cartHeader) {
-        cartHeader.addEventListener('click', () => toggleCart());
-     }
+    if (cartHeader) {
+        // Only the header click toggles the cart open/close state
+        cartHeader.addEventListener('click', () => toggleCart(null));
+    }
 
-
-    // --- Fungsi Kirim Pesanan ---
-    async function sendOrder() {
+    // --- Send Order Logic ---
+    async function sendOrder() { // (Keep existing sendOrder function as is)
         if (!tableIdInput || !tableIdInput.value) {
-            showOrderMessage('Error: ID Meja tidak ditemukan.', 'error');
-            return;
+            showOrderMessage('Error: ID Meja tidak ditemukan.', 'error'); return;
         }
         if (Object.keys(cart).length === 0) {
-            showOrderMessage('Keranjang Anda kosong.', 'info');
-            return;
+            showOrderMessage('Keranjang Anda kosong.', 'info'); return;
         }
 
         placeOrderBtn.disabled = true;
         placeOrderBtn.textContent = 'Memproses...';
-        showOrderMessage(''); // Hapus pesan lama
+        showOrderMessage('');
 
         const orderData = {
             table_id: parseInt(tableIdInput.value),
@@ -233,22 +231,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const baseUrl = window.APP_BASE_URL || '';
-            // *** Pastikan URL Fetch Benar (Tanpa Double Slash) ***
-            const fetchUrl = `${baseUrl}/order/place`; // Harusnya baseUrl sudah tanpa slash akhir
-            console.log("Sending order to:", fetchUrl); // Debug URL
+            const fetchUrl = `${baseUrl}/order/place`;
+            console.log("Sending order to:", fetchUrl);
 
             const response = await fetch(fetchUrl, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
                 body: JSON.stringify(orderData)
             });
 
-            // Cek status sebelum mencoba parse JSON
             if (!response.ok) {
-                 // Coba baca response text jika bukan JSON (misal error HTML)
                  const errorText = await response.text();
                  console.error('Server response error text:', errorText);
                  throw new Error(`Server error: ${response.status} ${response.statusText}. Response: ${errorText.substring(0, 100)}...`);
@@ -258,73 +250,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (result.success) {
                 showOrderMessage('Pesanan berhasil! Mengalihkan...', 'success');
-                cart = {};
-                saveCart();
-                updateCartUI();
-
+                cart = {}; saveCart(); updateCartUI();
                 setTimeout(() => {
-                    if (result.redirect_url) {
-                        window.location.href = result.redirect_url;
-                    } else {
-                         showOrderMessage('Pesanan berhasil, tapi URL status tidak ditemukan.', 'warning');
-                         placeOrderBtn.textContent = 'Pesan Sekarang'; // Kembalikan teks tombol
-                         placeOrderBtn.disabled = false; // Aktifkan lagi
-                    }
+                    if (result.redirect_url) { window.location.href = result.redirect_url; }
+                    else { showOrderMessage('Pesanan berhasil, tapi URL status tidak ditemukan.', 'warning'); placeOrderBtn.textContent = 'Pesan Sekarang'; placeOrderBtn.disabled = false; }
                 }, 1500);
-
-            } else {
-                throw new Error(result.message || 'Gagal mengirim pesanan.');
-            }
+            } else { throw new Error(result.message || 'Gagal mengirim pesanan.'); }
 
         } catch (error) {
             console.error('Error placing order:', error);
-            // Tampilkan pesan error yang lebih informatif jika memungkinkan
             let displayError = 'Terjadi kesalahan saat mengirim pesanan.';
-            if (error instanceof SyntaxError) {
-                 displayError = 'Format respons server tidak valid.';
-            } else if (error.message) {
-                 // Coba tampilkan pesan error dari server jika ada
-                 if (error.message.includes('Server error:')) {
-                    displayError = `Gagal mengirim pesanan. Server: ${error.message.split('.')[1] || 'Unknown Error'}`;
-                 } else {
-                    displayError = `Error: ${error.message}`;
-                 }
-            }
+             if (error.message && error.message.includes('Server error:')) { displayError = `Gagal mengirim pesanan. Server: ${error.message.split('.')[1] || 'Unknown Error'}`; }
+             else if (error.message) { displayError = `Error: ${error.message}`; }
             showOrderMessage(displayError, 'error');
-            placeOrderBtn.disabled = false;
-            placeOrderBtn.textContent = 'Pesan Sekarang';
+            placeOrderBtn.disabled = false; placeOrderBtn.textContent = 'Pesan Sekarang';
         }
     }
 
     function showOrderMessage(message, type = 'info') {
         if (orderMessageElement) {
             orderMessageElement.textContent = message;
-            orderMessageElement.className = 'mt-3 text-sm text-center font-medium'; // Reset class + tambah font-medium
-            if (type === 'success') {
-                orderMessageElement.classList.add('text-green-600');
-            } else if (type === 'error') {
-                orderMessageElement.classList.add('text-red-600');
-            } else if (type === 'warning') {
-                orderMessageElement.classList.add('text-yellow-600');
-            } else {
-                 orderMessageElement.classList.add('text-gray-500');
-            }
+            orderMessageElement.className = 'mt-3 text-sm text-center font-medium';
+            const colorClasses = { success: 'text-green-600', error: 'text-red-600', warning: 'text-yellow-600', info: 'text-slate-500' };
+            orderMessageElement.classList.add(colorClasses[type] || colorClasses['info']);
         }
     }
 
-    // Listener untuk tombol pesan
     if (placeOrderBtn) {
         placeOrderBtn.addEventListener('click', sendOrder);
     }
 
-    // --- Inisialisasi ---
-    updateCartUI(); // Tampilkan cart saat halaman pertama kali dimuat
+    // --- Initialization ---
+    updateCartUI();
 
-    // Inisialisasi posisi cart (sedikit terlihat)
     if (cartSection && cartHeader) {
-        setTimeout(() => { // Beri sedikit waktu agar offsetHeight benar
-             cartSection.style.transform = `translateY(calc(100% - ${cartHeader.offsetHeight}px))`;
+        setTimeout(() => {
+             if (!isCartOpen) {
+                cartSection.style.transform = `translateY(calc(100% - ${cartHeader.offsetHeight}px))`;
+             }
         }, 100);
     }
 
-});
+    // Helper for sanitizing HTML
+    const SanitizeHelper = {
+        html: (text) => { const temp = document.createElement('div'); temp.textContent = text ?? ''; return temp.innerHTML; }
+    };
+
+}); // End DOMContentLoaded
