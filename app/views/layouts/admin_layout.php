@@ -152,6 +152,5 @@ use App\Helpers\SessionHelper;
 
     <script src="<?= UrlHelper::baseUrl('js/admin-main.js') ?>" defer></script>
     <script src="<?= UrlHelper::baseUrl('js/admin-notifications.js') ?>" defer></script>
-    <script src="<?= UrlHelper::baseUrl('js/admin-orders.js') ?>" defer></script>
     </body>
 </html>

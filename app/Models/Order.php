@@ -335,29 +335,25 @@ class Order extends Model {
         }
     }
 
- /**
-  * Mengambil order baru dengan status tertentu sejak ID terakhir yang dilihat.
-  * **Modifikasi: Tambahkan o.total_amount**
-  */
- public function getNewOrdersSince(int $lastSeenId, string $status): array {
-    $allowedStatuses = ['pending', 'received', 'preparing', 'ready', 'served', 'paid', 'cancelled'];
-    if (!in_array($status, $allowedStatuses)) return [];
-    // *** Tambahkan o.total_amount di SELECT ***
-    $sql = "SELECT o.id, o.order_number, o.status, o.order_time, t.table_number, o.total_amount
-            FROM {$this->table} o
-            JOIN tables t ON o.table_id = t.id
-            WHERE o.status = :status AND o.id > :last_seen_id
-            ORDER BY o.id ASC";
-   try {
-       $stmt = $this->db->prepare($sql);
-       $stmt->bindParam(':status', $status, PDO::PARAM_STR);
-       $stmt->bindParam(':last_seen_id', $lastSeenId, PDO::PARAM_INT);
-       $stmt->execute();
-       return $stmt->fetchAll(PDO::FETCH_ASSOC);
-   } catch (PDOException $e) {
-       error_log("Error fetching new orders with status '{$status}' since ID {$lastSeenId}: " . $e->getMessage()); return [];
-   }
-}
+     /**
+      * Mengambil order baru dengan status tertentu sejak ID terakhir yang dilihat.
+      */
+     public function getNewOrdersSince(int $lastSeenId, string $status): array {
+         // ...(Kode getNewOrdersSince lengkap seperti sebelumnya)...
+         $allowedStatuses = ['pending', 'received', 'preparing', 'ready', 'served', 'paid', 'cancelled'];
+         if (!in_array($status, $allowedStatuses)) return [];
+         $sql = "SELECT o.id, o.order_number, o.status, o.order_time, t.table_number FROM {$this->table} o JOIN tables t ON o.table_id = t.id WHERE o.status = :status AND o.id > :last_seen_id ORDER BY o.id ASC";
+        try {
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindParam(':status', $status, PDO::PARAM_STR);
+            $stmt->bindParam(':last_seen_id', $lastSeenId, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error fetching new orders with status '{$status}' since ID {$lastSeenId}: " . $e->getMessage()); return [];
+        }
+     }
+
     /**
      * Mengambil ringkasan data penjualan untuk periode tanggal tertentu.
      */

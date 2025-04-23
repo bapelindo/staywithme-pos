@@ -67,7 +67,7 @@ $statusTexts = [
                     </tr>
                 <?php else: ?>
                     <?php foreach ($orders as $order): ?>
-                        <tr data-order-id="<?= $order['id'] ?>">
+                        <tr>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600">
                                 <?= SanitizeHelper::html($order['order_number']) ?>
                             </td>
