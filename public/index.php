@@ -1,78 +1,67 @@
 <?php
-// Lokasi: public/index.php
+/**
+ * Stay With Me Cafe - POS QR Ordering System
+ *
+ * Entry Point Aplikasi (Front Controller).
+ * Semua request publik masuk melalui file ini.
+ */
 
-// --- Definisikan Konstanta Path ---
-// FCPATH: Front Controller Path (Folder public)
-define('FCPATH', __DIR__ . DIRECTORY_SEPARATOR);
-// APPROOT: Didefinisikan di config.php, JANGAN definisikan lagi di sini
-// define('APPROOT', dirname(__DIR__) . DIRECTORY_SEPARATOR . 'app'); // <-- HAPUS ATAU KOMENTARI BARIS INI
-define('ROOTPATH', dirname(__DIR__) . DIRECTORY_SEPARATOR); // Path ke root proyek
-
-// --- Muat Konfigurasi (APPROOT & APP_ENV sudah didefinisikan di sini) ---
-require_once dirname(__DIR__) . '/config/config.php';
-
-// --- Deteksi Environment (Sekarang APP_ENV sudah ada) ---
-define('ENVIRONMENT', APP_ENV ?? 'development'); // Fallback jika APP_ENV tidak terdefinisi di config
-
-// --- Konfigurasi Error Reporting Berdasarkan Environment ---
-switch (ENVIRONMENT) {
-	case 'development':
-		error_reporting(E_ALL);
-		ini_set('display_errors', 1);
-		break;
-	case 'testing':
-	case 'production':
-		error_reporting(0);
-		ini_set('display_errors', 0);
-		ini_set('log_errors', 1);
-		$logPath = ROOTPATH . 'logs/php_error.log';
-		if (!is_dir(dirname($logPath))) { @mkdir(dirname($logPath), 0775, true); } // Gunakan @ untuk menekan warning jika folder sudah ada
-		ini_set('error_log', $logPath);
-		break;
-	default:
-		header('HTTP/1.1 503 Service Unavailable.', TRUE, 503);
-		echo 'Environment aplikasi tidak valid.';
-		exit(1);
+// 1. Mulai Session
+// Harus dipanggil sebelum output apapun ke browser.
+// Pastikan session handling dikonfigurasi dengan benar di php.ini (terutama save path).
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
 
+// 2. Pengaturan Error Reporting (Untuk Development)
+// Selama pengembangan, tampilkan semua error.
+// Untuk produksi, set ke 0 dan gunakan logging.
+error_reporting(E_ALL);
+ini_set('display_errors', '1'); // Set ke '0' di produksi
 
-// --- Muat Autoloader Composer ---
-require_once dirname(__DIR__) . '/vendor/autoload.php';
+// 3. Muat Konfigurasi Aplikasi
+// Berisi konstanta seperti kredensial DB, BASE_URL, dll.
+require_once '../config/config.php';
 
-// --- Muat Helper Functions ---
-require_once APPROOT . '/helpers/functions.php'; // APPROOT diambil dari config.php
+// 4. Muat Autoloader Composer
+// Ini akan otomatis memuat semua kelas dari direktori 'app/' (sesuai PSR-4)
+// dan library dari 'vendor/' saat dibutuhkan.
+require_once '../vendor/autoload.php';
 
+// 5. Inisialisasi Router
+// Gunakan namespace yang benar sesuai struktur folder.
+$router = new App\Core\Router();
 
-// --- Custom Error & Exception Handling (Placeholder - sama seperti sebelumnya) ---
-/* ... (Kode error handler Whoops atau kustom Anda) ... */
+// 6. Muat Definisi Rute (Routes)
+// File ini akan memanggil $router->addRoute() untuk semua rute aplikasi.
+require_once '../app/routes.php';
 
-
-// --- Inisialisasi Aplikasi ---
+// 7. Dispatch Router
+// Router akan mencocokkan URL saat ini dengan rute yang terdaftar
+// dan mengeksekusi method Controller yang sesuai.
 try {
-    // Buat instance Request dan Response
-    $request = new \Core\Request();
-    $response = new \Core\Response();
-
-    // Buat instance App dan jalankan
-    $app = new \Core\App($request, $response);
-
-    // Jalankan Middleware Global (jika ada) - Konsep Placeholder
-    // $app->runMiddleware('before');
-
-    $app->run();
-
-    // Jalankan Middleware Global (jika ada) - Konsep Placeholder
-    // $app->runMiddleware('after', $response);
-
+    $router->dispatch();
 } catch (\Throwable $e) {
-     error_log("Application Initialization Error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
-     if (ENVIRONMENT === 'development') {
-          echo "<h1>Application Error</h1><pre>" . $e->getMessage() . "\n" . $e->getTraceAsString() . "</pre>";
-     } else {
-          if (!headers_sent()) {
-              header('HTTP/1.1 500 Internal Server Error.', TRUE, 500);
-          }
-           echo 'Terjadi kesalahan pada server.';
-     }
-     exit(1);
+    // Tangkap error/exception yang mungkin tidak tertangani di Controller/Router
+    // Ini adalah fallback error handler sederhana.
+    error_log("Unhandled Exception/Error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
+
+    // Tampilkan pesan error generic ke pengguna (jangan tampilkan detail error di produksi)
+    http_response_code(500); // Internal Server Error
+
+    // Idealnya, tampilkan view error 500 yang user-friendly
+    // Contoh sederhana:
+    echo "<!DOCTYPE html><html><head><title>Error</title></head><body>";
+    echo "<h1>Terjadi Kesalahan</h1>";
+    echo "<p>Maaf, terjadi kesalahan pada server. Silakan coba lagi nanti.</p>";
+    // HANYA tampilkan detail error jika BUKAN di lingkungan produksi
+    // Misalnya, cek konstanta lingkungan (e.g., define('ENVIRONMENT', 'development'); di config.php)
+    // if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+    //     echo "<pre>Error: " . htmlspecialchars($e->getMessage(), ENT_QUOTES) . "</pre>";
+    //     echo "<pre>" . htmlspecialchars($e->getTraceAsString(), ENT_QUOTES) . "</pre>";
+    // }
+    echo "</body></html>";
+    exit;
 }
+
+?>

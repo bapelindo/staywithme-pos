@@ -1,105 +1,78 @@
 <?php
-// Lokasi File: app/views/admin/tables/edit.php
-// Dimuat oleh Admin\TableController::edit() & update() jika validasi gagal
+use App\Helpers\SanitizeHelper;
+use App\Helpers\UrlHelper;
+use App\Helpers\SessionHelper;
 
-ob_start();
-// Data: $title, $pageTitle, $table, $errors, $old
-$currentTable = $table ?? null; // Data meja saat ini
+// Data dari TableController
+$table = $table ?? null; // Data meja asli
+$oldInput = SessionHelper::getFlash('old_input'); // Ambil data flash jika ada
+$formData = $oldInput ?? $table; // Prioritaskan oldInput
+// $pageTitle sudah diatur layout
+
+if (!$table) {
+     echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded" role="alert">Meja tidak ditemukan.</div>';
+     return;
+}
 ?>
 
 <div class="max-w-lg mx-auto">
-     <a href="<?= url_for('/admin/tables') ?>" class="text-sm text-blue-600 hover:underline mb-4 inline-block">&larr; Kembali ke Daftar Meja</a>
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-semibold text-slate-800">Edit Meja: <?= SanitizeHelper::html($table['table_number']) ?></h2>
+        <a href="<?= UrlHelper::baseUrl('/admin/tables') ?>" class="text-sm text-indigo-600 hover:text-indigo-800 inline-flex items-center">
+            <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+            Kembali ke Daftar Meja
+        </a>
+    </div>
 
-    <?php if ($currentTable): ?>
-    <form action="<?= url_for('/admin/tables/update/' . $currentTable->id) ?>" method="POST">
-        <?php // CSRF Token ?>
-         <?php // Method Spoofing jika ingin pakai PUT ?>
-         <?php /* <input type="hidden" name="_method" value="PUT"> */ ?>
-
-        <div class="mb-4">
-            <label for="table_number" class="block text-sm font-medium text-gray-700 mb-1">Nomor/Nama Meja <span class="text-red-500">*</span></label>
-            <input type="text" id="table_number" name="table_number" required
-                   value="<?= htmlspecialchars($old['table_number'] ?? $currentTable->table_number) ?>"
-                   class="w-full border <?= isset($errors['table_number']) ? 'border-red-500' : 'border-gray-300' ?> rounded-md px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500">
-            <?php if (isset($errors['table_number'])): ?>
-                <p class="text-red-500 text-xs mt-1"><?= htmlspecialchars($errors['table_number'][0]) ?></p>
-            <?php endif; ?>
+    <?php $formError = SessionHelper::getFlash('error'); ?>
+    <?php if ($formError): ?>
+        <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg text-sm" role="alert">
+            <?= SanitizeHelper::html($formError) ?>
         </div>
+    <?php endif; ?>
 
-        <div class="mb-4">
-            <label for="capacity" class="block text-sm font-medium text-gray-700 mb-1">Kapasitas <span class="text-red-500">*</span></label>
-            <input type="number" id="capacity" name="capacity" required min="1" max="50"
-                   value="<?= htmlspecialchars($old['capacity'] ?? $currentTable->capacity) ?>"
-                   class="w-full border <?= isset($errors['capacity']) ? 'border-red-500' : 'border-gray-300' ?> rounded-md px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500">
-             <?php if (isset($errors['capacity'])): ?>
-                <p class="text-red-500 text-xs mt-1"><?= htmlspecialchars($errors['capacity'][0]) ?></p>
-            <?php endif; ?>
-        </div>
+    <div class="bg-white p-6 rounded-lg shadow-md border border-slate-200">
+        <form action="<?= UrlHelper::baseUrl('/admin/tables/update/' . $table['id']) ?>" method="POST" novalidate>
+            <div class="mb-4">
+                <label for="table_number" class="block text-sm font-medium text-slate-700 mb-1">Nomor Meja <span class="text-red-500">*</span></label>
+                <input type="text" id="table_number" name="table_number" required maxlength="50"
+                       value="<?= SanitizeHelper::html($formData['table_number'] ?? '') ?>"
+                       class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm">
+            </div>
 
-        <div class="mb-6">
-             <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status <span class="text-red-500">*</span></label>
-             <select id="status" name="status" required
-                     class="w-full border <?= isset($errors['status']) ? 'border-red-500' : 'border-gray-300' ?> rounded-md px-3 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white">
-                 <?php
-                 $currentStatus = $old['status'] ?? $currentTable->status;
-                 $statuses = ['available' => 'Tersedia', 'occupied' => 'Terisi', 'reserved' => 'Direservasi'];
-                 foreach ($statuses as $value => $label):
-                 ?>
-                 <option value="<?= $value ?>" <?= ($currentStatus == $value) ? 'selected' : '' ?>><?= $label ?></option>
-                 <?php endforeach; ?>
-             </select>
-              <?php if (isset($errors['status'])): ?>
-                <p class="text-red-500 text-xs mt-1"><?= htmlspecialchars($errors['status'][0]) ?></p>
-            <?php endif; ?>
-        </div>
+            <div class="mb-4">
+                <label for="description" class="block text-sm font-medium text-slate-700 mb-1">Deskripsi (Opsional)</label>
+                <textarea id="description" name="description" rows="3" maxlength="255"
+                          class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                ><?= SanitizeHelper::html($formData['description'] ?? '') ?></textarea>
+            </div>
 
-        <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-1">QR Code Identifier</label>
-            <input type="text" readonly
-                   value="<?= htmlspecialchars($currentTable->qr_code_identifier ?? 'Belum ada') ?>"
-                   class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-gray-100 text-gray-500">
-            <p class="text-xs text-gray-500 mt-1">Identifier dibuat otomatis dan sebaiknya tidak diubah manual.</p>
-             <?php if (!empty($currentTable->qr_code_identifier)): ?>
-             <form action="<?= url_for('/admin/tables/regenerateIdentifier/' . $currentTable->id) ?>" method="POST" class="inline-block mt-1"
-                  onsubmit="return confirm('Buat ulang identifier? URL QR lama tidak akan berfungsi.');">
-                <?php // CSRF ?>
-                <button type="submit" class="text-xs text-yellow-600 hover:underline">(Generate Ulang)</button>
-            </form>
-            <?php else: ?>
-             <form action="<?= url_for('/admin/tables/regenerateIdentifier/' . $currentTable->id) ?>" method="POST" class="inline-block mt-1">
-                 <?php // CSRF ?>
-                 <button type="submit" class="text-xs text-blue-600 hover:underline">(Generate Sekarang)</button>
-             </form>
-            <?php endif; ?>
-        </div>
+             <div class="mb-4 p-3 bg-slate-50 rounded-md border border-slate-200">
+                <label class="block text-sm font-medium text-slate-700 mb-1">QR Code</label>
+                <p class="text-xs text-slate-500 mb-2">Identifier unik untuk URL QR Code meja ini (tidak dapat diubah):</p>
+                <code class="text-sm bg-slate-200 text-slate-700 px-2 py-1 rounded"><?= SanitizeHelper::html($table['qr_code_identifier']) ?></code>
+                <a href="<?= UrlHelper::baseUrl('/admin/tables/qr/' . $table['id']) ?>" target="_blank" class="ml-3 text-xs text-indigo-600 hover:underline">(Lihat QR Code)</a>
+             </div>
 
+            <div class="mb-6">
+                 <label for="is_active" class="flex items-center">
+                     <input type="checkbox" id="is_active" name="is_active" value="1"
+                            class="h-4 w-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                            <?= (isset($formData['is_active']) && $formData['is_active'] == 1) ? 'checked' : '' ?>
+                     >
+                     <span class="ml-2 text-sm text-slate-700">Meja Aktif</span>
+                 </label>
+            </div>
 
-        <div class="flex justify-between items-center">
-            <div>
-                <button type="submit"
-                        class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md text-sm shadow-sm">
-                    Update Meja
-                </button>
-                 <a href="<?= url_for('/admin/tables') ?>" class="text-gray-600 text-sm ml-3 hover:underline">
+            <div class="flex justify-end space-x-3">
+                <a href="<?= UrlHelper::baseUrl('/admin/tables') ?>" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium py-2 px-4 rounded-lg transition border border-slate-300">
                     Batal
                 </a>
+                 <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition shadow-md">
+                    Update Meja
+                </button>
             </div>
-             <form action="<?= url_for('/admin/tables/delete/' . $currentTable->id) ?>" method="POST"
-                  onsubmit="return confirm('Yakin hapus meja <?= htmlspecialchars($currentTable->table_number) ?>?');">
-                 <?php // CSRF ?>
-                 <button type="submit" class="text-red-600 hover:text-red-800 font-semibold text-sm">
-                     Hapus Meja Ini
-                 </button>
-             </form>
-        </div>
 
-    </form>
-    <?php else: ?>
-        <p class="text-center text-red-500">Data meja tidak ditemukan.</p>
-    <?php endif; ?>
+        </form>
+    </div>
 </div>
-
-<?php
-$content = ob_get_clean();
-require APPROOT . '/views/layouts/admin.php';
-?>

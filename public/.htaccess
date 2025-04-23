@@ -1,13 +1,76 @@
-Options -MultiViews -Indexes
+# File: public/.htaccess
 
-RewriteEngine On
+<IfModule mod_rewrite.c>
+    # Aktifkan Mesin Rewrite URL Apache
+    RewriteEngine On
 
-# Handle Front Controller...
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
+    # Set Base Path (PENTING jika aplikasi tidak di root domain)
+    # Jika URL Anda adalah http://localhost/nama_folder_proyek/public/
+    # maka RewriteBase adalah /nama_folder_proyek/public/
+    # Jika URL Anda http://namadomain.com/ (langsung di root),
+    # maka RewriteBase adalah /
+    # Sesuaikan baris di bawah ini dengan struktur URL Anda:
+    # Contoh untuk http://localhost/staywithme-pos/public/
+    RewriteBase /staywithme-pos/public/
+    # Contoh jika di root domain (http://staywithmecafe.com/)
+    # RewriteBase /
 
-# Optional: Redirect Trailing Slashes (jika diinginkan)
-# RewriteCond %{REQUEST_FILENAME} !-d
-# RewriteCond %{REQUEST_URI} (.+)/$
-# RewriteRule ^ %1 [L,R=301]
+    # Redirect Trailing Slashes (Opsional, untuk konsistensi URL)
+    # Mengarahkan /menu/ ke /menu
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)/$ %{REQUEST_URI} [L,R=301]
+    # Catatan: Baris di atas mungkin perlu penyesuaian tergantung RewriteBase
+    # Alternatif yang seringkali lebih aman tanpa perlu RewriteBase eksplisit:
+    # RewriteRule ^(.*)/$ $1 [L,R=301]
+
+    # Handle Front Controller
+    # Aturan ini mengarahkan semua request ke index.php
+    # JIKA request tersebut BUKAN untuk file fisik yang ada (-f)
+    # DAN BUKAN untuk direktori fisik yang ada (-d)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [L]
+    # ^           : Cocokkan awal dari string path URL (setelah RewriteBase)
+    # index.php   : Tujuan rewrite (file yang akan menangani request)
+    # [L]         : Last flag, berhenti memproses aturan rewrite lebih lanjut
+
+</IfModule>
+
+# Opsional: Pengaturan Keamanan Tambahan (Contoh)
+<IfModule mod_headers.c>
+    # Header untuk mencegah clickjacking
+    Header always set X-Frame-Options "SAMEORIGIN"
+    # Mencegah browser menebak tipe konten (mencegah beberapa serangan XSS)
+    Header always set X-Content-Type-Options "nosniff"
+    # Aktifkan proteksi XSS bawaan browser
+    Header always set X-XSS-Protection "1; mode=block"
+    # Hapus informasi versi server (sedikit obscuritas)
+    Header unset Server
+    Header unset X-Powered-By
+</IfModule>
+
+# Opsional: Cegah akses langsung ke file tertentu (jika ada di public)
+# <FilesMatch "\.(htaccess|htpasswd|ini|log|sh|inc|bak|config|sql)$">
+#     Require all denied
+# </FilesMatch>
+
+# Opsional: Force HTTPS (jika sertifikat SSL sudah terpasang)
+# RewriteCond %{HTTPS} off
+# RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC] # Cek header proxy jika ada
+# RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Opsional: Konfigurasi Caching (Contoh sederhana)
+# <IfModule mod_expires.c>
+#     ExpiresActive On
+#     ExpiresByType image/jpg "access plus 1 month"
+#     ExpiresByType image/jpeg "access plus 1 month"
+#     ExpiresByType image/gif "access plus 1 month"
+#     ExpiresByType image/png "access plus 1 month"
+#     ExpiresByType image/webp "access plus 1 month"
+#     ExpiresByType image/svg+xml "access plus 1 month"
+#     ExpiresByType text/css "access plus 1 week"
+#     ExpiresByType application/javascript "access plus 1 week"
+# </IfModule>
+
+# Pengaturan Index Default (biasanya sudah default ke index.php/html)
+DirectoryIndex index.php index.html
