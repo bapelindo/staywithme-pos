@@ -130,7 +130,7 @@ class Order extends Model {
      */
     private function generateOrderNumber(): string|false {
         // ...(Kode generateOrderNumber lengkap seperti sebelumnya)...
-        $prefix = "BPL-";
+        $prefix = "SWM-";
         $timezone = new DateTimeZone('Asia/Jakarta');
         $datePart = (new DateTime('now', $timezone))->format('Ymd');
         $sql = "SELECT MAX(CAST(SUBSTRING_INDEX(order_number, '-', -1) AS UNSIGNED)) as last_num
