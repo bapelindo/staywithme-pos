@@ -6,6 +6,7 @@ namespace App\Controllers\Admin;
 use App\Core\Controller;
 use App\Models\MenuItem;
 use App\Models\Category;
+use App\Models\OrderItem;
 use App\Helpers\AuthHelper;
 use App\Helpers\UrlHelper;
 use App\Helpers\SessionHelper; // Gunakan SessionHelper yang sudah diupdate
@@ -19,10 +20,12 @@ class MenuController extends Controller {
 
     private $menuItemModel;
     private $categoryModel;
+    private $orderItemModel;
 
     public function __construct() {
         $this->menuItemModel = $this->model('MenuItem');
         $this->categoryModel = $this->model('Category');
+        $this->orderItemModel = $this->model('OrderItem');
     }
 
     // === METHOD ITEM MENU ===
@@ -119,9 +122,45 @@ class MenuController extends Controller {
      }
 
      public function destroy(int $id) {
-         AuthHelper::requireAdmin(); $safeId = SanitizeHelper::integer($id); if ($safeId <= 0 || $_SERVER['REQUEST_METHOD'] !== 'POST') { UrlHelper::redirect('/admin/menu'); return; }
-         $menuItem = $this->menuItemModel->findById($safeId); if ($menuItem) { if ($this->menuItemModel->deleteMenuItem($safeId)) { if (!empty($menuItem['image_path'])) { $imagePathFull = '../public/' . $menuItem['image_path']; if (file_exists($imagePathFull)) { @unlink($imagePathFull); }} SessionHelper::setFlash('success', 'Item dihapus.'); } else { SessionHelper::setFlash('error', 'Gagal hapus item.'); } } else { SessionHelper::setFlash('error', 'Item tidak ditemukan.'); } UrlHelper::redirect('/admin/menu');
-     }
+        AuthHelper::requireAdmin();
+        $safeId = SanitizeHelper::integer($id);
+        if ($safeId <= 0 || $_SERVER['REQUEST_METHOD'] !== 'POST') {
+            UrlHelper::redirect('/admin/menu');
+            return;
+        }
+
+        $menuItem = $this->menuItemModel->findById($safeId);
+
+        if ($menuItem) {
+            // === CEK SEBELUM HAPUS ===
+            $orderItemCount = $this->orderItemModel->countByMenuItemId($safeId);
+
+            if ($orderItemCount > 0) {
+                // Jika ada item pesanan terkait, JANGAN HAPUS
+                SessionHelper::setFlash('error', 'Item menu "' . SanitizeHelper::html($menuItem['name']) . '" tidak dapat dihapus karena sudah pernah dipesan.');
+            } else {
+                // Jika tidak ada pesanan terkait, lanjutkan penghapusan
+                if ($this->menuItemModel->deleteMenuItem($safeId)) {
+                    // Hapus gambar jika ada
+                    if (!empty($menuItem['image_path'])) {
+                        $imagePathFull = '../public/' . $menuItem['image_path'];
+                        if (file_exists($imagePathFull)) {
+                            @unlink($imagePathFull);
+                        }
+                    }
+                    SessionHelper::setFlash('success', 'Item menu "' . SanitizeHelper::html($menuItem['name']) . '" berhasil dihapus.');
+                } else {
+                    // Tangani jika deleteMenuItem gagal karena alasan lain (meskipun jarang jika count 0)
+                    SessionHelper::setFlash('error', 'Gagal menghapus item menu. Terjadi kesalahan tak terduga.');
+                }
+            }
+            // === AKHIR CEK ===
+        } else {
+            SessionHelper::setFlash('error', 'Item menu tidak ditemukan.');
+        }
+        UrlHelper::redirect('/admin/menu');
+    }
+
 
      public function toggleAvailability(int $id) { /* ... (Kode AJAX tetap sama) ... */ AuthHelper::requireRole(['admin', 'staff']); /* ... */ }
 

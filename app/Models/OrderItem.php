@@ -13,9 +13,22 @@ use PDOException;
 class OrderItem extends Model {
     protected $table = 'order_items';
 
+    public function countByMenuItemId(int $menuItemId): int {
+        if ($menuItemId <= 0) return 0;
+        try {
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM {$this->table} WHERE menu_item_id = :menu_item_id");
+            $stmt->bindParam(':menu_item_id', $menuItemId, PDO::PARAM_INT);
+            $stmt->execute();
+            return (int)$stmt->fetchColumn();
+        } catch (\PDOException $e) {
+            error_log("Error counting order items for menu item ID {$menuItemId}: " . $e->getMessage());
+            return 0; // Anggap 0 jika error, atau lempar exception
+        }
+    }
     /**
      * Mengambil semua item berdasarkan order ID.
      */
+    
     public function findByOrderId(int $orderId): array {
         // ...(Kode findByOrderId lengkap seperti sebelumnya)...
          if ($orderId <= 0) return [];
