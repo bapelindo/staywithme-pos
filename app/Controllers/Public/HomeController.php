@@ -1,44 +1,70 @@
 <?php
-// File: app/Controllers/Public/HomeController.php
+// File: app/Controllers/Public/HomeController.php (Direvisi - Tanpa mengubah OrderItem Model)
 
 namespace App\Controllers\Public;
 
-use App\Core\Controller; // Menggunakan Base Controller
-use App\Helpers\SanitizeHelper; // Untuk sanitasi data ke view (meski di sini hanya judul)
-// use App\Helpers\UrlHelper; // Gunakan jika perlu redirect
-// use App\Helpers\AuthHelper; // Gunakan jika konten homepage tergantung status login
+use App\Core\Controller;
+use App\Models\MenuItem;
+use App\Models\Category;
+use App\Models\OrderItem; // <-- Tetap diperlukan
+use DateTime;
 
-/**
- * Class HomeController
- *
- * Controller untuk halaman utama (beranda) publik.
- */
-class HomeController extends Controller {
+class HomeController extends Controller
+{
+    public function index()
+    {
+        // Instansiasi model
+        $menuItemModel = new MenuItem();
+        $categoryModel = new Category();
+        $orderItemModel = new OrderItem();
 
-    /**
-     * Menampilkan halaman beranda publik.
-     * Metode ini dipanggil ketika pengguna mengakses root URL ('/').
-     */
-    public function index() {
-        // Contoh: Jika pengguna sudah login (misal ada akun customer),
-        // mungkin redirect ke halaman lain? Tapi untuk kasus ini, tampilkan saja homepage.
-        // if (AuthHelper::isLoggedIn()) {
-        //     UrlHelper::redirect('/dashboard-customer'); // Contoh
-        //     return;
-        // }
+        // 1. Tentukan rentang tanggal (Contoh: 30 hari terakhir)
+        $endDate = date('Y-m-d');
+        $startDate = (new DateTime($endDate))->modify('-30 days')->format('Y-m-d');
 
-        // Data yang akan dikirim ke view (misalnya judul halaman)
+        // 2. Ambil data populer (hanya nama & jumlah) dari OrderItem Model
+        $popularData = $orderItemModel->getPopularItems($startDate, $endDate, 5); //
+
+        // 3. Ambil SEMUA item menu yang AKTIF dengan detail lengkap
+        $menuItems = $menuItemModel->getAllAvailableGroupedByCategory(); //
+
+        // 4. Proses untuk mendapatkan detail lengkap Top 5
+        $topItems = [];
+        if (!empty($popularData) && !empty($menuItems)) {
+            // Buat map jumlah terjual berdasarkan nama item
+            $popularQuantities = array_column($popularData, 'total_quantity', 'menu_item_name');
+
+            // Cari detail lengkap item populer dari $menuItems
+            foreach ($menuItems as $item) {
+                if (isset($popularQuantities[$item['name']])) {
+                    // Item ini termasuk populer, tambahkan detail & jumlah terjual
+                    $item['total_quantity'] = $popularQuantities[$item['name']];
+                    $topItems[] = $item;
+                }
+            }
+
+            // Urutkan $topItems berdasarkan 'total_quantity' secara descending
+            usort($topItems, function($a, $b) {
+                return ($b['total_quantity'] ?? 0) <=> ($a['total_quantity'] ?? 0);
+            });
+
+            // Pastikan hanya ada 5 item teratas (jika ada duplikasi nama atau proses filtering menghasilkan lebih)
+             $topItems = array_slice($topItems, 0, 5);
+        }
+        // Jika $popularData kosong atau $menuItems kosong, $topItems akan tetap kosong.
+
+        // 5. Ambil semua kategori (meski tidak dipakai di view carousel)
+        $categories = $categoryModel->getAllSorted(); //
+
+        // Data untuk dikirim ke view
         $data = [
-            // Gunakan SanitizeHelper untuk memastikan output aman
-            'pageTitle' => SanitizeHelper::html('Selamat Datang di Stay With Me Cafe')
-            // Tambahkan data lain jika view 'public.home' membutuhkannya
-            // 'featuredItems' => $this->model('MenuItem')->getFeatured(3) // Contoh jika perlu data model
+            'pageTitle' => 'Selamat Datang',
+            'topItems' => $topItems,         // <-- Top 5 dengan detail & qty
+            'menuItems' => $menuItems,      // <-- Semua menu dengan detail
+            'categories' => $categories    // <-- Kategori (jika masih diperlukan di tempat lain)
         ];
 
-        // Memanggil method view dari Base Controller untuk memuat file view
-        // 'public.home' akan diterjemahkan menjadi path 'app/Views/public/home.php'
-        // Data dalam array $data akan diekstrak menjadi variabel di dalam view (e.g., $pageTitle)
-        $this->view('public.home', $data);
+        // Load view 'home' dengan layout 'public_layout' dan kirim data
+        $this->view('public/home', $data, 'public_layout');
     }
 }
-?>

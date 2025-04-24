@@ -44,7 +44,7 @@ $readyOrders = $readyOrders ?? [];
     </style>
 <script>
     var APP_BASE_URL = "<?= rtrim(UrlHelper::baseUrl(), '/') ?>";
-    var CDS_AUDIO_URL = "<?= UrlHelper::baseUrl('assets/audio/cds_new_order.mp3') ?>";
+    var CDS_AUDIO_URL = "<?= UrlHelper::asset('audio/cds_new_order.mp3') ?>";
 </script>
 </head>
 <body>

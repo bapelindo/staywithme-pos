@@ -42,7 +42,7 @@ $pageTitle = $pageTitle ?? 'Kitchen Display System';
     </style>
 <script>
     var APP_BASE_URL = "<?= rtrim(UrlHelper::baseUrl(), '/') ?>";
-    var KDS_AUDIO_URL = "<?= UrlHelper::baseUrl('assets/audio/kds_new_order.mp3') ?>";
+    var KDS_AUDIO_URL = "<?= UrlHelper::asset('audio/kds_new_order.mp3') ?>";
 </script>
 </head>
 <body class="antialiased">

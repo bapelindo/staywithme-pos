@@ -130,7 +130,7 @@ class Order extends Model {
      */
     private function generateOrderNumber(): string|false {
         // ...(Kode generateOrderNumber lengkap seperti sebelumnya)...
-        $prefix = "STW-";
+        $prefix = "BPL-";
         $timezone = new DateTimeZone('Asia/Jakarta');
         $datePart = (new DateTime('now', $timezone))->format('Ymd');
         $sql = "SELECT MAX(CAST(SUBSTRING_INDEX(order_number, '-', -1) AS UNSIGNED)) as last_num
@@ -228,23 +228,59 @@ class Order extends Model {
     /**
      * Mengambil detail lengkap order beserta item-itemnya.
      */
-    public function getOrderWithDetails(int $orderId): array|false {
-        // ...(Kode getOrderWithDetails lengkap seperti sebelumnya)...
-         if ($orderId <= 0) return false;
-         $sqlOrder = "SELECT o.*, t.table_number FROM {$this->table} o JOIN tables t ON o.table_id = t.id WHERE o.id = :id LIMIT 1";
-         try {
-            $stmtOrder = $this->db->prepare($sqlOrder);
-            $stmtOrder->bindParam(':id', $orderId, PDO::PARAM_INT);
-            $stmtOrder->execute();
-            $orderData = $stmtOrder->fetch(PDO::FETCH_ASSOC);
-            if (!$orderData) return false;
-            $orderItemModel = new OrderItem();
-            $itemsData = $orderItemModel->findByOrderId($orderId);
-            $orderData['items'] = $itemsData;
-            return $orderData;
-         } catch (PDOException $e) {
-             error_log("Error fetching order details for ID {$orderId}: " . $e->getMessage()); return false;
-         }
+    public function getOrderWithDetails(int $orderId): ?array {
+        // === PERBAIKAN NAMA KOLOM ===
+        // Ganti 't.number' menjadi 't.table_number'
+        $sql = "SELECT
+                    o.id, o.order_number, o.table_id, o.status, o.total_amount,
+                    o.notes AS order_notes, o.order_time, o.created_at, o.updated_at,
+                    t.table_number, -- <<< SUDAH DIPERBAIKI
+                    t.qr_code_identifier
+                FROM orders o
+                JOIN tables t ON o.table_id = t.id -- Join dengan tabel 'tables'
+                WHERE o.id = :order_id";
+        // === AKHIR PERBAIKAN ===
+
+        try { // Tambahkan try-catch block untuk penanganan error yang lebih baik
+            $stmt = $this->db->prepare($sql);
+            if (!$stmt) {
+                 // Handle error persiapan query
+                 error_log("PDO prepare failed for getOrderWithDetails: " . implode(":", $this->db->errorInfo()));
+                 return null;
+            }
+            $stmt->bindParam(':order_id', $orderId, \PDO::PARAM_INT);
+            $stmt->execute();
+            $order = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+            if (!$order) {
+                return null; // Pesanan tidak ditemukan
+            }
+
+            // Ambil item pesanan
+            $itemSql = "SELECT
+                            oi.quantity, oi.price_at_order, oi.subtotal, oi.notes,
+                            mi.name as menu_item_name, mi.image_path
+                        FROM order_items oi
+                        JOIN menu_items mi ON oi.menu_item_id = mi.id
+                        WHERE oi.order_id = :order_id";
+            $itemStmt = $this->db->prepare($itemSql);
+             if (!$itemStmt) {
+                 // Handle error persiapan query item
+                 error_log("PDO prepare failed for order items: " . implode(":", $this->db->errorInfo()));
+                 $order['items'] = []; // Set item kosong jika query gagal
+             } else {
+                $itemStmt->bindParam(':order_id', $orderId, \PDO::PARAM_INT);
+                $itemStmt->execute();
+                $order['items'] = $itemStmt->fetchAll(\PDO::FETCH_ASSOC);
+             }
+
+            return $order; // Mengembalikan data order lengkap
+
+        } catch (\PDOException $e) {
+            // Log error eksekusi
+             error_log("PDO Exception in getOrderWithDetails for order ID {$orderId}: " . $e->getMessage());
+             return null; // Kembalikan null jika terjadi error
+        }
     }
 
     /**

@@ -32,7 +32,7 @@ class KdsController extends Controller {
             'pageTitle' => 'Kitchen Display System',
             'orders' => $orders
             // Mungkin perlu layout khusus KDS
-        ]);
+        ], null);
     }
 
     /**

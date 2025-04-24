@@ -1,4 +1,5 @@
 <?php
+// File: staywithme-pos/app/Controllers/Public/OrderController.php
 namespace App\Controllers\Public;
 
 use App\Core\Controller;
@@ -58,20 +59,23 @@ class OrderController extends Controller {
 
         // Proses pembuatan order menggunakan Model
         $orderModel = new Order();
+        // NOTE: Pastikan method `createOrder` di Model Order mengembalikan ID order yang baru dibuat
         $orderId = $orderModel->createOrder($tableId, $items, $notes);
 
         if ($orderId) {
             // Sukses membuat order
-            $newOrderData = $orderModel->findById($orderId); // Ambil data order baru untuk nomornya
+            $newOrderData = $orderModel->findById($orderId); // Ambil data order baru untuk nomornya (jika perlu)
             return $this->jsonResponse([
                 'success' => true,
                 'message' => 'Pesanan berhasil dibuat!',
                 'order_id' => $orderId,
                 'order_number' => $newOrderData['order_number'] ?? null, // Sertakan nomor order jika perlu
+                // === Pastikan URL ini Sesuai dengan Rute Status Pesanan ===
                 'redirect_url' => UrlHelper::baseUrl('/order/status/' . $orderId) // URL Halaman Status
             ]);
         } else {
             // Gagal membuat order
+            // Log error jika perlu: error_log('Gagal membuat pesanan: ' . $orderModel->getLastError());
             return $this->jsonResponse(['success' => false, 'message' => 'Gagal membuat pesanan. Silakan coba lagi.'], 500);
         }
     }
@@ -85,23 +89,28 @@ class OrderController extends Controller {
         $safeOrderId = SanitizeHelper::integer($order_id);
         if ($safeOrderId <= 0) {
              // Redirect atau tampilkan error jika ID tidak valid
+             SessionHelper::setFlash('error', 'ID Pesanan tidak valid.');
              UrlHelper::redirect('/'); // Ke home misalnya
              return;
         }
 
         $orderModel = new Order();
+        // === Pastikan method ini mengambil detail yang diperlukan, termasuk link_identifier ===
         $order = $orderModel->getOrderWithDetails($safeOrderId);
 
         if (!$order) {
-            http_response_code(404);
-            $this->view('public.errors.404', ['message' => 'Pesanan tidak ditemukan.']);
+            // Pesanan tidak ditemukan, tampilkan halaman 404 kustom
+            // SessionHelper::setFlash('error', 'Pesanan tidak ditemukan.'); // Opsional
+            // UrlHelper::redirect('/'); // Redirect atau tampilkan 404
+            http_response_code(404); // Set status code
+            $this->view('public.errors.404', ['message' => 'Pesanan tidak ditemukan.']); // Tampilkan view 404
             return;
         }
 
-        // Load view status pesanan
+        // Load view status pesanan dengan data order
         $this->view('public.order_status', [
-            'order' => $order,
-            'pageTitle' => 'Status Pesanan ' . SanitizeHelper::html($order['order_number'])
+            'order' => $order, // Data order lengkap (termasuk items dan link_identifier)
+            'pageTitle' => 'Status Pesanan #' . SanitizeHelper::html($order['order_number'])
         ]);
     }
 
@@ -118,16 +127,19 @@ class OrderController extends Controller {
         }
 
         $orderModel = new Order();
-        $order = $orderModel->findById($safeOrderId); // Hanya perlu status
+        // Cukup ambil data dasar order (terutama status) untuk efisiensi
+        $order = $orderModel->findById($safeOrderId);
 
         if (!$order) {
             return $this->jsonResponse(['success' => false, 'message' => 'Pesanan tidak ditemukan.'], 404);
         }
 
+        // Hanya kirim data yang relevan untuk update status
         return $this->jsonResponse([
             'success' => true,
             'order_id' => $order['id'],
             'status' => $order['status'] // Kirim status terbaru
+            // Anda bisa tambahkan data lain jika JS membutuhkannya, misal: 'updated_at'
         ]);
     }
 }
