@@ -50,6 +50,10 @@ $baseUrl = rtrim(UrlHelper::baseUrl(), '/');
              <p class="loader-text text-lg mt-4 text-text-dark-secondary font-medium">Menyeduh Kesempurnaan...</p>
          </div>
     </div>
+    <div id="lightbox-overlay" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-[200] flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300 ease-in-out hidden" aria-hidden="true">
+        <img id="lightbox-image" src="#" alt="Gambar Fullscreen" class="max-w-[95%] max-h-[90vh] object-contain block shadow-lg rounded">
+        <button id="lightbox-close" aria-label="Tutup Gambar" class="absolute top-5 right-5 sm:top-8 sm:right-8 text-white hover:text-gray-300 text-4xl font-light transition-colors leading-none">&times;</button>
+    </div>
 
     <header class="fixed top-0 left-0 right-0 z-[100] bg-bg-dark-primary/80 backdrop-blur-md shadow-md transition-all duration-300" id="main-header">
          <nav class="container mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
@@ -57,7 +61,7 @@ $baseUrl = rtrim(UrlHelper::baseUrl(), '/');
                 <i class="fas fa-mug-hot text-accent-primary mr-2 text-xl"></i> <?= $appName ?>
             </a>
              <div class="hidden lg:flex space-x-10 items-center">
-                <a href="<?= $baseUrl ?>/#hero" class="nav-link relative text-sm font-semibold text-white hover:text-accent-primary transition-colors active">Beranda</a>
+                <a href="<?= $baseUrl ?>/#hero" class="nav-link relative text-sm font-semibold text-white hover:text-accent-primary transition-colors ">Beranda</a>
                 <a href="<?= $baseUrl ?>/#story" class="nav-link relative text-sm font-semibold text-text-dark-secondary hover:text-accent-primary transition-colors">Cerita Kami</a>
                 <a href="<?= $baseUrl ?>/#menu" class="nav-link relative text-sm font-semibold text-text-dark-secondary hover:text-accent-primary transition-colors">Menu</a>
                 <a href="<?= $baseUrl ?>/#experience" class="nav-link relative text-sm font-semibold text-text-dark-secondary hover:text-accent-primary transition-colors">Suasana</a>

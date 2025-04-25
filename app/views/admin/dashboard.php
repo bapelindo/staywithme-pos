@@ -52,5 +52,6 @@ $unavailableItemCount = $unavailableItemCount ?? 0;
         <a href="<?= UrlHelper::baseUrl('/admin/orders') ?>" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium py-2 px-4 rounded-lg transition">Lihat Semua Pesanan</a>
         <a href="<?= UrlHelper::baseUrl('/admin/menu/create') ?>" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium py-2 px-4 rounded-lg transition">Tambah Item Menu</a>
         <a href="<?= UrlHelper::baseUrl('/admin/kds') ?>" target="_blank" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium py-2 px-4 rounded-lg transition">Buka KDS</a>
+        <a href="<?= UrlHelper::baseUrl('/cds') ?>" target="_blank" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium py-2 px-4 rounded-lg transition">Buka CDS</a>
     </div>
 </div>

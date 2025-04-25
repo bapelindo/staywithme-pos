@@ -183,8 +183,10 @@ $isCancelled = ($currentStatusKey === 'cancelled');
                  </dl>
             </div>
 
+            <?php // Bagian pesan status utama ?>
             <div class="px-6 py-5 bg-bg-dark-secondary border-t border-border-dark">
-                 <p class="text-center text-sm text-text-dark-secondary mb-4">
+                 <?php // === TAMBAHKAN ID DI SINI === ?>
+                 <p id="order-status-text" class="text-center text-sm text-text-dark-secondary mb-4">
                     <?php if($currentStatusKey == 'paid'): ?>
                         Pesanan ini sudah lunas. Terima kasih telah berkunjung!
                     <?php elseif($currentStatusKey == 'served' || $currentStatusKey == 'ready'): ?>
