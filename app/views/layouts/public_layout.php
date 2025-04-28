@@ -24,7 +24,6 @@ $baseUrl = rtrim(UrlHelper::baseUrl(), '/');
     <link rel="apple-touch-icon" href="<?= UrlHelper::asset('images/apple-touch-icon.png') ?>">
     <link rel="manifest" href="<?= $baseUrl ?>/manifest.webmanifest">
     <link rel="stylesheet" href="<?= \App\Helpers\UrlHelper::baseUrl('css/public_output.css') ?>">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
 
@@ -33,8 +32,6 @@ $baseUrl = rtrim(UrlHelper::baseUrl(), '/');
     <link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
 
     <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
-
-    <link rel="stylesheet" href="<?= UrlHelper::baseUrl('css/style.css') ?>">
 
     <script>
         document.documentElement.classList.add('dark');
@@ -64,7 +61,6 @@ $baseUrl = rtrim(UrlHelper::baseUrl(), '/');
                 <a href="<?= $baseUrl ?>/#menu" class="nav-link relative text-sm font-semibold text-text-dark-secondary hover:text-accent-primary transition-colors">Menu</a>
                 <a href="<?= $baseUrl ?>/#experience" class="nav-link relative text-sm font-semibold text-text-dark-secondary hover:text-accent-primary transition-colors">Suasana</a>
                 <a href="<?= $baseUrl ?>/#gallery" class="nav-link relative text-sm font-semibold text-text-dark-secondary hover:text-accent-primary transition-colors">Galeri</a>
-                <a href="<?= $baseUrl ?>/#connect" class="nav-link relative text-sm font-semibold text-text-dark-secondary hover:text-accent-primary transition-colors">Kontak</a>
              </div>
              <div class="hidden lg:flex items-center space-x-4">
                   <a href="https://instagram.com/username_kafe_anda" target="_blank" class="text-text-dark-secondary hover:text-white transition text-lg" title="Instagram" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
@@ -81,7 +77,6 @@ $baseUrl = rtrim(UrlHelper::baseUrl(), '/');
                  <a href="<?= $baseUrl ?>/#menu" class="mobile-nav-link block text-text-dark-secondary hover:text-accent-primary px-3 py-2 rounded-md text-base font-medium">Menu</a>
                  <a href="<?= $baseUrl ?>/#experience" class="mobile-nav-link block text-text-dark-secondary hover:text-accent-primary px-3 py-2 rounded-md text-base font-medium">Suasana</a>
                  <a href="<?= $baseUrl ?>/#gallery" class="mobile-nav-link block text-text-dark-secondary hover:text-accent-primary px-3 py-2 rounded-md text-base font-medium">Galeri</a>
-                 <a href="<?= $baseUrl ?>/#connect" class="mobile-nav-link block text-text-dark-secondary hover:text-accent-primary px-3 py-2 rounded-md text-base font-medium">Kontak</a>
                  <hr class="border-border-dark my-4">
                  <div class="flex justify-center space-x-6 pt-5">
                       <a href="https://instagram.com/username_kafe_anda" target="_blank" class="social-link text-text-dark-secondary hover:text-white transition text-xl" title="Instagram"><i class="fab fa-instagram"></i></a>

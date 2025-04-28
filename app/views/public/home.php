@@ -374,20 +374,20 @@ $placeholderImage = UrlHelper::baseUrl('images/menu-placeholder.jpg');
             <?php // Kolom Kiri Lokasi dengan AOS ?>
             <div data-aos="fade-right" data-aos-duration="800">
                 <h2 class="text-4xl md:text-5xl font-bold mb-6 text-white">Temukan Kami Disini</h2>
-                <p class="text-lg text-text-dark-secondary mb-8">Berlokasi strategis di jantung kota Malang, kami siap menyambut Anda.</p>
+                <p class="text-lg text-text-dark-secondary mb-8">Berlokasi strategis di kabupaten Malang, kami siap menyambut Anda.</p>
                 <div class="space-y-5 mb-8 text-sm">
                     <p class="flex items-start"><i class="fas fa-map-marker-alt w-5 mt-1 mr-4 text-accent-primary flex-shrink-0"></i> <span class="flex-1 text-text-dark-secondary"><?= $cafeAddress ?></span></p>
                     <p class="flex items-start"><i class="fas fa-phone-alt w-5 mt-1 mr-4 text-accent-primary flex-shrink-0"></i> <a href="tel:<?= SanitizeHelper::html(str_replace('-', '', $cafePhone)) ?>" class="hover:text-accent-primary transition text-text-dark-secondary"><?= $cafePhone ?></a></p>
-                    <p class="flex items-start"><i class="fas fa-envelope w-5 mt-1 mr-4 text-accent-primary flex-shrink-0"></i> <a href="mailto:info@namakafeanda.com" class="hover:text-accent-primary transition text-text-dark-secondary">info@namakafeanda.com</a></p>
-                    <p class="flex items-start"><i class="fas fa-clock w-5 mt-1 mr-4 text-accent-primary flex-shrink-0"></i> <span class="flex-1 text-text-dark-secondary">Senin - Minggu : 08:00 - 23:00 WIB</span></p>
+                    <p class="flex items-start"><i class="fas fa-envelope w-5 mt-1 mr-4 text-accent-primary flex-shrink-0"></i> <a href="mailto:info@namakafeanda.com" class="hover:text-accent-primary transition text-text-dark-secondary">info@namakafe.com</a></p>
+                    <p class="flex items-start"><i class="fas fa-clock w-5 mt-1 mr-4 text-accent-primary flex-shrink-0"></i> <span class="flex-1 text-text-dark-secondary">Senin - Minggu : 10:00 - 23:00 WIB</span></p>
                 </div>
-                 <a href="https://maps.app.goo.gl/oW6uXh4N5yJ2kZmN7" target="_blank" rel="noopener noreferrer" class="btn btn-accent inline-flex items-center px-7 py-3 rounded-full font-semibold transition text-base transform hover:scale-105">
+                 <a href="https://maps.app.goo.gl/YxhZAfuerRJn7Hm57" target="_blank" rel="noopener noreferrer" class="btn btn-accent inline-flex items-center px-7 py-3 rounded-full font-semibold transition text-base transform hover:scale-105">
                     <i class="fas fa-directions mr-2"></i> Lihat Peta & Arah
                  </a>
             </div>
              <?php // Kolom Kanan Lokasi dengan AOS ?>
             <div class="rounded-lg overflow-hidden shadow-xl border-2 border-border-dark" data-aos="zoom-in-down" data-aos-duration="800" data-aos-delay="200">
-                 <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3951.268036652355!2d112.6360088740318!3d-7.971768979319985!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2dd62823be6b759d%3A0xf7076c718b470f97!2sStay%20With%20Me!5e0!3m2!1sen!2sid!4v1735120119246!5m2!1sen!2sid" width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Peta Lokasi Kafe"></iframe>
+                 <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3212.4867603811585!2d112.64182154115723!3d-8.171733991975637!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2dd61f6b0266c8c3%3A0xe868ece3ca3050d8!2sStay%20With%20Me%20Coffee!5e0!3m2!1sid!2sid!4v1745879756956!5m2!1sid!2sid" width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Peta Lokasi Kafe"></iframe>
             </div>
         </div>
     </div>
