@@ -18,7 +18,7 @@ $pageTitle = "Invoice #" . ($order ? SanitizeHelper::html($order['order_number']
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $pageTitle ?></title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <link rel="stylesheet" href="<?= \App\Helpers\UrlHelper::baseUrl('css/admin_output.css') ?>">
     <style>
         body {
             font-family: 'sans-serif'; /* Font dasar yang umum */

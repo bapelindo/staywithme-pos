@@ -1,23 +1,24 @@
 <?php
-// File: app/Views/admin/reports/index.php (Cleaned)
+// File: app/Views/admin/reports/index.php (Lengkap - Dengan Laporan Kategori)
 
 use App\Helpers\SanitizeHelper;
 use App\Helpers\UrlHelper;
 use App\Helpers\NumberHelper;
-use App\Helpers\DateHelper; // Make sure the 'use' statement is present
+use App\Helpers\DateHelper;
 
-// Data from ReportController
-$startDate = $startDate ?? date('Y-m-01'); // Default awal bulan ini
-$endDate = $endDate ?? date('Y-m-d');   // Default hari ini
+// Data dari ReportController
+$startDate = $startDate ?? date('Y-m-01');
+$endDate = $endDate ?? date('Y-m-d');
 $summary = $summary ?? ['total_orders' => 0, 'total_revenue' => 0, 'average_order_value' => 0];
 $popularItems = $popularItems ?? [];
-// $pageTitle diatur layout
-
-// Data untuk grafik dari ReportController
 $salesDataForChart = $salesDataForChart ?? ['labels'=>[], 'revenue'=>[], 'orders'=>[]];
-$popularItemsForChart = $popularItemsForChart ?? ['labels' => array_column($popularItems, 'menu_item_name'), 'quantities' => array_column($popularItems, 'total_quantity')];
+$popularItemsForChart = $popularItemsForChart ?? ['labels' => [], 'quantities' => []];
+// Data baru untuk laporan kategori
+$categoryRevenueForChart = $categoryRevenueForChart ?? ['labels'=>[], 'data'=>[], 'colors'=>[]];
+$revenueByCategory = $revenueByCategory ?? []; // Untuk tabel detail
 
 $todayDate = date('Y-m-d'); // Untuk batas max date input
+// $pageTitle diatur layout admin
 ?>
 
 <div class="mb-6">
@@ -47,7 +48,6 @@ $todayDate = date('Y-m-d'); // Untuk batas max date input
     </form>
     <p class="text-xs text-slate-500 mt-2">Menampilkan laporan untuk periode:
     <?php
-        // Safely call DateHelper, handle potential null from error
         $formattedStartDate = '[Invalid Date]';
         $formattedEndDate = '[Invalid Date]';
         if (class_exists('App\\Helpers\\DateHelper')) {
@@ -66,7 +66,7 @@ $todayDate = date('Y-m-d'); // Untuk batas max date input
     <div class="p-5 bg-white rounded-lg shadow border border-slate-200">
         <h3 class="text-sm font-medium text-slate-500 uppercase mb-1">Total Pesanan Selesai</h3>
         <p class="text-3xl font-bold text-blue-600"><?= NumberHelper::formatNumber($summary['total_orders']) ?></p>
-         <span class="text-xs text-slate-400">(Status: Paid/Served)</span>
+         <span class="text-xs text-slate-400">(Status: Served)</span> <?php // Sesuaikan jika perlu ?>
     </div>
     <div class="p-5 bg-white rounded-lg shadow border border-slate-200">
         <h3 class="text-sm font-medium text-slate-500 uppercase mb-1">Rata-Rata per Pesanan</h3>
@@ -77,7 +77,8 @@ $todayDate = date('Y-m-d'); // Untuk batas max date input
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
     <div class="bg-white p-5 rounded-lg shadow border border-slate-200">
         <h3 class="text-lg font-semibold text-slate-700 mb-4">Tren Pendapatan & Pesanan</h3>
-        <div class="h-72"> <?php if (!empty($salesDataForChart['labels'])): ?>
+        <div class="h-72"> <?php // Tinggi tetap ?>
+            <?php if (!empty($salesDataForChart['labels'])): ?>
                 <canvas id="salesChart"></canvas>
             <?php else: ?>
                 <p class="text-center text-slate-500 pt-10">Data tidak cukup untuk menampilkan grafik tren.</p>
@@ -87,7 +88,8 @@ $todayDate = date('Y-m-d'); // Untuk batas max date input
 
     <div class="bg-white p-5 rounded-lg shadow border border-slate-200">
         <h3 class="text-lg font-semibold text-slate-700 mb-4">Top 5 Item Terpopuler</h3>
-         <div class="h-72"> <?php if (!empty($popularItemsForChart['labels'])): ?>
+         <div class="h-72"> <?php // Tinggi tetap ?>
+             <?php if (!empty($popularItemsForChart['labels'])): ?>
                  <canvas id="popularItemsChart"></canvas>
              <?php else: ?>
                  <p class="text-center text-slate-500 pt-10">Belum ada data item populer untuk periode ini.</p>
@@ -96,18 +98,54 @@ $todayDate = date('Y-m-d'); // Untuk batas max date input
     </div>
 </div>
 
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div class="bg-white p-5 rounded-lg shadow border border-slate-200">
+        <h3 class="text-lg font-semibold text-slate-700 mb-4">Pendapatan per Kategori</h3>
+        <div class="h-72 relative"> <?php // Tinggi tetap, perlu relatif untuk tooltip/legend ?>
+            <?php if (!empty($categoryRevenueForChart['labels'])): ?>
+                <canvas id="categoryRevenueChart"></canvas>
+            <?php else: ?>
+                <p class="text-center text-slate-500 pt-10">Tidak ada data pendapatan per kategori untuk periode ini.</p>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <div class="bg-white shadow-md rounded-lg overflow-hidden border border-slate-200 lg:max-h-[calc(18rem_+_2.5rem_+_2.5rem)] lg:overflow-y-auto"> <?php // Batasi tinggi & scroll jika perlu ?>
+        <h3 class="text-lg font-semibold text-slate-700 p-5 border-b border-slate-200 sticky top-0 bg-white z-10">Detail Pendapatan per Kategori</h3>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-slate-200">
+                <thead class="bg-slate-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Kategori</th>
+                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Total Pendapatan</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-slate-200">
+                    <?php if (empty($revenueByCategory)): ?>
+                        <tr>
+                            <td colspan="2" class="px-6 py-6 text-center text-slate-500 text-sm">Tidak ada data.</td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($revenueByCategory as $catData): ?>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                                    <?= SanitizeHelper::html($catData['category_name']) ?>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-700 text-right font-semibold">
+                                    <?= NumberHelper::formatCurrencyIDR($catData['total_revenue']) ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
 <div class="bg-white shadow-md rounded-lg overflow-hidden border border-slate-200">
-    <h3 class="text-lg font-semibold text-slate-700 p-5 border-b border-slate-200">Detail Item Terlaris (
-        <?php
-            // Safely call DateHelper
-             $detailStartDate = '[Invalid Date]';
-             $detailEndDate = '[Invalid Date]';
-             if (class_exists('App\\Helpers\\DateHelper')) {
-                 $detailStartDate = DateHelper::formatIndonesian($startDate, 'dateonly') ?? $detailStartDate;
-                 $detailEndDate = DateHelper::formatIndonesian($endDate, 'dateonly') ?? $detailEndDate;
-             }
-        ?>
-        <?= SanitizeHelper::html($detailStartDate) ?> - <?= SanitizeHelper::html($detailEndDate) ?>)</h3>
+    <h3 class="text-lg font-semibold text-slate-700 p-5 border-b border-slate-200">Detail Item Terlaris (Periode yang Sama)</h3>
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-slate-200">
             <thead class="bg-slate-50">
@@ -141,11 +179,13 @@ $todayDate = date('Y-m-d'); // Untuk batas max date input
     </div>
 </div>
 
+<?php // Kirim semua data yang dibutuhkan oleh JS ?>
 <script>
-    // Pastikan variabel ini ada sebelum JS report dimuat
     window.salesReportData = <?= json_encode($salesDataForChart) ?>;
     window.popularItemsReportData = <?= json_encode($popularItemsForChart) ?>;
+    window.categoryRevenueReportData = <?= json_encode($categoryRevenueForChart) ?>;
 </script>
 
+<?php // Load library Chart.js & script JS laporan ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
 <script src="<?= UrlHelper::baseUrl('js/admin-reports.js') ?>" defer></script>

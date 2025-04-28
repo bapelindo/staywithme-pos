@@ -141,6 +141,50 @@ document.addEventListener('DOMContentLoaded', () => {
          console.warn('Canvas #popularItemsChart ditemukan, tetapi Chart.js tidak dimuat.');
      }
 
+     const categoryRevenueCtx = document.getElementById('categoryRevenueChart')?.getContext('2d');
+     if (categoryRevenueCtx && window.categoryRevenueReportData && window.categoryRevenueReportData.labels.length > 0) {
+         new Chart(categoryRevenueCtx, {
+             type: 'doughnut', // atau 'pie'
+             data: {
+                 labels: window.categoryRevenueReportData.labels,
+                 datasets: [{
+                     label: 'Pendapatan per Kategori',
+                     data: window.categoryRevenueReportData.data,
+                     backgroundColor: window.categoryRevenueReportData.colors, // Ambil warna dari data PHP
+                     hoverOffset: 4
+                 }]
+             },
+             options: {
+                 responsive: true,
+                 maintainAspectRatio: false, // Penting agar chart mengisi div h-72
+                 plugins: {
+                     legend: {
+                         position: 'bottom', // Pindahkan legend ke bawah agar tidak menutupi chart
+                         labels: {
+                              boxWidth: 12, // Kecilkan kotak warna legend
+                              padding: 15 // Beri jarak antar item legend
+                         }
+                     },
+                     tooltip: {
+                         callbacks: {
+                             label: function(context) {
+                                 let label = context.label || '';
+                                 if (label) { label += ': '; }
+                                 if (context.parsed !== null) {
+                                     // Format sebagai mata uang Rupiah
+                                     label += new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(context.parsed);
+                                 }
+                                 return label;
+                             }
+                         }
+                     }
+                 }
+             }
+         });
+     } else if (document.getElementById('categoryRevenueChart')) {
+         console.warn('Canvas #categoryRevenueChart ditemukan, tetapi data tidak tersedia atau Chart.js tidak dimuat.');
+     }
+  
 
     // --- Inisialisasi Chart Lain ---
 

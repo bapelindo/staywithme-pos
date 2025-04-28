@@ -103,7 +103,7 @@ class Order extends Model {
         $this->db->beginTransaction();
         try {
             $sqlOrder = "INSERT INTO {$this->table} (table_id, order_number, total_amount, status, notes, order_time, created_at, updated_at)
-                         VALUES (:table_id, :order_number, :total_amount, 'received', :notes, NOW(), NOW(), NOW())";
+                         VALUES (:table_id, :order_number, :total_amount, 'pending_payment', :notes, NOW(), NOW(), NOW())";
             $stmtOrder = $this->db->prepare($sqlOrder);
             $stmtOrder->bindParam(':table_id', $tableId, PDO::PARAM_INT);
             $stmtOrder->bindParam(':order_number', $orderNumber, PDO::PARAM_STR);
@@ -124,7 +124,6 @@ class Order extends Model {
             return false;
         }
     }
-
     /**
      * Generate nomor order unik (Contoh: STW-YYYYMMDD-NNNN)
      */
@@ -303,11 +302,11 @@ class Order extends Model {
      * Menghitung jumlah order berdasarkan satu atau beberapa status.
      */
     public function countByStatus(string|array $status): int {
-         // ...(Kode countByStatus lengkap seperti sebelumnya)...
         $statuses = is_array($status) ? $status : [$status];
-        $allowedStatuses = ['pending', 'received', 'preparing', 'ready', 'served', 'paid', 'cancelled'];
+        $allowedStatuses = ['pending_payment', 'received', 'preparing', 'ready', 'served', /* 'paid', */ 'cancelled']; // Sesuaikan array ini juga
         $validStatuses = array_intersect($statuses, $allowedStatuses);
         if (empty($validStatuses)) return 0;
+
         $placeholders = implode(',', array_fill(0, count($validStatuses), '?'));
         $sql = "SELECT COUNT(*) FROM {$this->table} WHERE status IN ($placeholders)";
         try {
@@ -320,7 +319,6 @@ class Order extends Model {
             error_log("Error counting orders by status: " . $e->getMessage()); return 0;
         }
     }
-
     /**
      * Mengambil semua order dengan paginasi, diurutkan berdasarkan waktu order terbaru.
      */
@@ -355,40 +353,64 @@ class Order extends Model {
      * Mengambil order berdasarkan status dengan paginasi, urut terbaru.
      */
     public function getOrdersByStatusPaginated(string $status, int $limit, int $offset): array {
-        // ...(Kode getOrdersByStatusPaginated lengkap seperti sebelumnya)...
-        $allowedStatuses = ['pending', 'received', 'preparing', 'ready', 'served', 'paid', 'cancelled'];
-        if (!in_array($status, $allowedStatuses)) return [];
-        $sql = "SELECT o.*, t.table_number FROM {$this->table} o JOIN tables t ON o.table_id = t.id WHERE o.status = :status ORDER BY o.order_time DESC LIMIT :limit OFFSET :offset";
+        // Daftar status yang valid diambil dari database ENUM atau didefinisikan di sini
+        // Jika Anda menghapus 'paid', pastikan array ini juga diperbarui.
+         $allowedStatuses = ['pending_payment', 'received', 'preparing', 'ready', 'served', /* 'paid', */ 'cancelled']; // Sesuaikan jika 'paid' dihapus
+
+        if (!in_array($status, $allowedStatuses)) {
+             error_log("Attempted to filter orders by invalid status: {$status}");
+             return []; // Kembalikan kosong jika status tidak valid
+        }
+
+        $sql = "SELECT o.*, t.table_number
+                FROM {$this->table} o
+                JOIN tables t ON o.table_id = t.id
+                WHERE o.status = :status -- Filter berdasarkan status
+                ORDER BY o.order_time DESC -- Urutkan terbaru dulu
+                LIMIT :limit OFFSET :offset"; // Paginasi
         try {
             $stmt = $this->db->prepare($sql);
-            $stmt->bindParam(':status', $status, PDO::PARAM_STR);
+            $stmt->bindParam(':status', $status, PDO::PARAM_STR); // Bind status yang dicari
             $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
             $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            error_log("Error fetching orders by status '{$status}' paginated: " . $e->getMessage()); return [];
+            error_log("Error fetching orders by status '{$status}' paginated: " . $e->getMessage());
+            return [];
         }
     }
 
      /**
       * Mengambil order baru dengan status tertentu sejak ID terakhir yang dilihat.
       */
-     public function getNewOrdersSince(int $lastSeenId, string $status): array {
-         // ...(Kode getNewOrdersSince lengkap seperti sebelumnya)...
-         $allowedStatuses = ['pending', 'received', 'preparing', 'ready', 'served', 'paid', 'cancelled'];
-         if (!in_array($status, $allowedStatuses)) return [];
-         $sql = "SELECT o.id, o.order_number, o.status, o.order_time, t.table_number FROM {$this->table} o JOIN tables t ON o.table_id = t.id WHERE o.status = :status AND o.id > :last_seen_id ORDER BY o.id ASC";
-        try {
-            $stmt = $this->db->prepare($sql);
-            $stmt->bindParam(':status', $status, PDO::PARAM_STR);
-            $stmt->bindParam(':last_seen_id', $lastSeenId, PDO::PARAM_INT);
-            $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log("Error fetching new orders with status '{$status}' since ID {$lastSeenId}: " . $e->getMessage()); return [];
+      public function getNewOrdersSince(int $lastSeenId, string $status): array {
+        // Daftar status yang diizinkan untuk dicek (sesuaikan jika perlu)
+        $allowedStatuses = ['pending_payment', 'received', 'preparing', 'ready', 'served', 'paid', 'cancelled'];
+        if (!in_array($status, $allowedStatuses)) {
+            error_log("Attempted to get new orders with invalid status: {$status}");
+            return []; // Jangan proses jika status tidak valid
         }
-     }
+
+        // Query untuk mengambil data order baru (termasuk nomor meja)
+        $sql = "SELECT o.id, o.order_number, o.status, o.order_time, t.table_number
+                FROM {$this->table} o
+                JOIN tables t ON o.table_id = t.id -- Join untuk mendapatkan nomor meja
+                WHERE o.status = :status AND o.id > :last_seen_id
+                ORDER BY o.id ASC"; // Urutkan berdasarkan ID terbaru
+
+       try {
+           $stmt = $this->db->prepare($sql);
+           $stmt->bindParam(':status', $status, PDO::PARAM_STR);
+           $stmt->bindParam(':last_seen_id', $lastSeenId, PDO::PARAM_INT);
+           $stmt->execute();
+           return $stmt->fetchAll(PDO::FETCH_ASSOC); // Kembalikan semua order baru
+       } catch (PDOException $e) {
+           error_log("Error fetching new orders with status '{$status}' since ID {$lastSeenId}: " . $e->getMessage());
+           return []; // Kembalikan array kosong jika error
+       }
+    }
+
 
     /**
      * Mengambil ringkasan data penjualan untuk periode tanggal tertentu.

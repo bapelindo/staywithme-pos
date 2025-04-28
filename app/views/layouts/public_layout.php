@@ -23,9 +23,7 @@ $baseUrl = rtrim(UrlHelper::baseUrl(), '/');
     <link rel="icon" href="<?= UrlHelper::asset('images/icon.svg') ?>" type="image/svg+xml">
     <link rel="apple-touch-icon" href="<?= UrlHelper::asset('images/apple-touch-icon.png') ?>">
     <link rel="manifest" href="<?= $baseUrl ?>/manifest.webmanifest">
-
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
-
+    <link rel="stylesheet" href="<?= \App\Helpers\UrlHelper::baseUrl('css/public_output.css') ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">

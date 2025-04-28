@@ -1,0 +1,33 @@
+{
+  "name": "staywithme-pos",
+  "version": "1.0.0",
+  "main": "index.js",
+"scripts": {
+  "build:public": "tailwindcss -i ./src/public.css -o ./public/css/public_output.css --minify",
+  "watch:public": "tailwindcss -i ./src/public.css -o ./public/css/public_output.css --watch",
+  "build:admin": "tailwindcss -i ./src/admin.css -o ./public/css/admin_output.css --minify",
+  "watch:admin": "tailwindcss -i ./src/admin.css -o ./public/css/admin_output.css --watch",
+  "build": "npm run build:public && npm run build:admin",
+  "watch": "npm run watch:public & npm run watch:admin"
+},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bapelindo/staywithme-pos.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bapelindo/staywithme-pos/issues"
+  },
+  "homepage": "https://github.com/bapelindo/staywithme-pos#readme",
+  "description": "",
+  "devDependencies": {
+    "@tailwindcss/aspect-ratio": "^0.4.2",
+    "@tailwindcss/forms": "^0.5.10",
+    "@tailwindcss/typography": "^0.5.16",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17"
+  }
+}

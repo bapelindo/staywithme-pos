@@ -45,51 +45,51 @@ class Payment extends Model {
      * @return int|false ID payment baru atau false jika gagal.
      */
     public function createPayment(int $orderId, float|string $amountPaid, string $paymentMethod, ?int $processedByUserId = null): int|false {
-         // Validasi payment method (optional tapi bagus)
-         $allowedMethods = ['cash', 'qris', 'card', 'transfer'];
-         if (!in_array($paymentMethod, $allowedMethods)) {
-             error_log("Invalid payment method '{$paymentMethod}' for order ID {$orderId}.");
-             return false;
-         }
-
-         // Mulai transaksi jika diperlukan (misal jika sekaligus update status order)
-         // $this->db->beginTransaction();
-
-         $sql = "INSERT INTO {$this->table} (order_id, payment_method, amount_paid, payment_time, processed_by_user_id, created_at, updated_at)
-                 VALUES (:order_id, :payment_method, :amount_paid, NOW(), :processed_by_user_id, NOW(), NOW())";
-        try {
-            $stmt = $this->db->prepare($sql);
-            $stmt->bindParam(':order_id', $orderId, PDO::PARAM_INT);
-            $stmt->bindParam(':payment_method', $paymentMethod, PDO::PARAM_STR);
-            $amountStr = (string)$amountPaid; // Bind sebagai string
-            $stmt->bindParam(':amount_paid', $amountStr, PDO::PARAM_STR);
-            $stmt->bindParam(':processed_by_user_id', $processedByUserId, PDO::PARAM_INT);
-
-            if ($stmt->execute()) {
-                $paymentId = (int)$this->db->lastInsertId();
-
-                // Jika berhasil, update status order menjadi 'paid'
-                $orderModel = new Order();
-                if ($orderModel->updateStatus($orderId, 'paid')) {
-                    // $this->db->commit(); // Commit jika pakai transaksi
-                    return $paymentId;
-                } else {
-                     // $this->db->rollBack(); // Rollback jika gagal update status order
-                     error_log("Payment created for order ID {$orderId} but failed to update order status.");
-                     // Anda mungkin perlu menghapus payment record yang baru dibuat di sini atau handle secara manual.
-                     return false;
-                }
-            }
-            // $this->db->rollBack(); // Rollback jika insert payment gagal
+        $allowedMethods = ['cash', 'qris', 'card', 'transfer'];
+        if (!in_array($paymentMethod, $allowedMethods)) {
+            error_log("Invalid payment method '{$paymentMethod}' for order ID {$orderId}.");
             return false;
-
-        } catch (PDOException $e) {
-             // $this->db->rollBack(); // Rollback jika ada error
-             error_log("Error creating payment for order ID {$orderId}: " . $e->getMessage());
-              // Gagal karena duplikat order_id (jika UNIQUE constraint)
-             if ($e->getCode() == 23000) { return false; }
-             return false;
         }
-    }
+
+        // Mulai transaksi agar insert payment dan update status order atomik
+        $this->db->beginTransaction();
+
+        $sql = "INSERT INTO {$this->table} (order_id, payment_method, amount_paid, payment_time, processed_by_user_id, created_at, updated_at)
+                VALUES (:order_id, :payment_method, :amount_paid, NOW(), :processed_by_user_id, NOW(), NOW())";
+       try {
+           $stmt = $this->db->prepare($sql);
+           $stmt->bindParam(':order_id', $orderId, PDO::PARAM_INT);
+           $stmt->bindParam(':payment_method', $paymentMethod, PDO::PARAM_STR);
+           $amountStr = (string)$amountPaid;
+           $stmt->bindParam(':amount_paid', $amountStr, PDO::PARAM_STR);
+           $stmt->bindParam(':processed_by_user_id', $processedByUserId, PDO::PARAM_INT);
+
+           if ($stmt->execute()) {
+               $paymentId = (int)$this->db->lastInsertId();
+
+               // === PERUBAHAN DI SINI ===
+               // Ubah status order menjadi 'received' agar masuk ke KDS
+               $orderModel = new Order(); // Pastikan Order model bisa diakses
+               if ($orderModel->updateStatus($orderId, 'received')) { // <-- Ganti 'paid' menjadi 'received'
+               // === AKHIR PERUBAHAN ===
+                   $this->db->commit(); // Commit transaksi jika semua berhasil
+                   return $paymentId;
+               } else {
+                    $this->db->rollBack(); // Rollback jika gagal update status order
+                    error_log("Payment created for order ID {$orderId} but failed to update order status to received.");
+                    return false;
+               }
+           }
+           $this->db->rollBack(); // Rollback jika insert payment gagal
+           return false;
+
+       } catch (PDOException $e) {
+            $this->db->rollBack(); // Rollback jika ada error PDO
+            error_log("Error creating payment or updating order status for order ID {$orderId}: " . $e->getMessage());
+             // Gagal karena duplikat order_id (jika UNIQUE constraint di payments)
+            if ($e->getCode() == 23000) { return false; }
+            return false;
+       }
+   }
 }
 ?>

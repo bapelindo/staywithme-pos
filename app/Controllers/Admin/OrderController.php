@@ -1,4 +1,5 @@
 <?php
+// File: app/Controllers/Admin/OrderController.php (Revisi Notifikasi)
 namespace App\Controllers\Admin;
 
 use App\Core\Controller;
@@ -8,8 +9,8 @@ use App\Helpers\AuthHelper;
 use App\Helpers\UrlHelper;
 use App\Helpers\SessionHelper;
 use App\Helpers\SanitizeHelper;
-use App\Helpers\NumberHelper; // Untuk format harga di invoice
-use App\Helpers\DateHelper;   // Untuk format tanggal di invoice
+use App\Helpers\NumberHelper;
+use App\Helpers\DateHelper;
 
 class OrderController extends Controller {
 
@@ -17,30 +18,36 @@ class OrderController extends Controller {
      * Menampilkan daftar semua pesanan (atau filter berdasarkan status).
      */
     public function index() {
-        AuthHelper::requireRole(['admin', 'staff']); // Hanya admin & staff
+        AuthHelper::requireRole(['admin', 'staff']);
 
         $statusFilter = isset($_GET['status']) ? SanitizeHelper::string($_GET['status']) : 'all';
         $page = isset($_GET['page']) ? max(1, SanitizeHelper::integer($_GET['page'])) : 1;
-        $limit = 15; // Jumlah order per halaman
+        $limit = 15;
         $offset = ($page - 1) * $limit;
 
         $orderModel = new Order();
         $orders = [];
         $totalOrders = 0;
 
-        // Ambil data order berdasarkan filter status
-        // Anda perlu membuat method di Order Model yang lebih fleksibel, misal:
-        // $orders = $orderModel->getOrdersFiltered($statusFilter, $limit, $offset);
-        // $totalOrders = $orderModel->countOrdersFiltered($statusFilter);
+        // === PERUBAHAN: Pastikan filter 'pending_payment' bisa jalan ===
+        // Cek apakah model sudah bisa handle 'pending_payment' di method get/count by status
+        // (Berdasarkan kode model sebelumnya, ini seharusnya sudah bisa)
+        $allowedStatusesForFilter = ['pending_payment', 'received', 'preparing', 'ready', 'served', 'cancelled'];
 
-        // Contoh sederhana: Ambil semua order terbaru
         if ($statusFilter === 'all' || empty($statusFilter)) {
-             $orders = $orderModel->getAllOrdersPaginated($limit, $offset); // Perlu method getAllOrdersPaginated
-             $totalOrders = $orderModel->countAllOrders(); // Perlu method countAllOrders
+             $orders = $orderModel->getAllOrdersPaginated($limit, $offset);
+             $totalOrders = $orderModel->countAllOrders();
+        } elseif (in_array($statusFilter, $allowedStatusesForFilter)) { // Cek status valid
+             $orders = $orderModel->getOrdersByStatusPaginated($statusFilter, $limit, $offset);
+             $totalOrders = $orderModel->countByStatus($statusFilter);
         } else {
-             $orders = $orderModel->getOrdersByStatusPaginated($statusFilter, $limit, $offset); // Perlu method getOrdersByStatusPaginated
-             $totalOrders = $orderModel->countByStatus($statusFilter); // Perlu method countByStatus
+            // Handle jika status tidak valid, mungkin redirect atau tampilkan semua
+            $statusFilter = 'all'; // Reset ke semua jika tidak valid
+            $orders = $orderModel->getAllOrdersPaginated($limit, $offset);
+            $totalOrders = $orderModel->countAllOrders();
+             SessionHelper::setFlash('error', 'Filter status tidak valid.'); // Beri pesan error
         }
+        // === AKHIR PERUBAHAN (minor check) ===
 
 
         $totalPages = ceil($totalOrders / $limit);
@@ -57,10 +64,9 @@ class OrderController extends Controller {
 
     /**
      * Menampilkan detail satu pesanan.
-     *
-     * @param int $order_id ID Pesanan.
      */
     public function show(int $order_id) {
+        // ... (Kode method show tetap sama) ...
         AuthHelper::requireRole(['admin', 'staff', 'kitchen']); // Kitchen juga boleh lihat detail?
 
         $safeOrderId = SanitizeHelper::integer($order_id);
@@ -93,24 +99,26 @@ class OrderController extends Controller {
 
 
     /**
-     * Endpoint AJAX untuk Polling pesanan baru (status 'received').
+     * Endpoint AJAX untuk Polling pesanan baru (status 'pending_payment').
      * Digunakan untuk notifikasi di dashboard admin atau OSS.
      */
     public function getNewOrders() {
         AuthHelper::requireRole(['admin', 'staff']); // Hanya admin & staff
 
-        // Ambil ID order terakhir yang dilihat dari parameter GET (jika ada)
         $lastSeenId = isset($_GET['lastSeenId']) ? SanitizeHelper::integer($_GET['lastSeenId']) : 0;
 
         $orderModel = new Order();
-        // Ambil order baru dengan status 'received' yang ID nya lebih besar dari lastSeenId
-        $newOrders = $orderModel->getNewOrdersSince($lastSeenId, 'received'); // Perlu method getNewOrdersSince
+
+        // === PERUBAHAN DI SINI: Ubah status yang dicari ===
+        // Ambil order baru dengan status 'pending_payment' yang ID nya lebih besar dari lastSeenId
+        $newOrders = $orderModel->getNewOrdersSince($lastSeenId, 'pending_payment'); // <-- Ubah 'received' menjadi 'pending_payment'
+        // === AKHIR PERUBAHAN ===
 
         // Hanya kirim data minimal
         $ordersData = array_map(fn($order) => [
             'id' => $order['id'],
             'order_number' => $order['order_number'],
-            'table_number' => $order['table_number'], // Perlu join di model
+            'table_number' => $order['table_number'] ?? 'N/A', // Handle jika join gagal/belum ada
             'order_time' => DateHelper::timeAgo($order['order_time']) // Format waktu
         ], $newOrders);
 
@@ -124,6 +132,7 @@ class OrderController extends Controller {
      * Menerima update status order dari Admin Panel atau KDS (via AJAX).
      */
     public function updateStatus() {
+        // ... (Kode method updateStatus tetap sama) ...
          AuthHelper::requireRole(['admin', 'staff', 'kitchen']); // Semua boleh update status? Atur sesuai kebutuhan
 
          if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -139,20 +148,20 @@ class OrderController extends Controller {
 
         $orderId = SanitizeHelper::integer($data['order_id']);
         $newStatus = SanitizeHelper::string($data['new_status']);
-        // Daftar status yang boleh di-set dari sini
-        $allowedStatuses = ['preparing', 'ready', 'served', 'cancelled']; // 'paid' dihandle oleh payment
+        // Daftar status yang boleh di-set dari sini (sesuaikan)
+        // 'pending_payment' tidak diubah dari sini, hanya dari kasir saat bayar
+        $allowedStatuses = ['received', 'preparing', 'ready', 'served', 'cancelled']; // 'paid' dihandle oleh payment
 
         if ($orderId <= 0 || !in_array($newStatus, $allowedStatuses)) {
              return $this->jsonResponse(['success' => false, 'message' => 'ID Pesanan atau status tidak valid.'], 400);
         }
 
         $orderModel = new Order();
-        // Cek order ada atau tidak (optional)
         $order = $orderModel->findById($orderId);
         if (!$order) {
              return $this->jsonResponse(['success' => false, 'message' => 'Pesanan tidak ditemukan.'], 404);
         }
-        // Anda bisa tambahkan validasi transisi status jika perlu (misal: tidak bisa dari 'served' ke 'preparing')
+        // Validasi transisi status jika perlu
 
         if ($orderModel->updateStatus($orderId, $newStatus)) {
              // TODO: Implement Push Notification / Update ke client jika menggunakan WebSocket
@@ -164,10 +173,9 @@ class OrderController extends Controller {
 
     /**
      * Menampilkan halaman invoice (HTML view).
-     *
-     * @param int $order_id ID Pesanan.
      */
     public function invoice(int $order_id) {
+        // ... (Kode method invoice tetap sama) ...
         AuthHelper::requireRole(['admin', 'staff']); // Hanya Admin/Staff
 
         $safeOrderId = SanitizeHelper::integer($order_id);
@@ -190,26 +198,20 @@ class OrderController extends Controller {
         $paymentModel = new Payment();
         $payment = $paymentModel->findByOrderId($safeOrderId);
 
-        // Ambil detail cafe dari setting (jika ada)
-        // $settings = SettingsModel::getAll();
-
-        // Load view invoice (buat file view khusus invoice)
         $this->view('admin.orders.invoice', [
              'pageTitle' => 'Invoice ' . SanitizeHelper::html($order['order_number']),
              'order' => $order,
              'payment' => $payment,
-             // 'cafe_details' => $settings,
-             // Jangan gunakan layout admin utama untuk invoice agar mudah dicetak
-             'use_layout' => false // Variabel untuk mengontrol layout di Base Controller::view()
+             'use_layout' => false
         ], null);
     }
 
      /**
-      * Memproses pembayaran cash (jika ada tombol bayar di detail order).
-      *
-      * @param int $order_id
+      * Memproses pembayaran cash (dipanggil dari tombol "Tandai Lunas").
+      * Method ini sekarang akan mengubah status menjadi 'received' via Payment model.
       */
      public function processCashPayment(int $order_id) {
+        // ... (Kode method processCashPayment tetap sama, karena perubahan utama ada di Model Payment) ...
          AuthHelper::requireRole(['admin', 'staff']);
 
          if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -221,8 +223,9 @@ class OrderController extends Controller {
          $orderModel = new Order();
          $order = $orderModel->findById($safeOrderId);
 
-         if (!$order || $order['status'] === 'paid' || $order['status'] === 'cancelled') {
-             SessionHelper::setFlash('error', 'Pesanan tidak valid atau sudah dibayar/dibatalkan.');
+         // Hanya proses jika statusnya 'pending_payment'
+         if (!$order || $order['status'] !== 'pending_payment') {
+             SessionHelper::setFlash('error', 'Pesanan tidak valid atau sudah diproses/dibatalkan.');
              UrlHelper::redirect('/admin/orders/show/' . $safeOrderId);
              return;
          }
@@ -231,12 +234,13 @@ class OrderController extends Controller {
          $paymentModel = new Payment();
          $userId = AuthHelper::getUserId();
 
+         // Panggil createPayment (yang sudah diubah untuk set status ke 'received')
          if ($paymentModel->createPayment($safeOrderId, $amountPaid, 'cash', $userId)) {
-             SessionHelper::setFlash('success', 'Pembayaran cash berhasil diproses.');
+             SessionHelper::setFlash('success', 'Pembayaran cash berhasil diproses. Pesanan diteruskan ke dapur.');
          } else {
              SessionHelper::setFlash('error', 'Gagal memproses pembayaran.');
          }
-         UrlHelper::redirect('/admin/orders/show/' . $safeOrderId);
+         UrlHelper::redirect('/admin/orders/show/' . $safeOrderId); // Redirect ke detail order
      }
 }
 ?>

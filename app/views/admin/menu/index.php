@@ -17,7 +17,7 @@ $menuItems = $menuItems ?? [];
             Kelola Kategori
         </a>
         <a href="<?= UrlHelper::baseUrl('/admin/menu/create') ?>" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold py-2 px-4 rounded-md transition shadow-sm">
-            + Tambah Item Baru
+            Tambah Item Baru
         </a>
     </div>
 </div>

@@ -17,7 +17,7 @@ $unavailableItemCount = $unavailableItemCount ?? 0;
 
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
-    <a href="<?= UrlHelper::baseUrl('/admin/orders?status=received') ?>" class="block p-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl shadow-lg hover:shadow-blue-400/50 transition-all duration-300 transform hover:-translate-y-1">
+    <a href="<?= UrlHelper::baseUrl('/admin/orders?status=pending_payment') ?>" class="block p-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl shadow-lg hover:shadow-blue-400/50 transition-all duration-300 transform hover:-translate-y-1">
         <div class="flex justify-between items-start mb-2">
             <h3 class="text-lg font-semibold">Pesanan Baru Diterima</h3>
             <svg class="w-8 h-8 text-blue-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg>

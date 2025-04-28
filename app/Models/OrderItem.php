@@ -120,5 +120,45 @@ class OrderItem extends Model {
         }
     }
 
+    public function getRevenueByCategory(string $startDate, string $endDate): array {
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $startDate) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $endDate)) {
+             error_log("Invalid date format for revenue by category report.");
+             return [];
+        }
+       $endDateFull = $endDate . ' 23:59:59';
+       // Tentukan status order yang dihitung (sesuaikan jika perlu, misal hanya 'served' jika 'paid' tidak dipakai)
+       $revenueStatuses = ['served']; // Atau ['served', 'paid'] jika masih relevan
+       $placeholders = implode(',', array_fill(0, count($revenueStatuses), '?'));
+
+       $sql = "SELECT
+                   c.id as category_id,
+                   c.name as category_name,
+                   SUM(oi.subtotal) as total_revenue
+               FROM {$this->table} oi
+               JOIN menu_items mi ON oi.menu_item_id = mi.id
+               JOIN categories c ON mi.category_id = c.id
+               JOIN orders o ON oi.order_id = o.id
+               WHERE o.status IN ($placeholders)
+               AND o.order_time BETWEEN ? AND ?
+               GROUP BY c.id, c.name
+               ORDER BY total_revenue DESC"; // Urutkan berdasarkan pendapatan terbanyak
+
+       try {
+           $stmt = $this->db->prepare($sql);
+           $paramIndex = 1;
+           foreach ($revenueStatuses as $status) {
+                $stmt->bindValue($paramIndex++, $status, PDO::PARAM_STR);
+           }
+           $stmt->bindValue($paramIndex++, $startDate, PDO::PARAM_STR);
+           $stmt->bindValue($paramIndex++, $endDateFull, PDO::PARAM_STR);
+
+           $stmt->execute();
+           return $stmt->fetchAll(PDO::FETCH_ASSOC);
+       } catch (PDOException $e) {
+           error_log("Error getting revenue by category ({$startDate} - {$endDate}): " . $e->getMessage());
+           return [];
+       }
+   }
+
 } // Akhir kelas OrderItem
 ?>

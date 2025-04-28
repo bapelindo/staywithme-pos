@@ -84,7 +84,7 @@ $placeholderImage = UrlHelper::baseUrl('images/menu-placeholder.jpg');
                                             <?= NumberHelper::formatCurrencyIDR($item['price']) ?>
                                         </span>
                                         <button
-                                            class="add-to-cart-btn bg-accent-secondary hover:bg-sky-500 text-white text-xs font-bold py-5 px-5 sm:py-3 sm:px-10 rounded-md transition duration-150 ease-in-out transform active:scale-95 flex items-center"
+                                            class="add-to-cart-btn bg-accent-secondary hover:bg-sky-500 text-white text-xs font-bold py-5 px-5 sm:py-2 sm:px-3 rounded-md transition duration-150 ease-in-out transform active:scale-95 flex items-center"
                                             data-id="<?= SanitizeHelper::html($itemId) ?>"
                                             data-name="<?= SanitizeHelper::html($item['name']) ?>"
                                             data-price="<?= SanitizeHelper::html((string)$item['price']) ?>"
@@ -134,35 +134,6 @@ $placeholderImage = UrlHelper::baseUrl('images/menu-placeholder.jpg');
     </div>
 </div>
 
-
-<style>
-.category-tabs-sticky {
-    position: -webkit-sticky; /* Safari */
-    position: sticky;
-    background-color: rgba(30, 41, 59, 0.3); /* Warna latar belakang transparan */
-    top: 60px; /* Sesuaikan dengan tinggi header meja Anda */
-    z-index: 30; /* Di bawah header utama, di atas konten */
-}
-/* Styling untuk tab aktif */
-.category-tab.active {
-    background-color: var(--accent-primary);
-    color: var(--bg-dark-primary);
-    font-weight: 600;
-}
-/* Styling dasar untuk tab (bisa juga pakai Tailwind) */
-.category-tab {
-    background-color: var(--bg-dark-tertiary);
-    color: var(--text-dark-secondary);
-    transition: all 0.2s ease-in-out;
-}
-.category-tab:hover {
-    background-color: var(--bg-dark-secondary);
-    color: var(--text-dark-primary);
-}
-/* Sembunyikan scrollbar horizontal standar */
-#category-tabs-container::-webkit-scrollbar { display: none; }
-#category-tabs-container { -ms-overflow-style: none; scrollbar-width: none; }
-</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {

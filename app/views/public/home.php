@@ -30,7 +30,7 @@ $placeholderImage = UrlHelper::baseUrl('images/menu-placeholder.jpg');
                 <?php // Hapus 'block' jika ada ?>
                 <span>Secangkir Inspirasi,</span>
                 <?php // Hapus 'block' jika ada ?>
-                <span id="dynamic-tagline" class="block text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-400 to-amber-500">Sejuta Cerita.</span>
+                <span id="dynamic-tagline" class="text-4xl md:text-6xl lg:text-7xl inline-block w-[23rem] sm:w-auto text-center mx-auto lg:mx-0 text-accent-primary whitespace-nowrap overflow-hidden">Sejuta Cerita.</span>
              </h1>
              <p class="text-lg md:text-xl text-text-dark-secondary mb-10 max-w-xl mx-auto lg:mx-0">
                Dapatkan kopi artisan terbaik, hidangan lezat, dan suasana yang memicu kreativitas serta koneksi di <?= $appName ?>.
@@ -125,7 +125,7 @@ $placeholderImage = UrlHelper::baseUrl('images/menu-placeholder.jpg');
         </div>
 
         <?php // Kolom Kanan Experience - Hapus AOS dari div ini ?>
-        <div>
+        <div div data-aos="zoom-in-down" data-aos-duration="800" data-aos-delay="200" class="overflow-x-auto hide-scrollbar">
             <div class="grid grid-cols-2 gap-4 lg:gap-6">
                 <?php
                     $img1 = UrlHelper::baseUrl('images/experience-illustration-1.jpg');
@@ -153,7 +153,7 @@ $placeholderImage = UrlHelper::baseUrl('images/menu-placeholder.jpg');
         <div class="mb-12" data-aos="fade-up">
              <h3 class="text-2xl font-semibold text-center mb-8 text-accent-primary">Top 5 Item Terpopuler</h3>
              <div class="relative">
-                <div class="swiper-container-wrapper"> <?php // Wrapper penting untuk overflow:hidden ?>
+                <div class="swiper-container-wrapper relative"> <?php // Wrapper penting untuk overflow:hidden ?>
                     <div class="swiper-container featured-menu-slider">
                         <div class="swiper-wrapper pb-8">
                             <?php foreach ($topItems as $topItem): ?>
@@ -163,7 +163,7 @@ $placeholderImage = UrlHelper::baseUrl('images/menu-placeholder.jpg');
                                                         : $placeholderImage;
                                 ?>
                                 <div class="swiper-slide h-auto px-1.5 sm:px-2">
-                                    <div class="menu-item menu-card bg-bg-dark rounded-lg shadow-lg overflow-hidden group border border-border-dark flex flex-col h-full">
+                                    <div class="menu-item menu-card relative bg-bg-dark rounded-lg shadow-lg overflow-hidden group border border-border-dark flex flex-col h-full">
                                         <div class="relative h-52 w-full">
                                             <img loading="lazy" src="<?= $topItemImagePath ?>" alt="<?= SanitizeHelper::html($topItem['name']) ?>"
                                                 class="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -188,7 +188,7 @@ $placeholderImage = UrlHelper::baseUrl('images/menu-placeholder.jpg');
                             <?php endforeach; ?>
                         </div>
                     </div>
-                </div> <?php // Akhir swiper-container-wrapper ?>
+                </div> <?php // Akhir swiper-container-wrapper relative ?>
                 <div class="swiper-button-prev swiper-button-prev-top !absolute !top-1/2 !-translate-y-1/2 !-left-0 text-accent-primary opacity-70 hover:opacity-100 transition-opacity z-10 cursor-pointer p-2"><i class="fas fa-chevron-left text-xl"></i></div>
                  <div class="swiper-button-next swiper-button-next-top !absolute !top-1/2 !-translate-y-1/2 !-right-0 text-accent-primary opacity-70 hover:opacity-100 transition-opacity z-10 cursor-pointer p-2"><i class="fas fa-chevron-right text-xl"></i></div>
              </div>
@@ -212,7 +212,7 @@ $placeholderImage = UrlHelper::baseUrl('images/menu-placeholder.jpg');
         <?php if (!empty($menuItems)): ?>
         <div class="mt-0 sm:mt-8" data-aos="fade-up" data-aos-delay="100">
              <div class="relative">
-                 <div class="swiper-container-wrapper"> <?php // Wrapper penting untuk overflow:hidden ?>
+                 <div class="swiper-container-wrapper relative"> <?php // Wrapper penting untuk overflow:hidden ?>
                      <div class="swiper-container full-menu-slider">
                          <div class="swiper-wrapper pb-8">
                              <?php foreach ($menuItems as $item): ?>
@@ -223,7 +223,7 @@ $placeholderImage = UrlHelper::baseUrl('images/menu-placeholder.jpg');
                                      $categorySlug = SanitizeHelper::html(strtolower(str_replace(' ', '-', $item['category_name'] ?? 'uncategorized')));
                                  ?>
                                  <div class="swiper-slide h-auto px-1.5 sm:px-2" data-category="<?= $categorySlug ?>">
-                                     <div class="menu-item menu-card bg-bg-dark rounded-lg shadow-lg overflow-hidden group border border-border-dark flex flex-col h-full">
+                                     <div class="menu-item menu-card relative bg-bg-dark rounded-lg shadow-lg overflow-hidden group border border-border-dark flex flex-col h-full">
                                         <div class="relative h-48 w-full">
                                              <img loading="lazy" src="<?= $imagePath ?>" alt="<?= SanitizeHelper::html($item['name']) ?>"
                                                 class="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -246,7 +246,7 @@ $placeholderImage = UrlHelper::baseUrl('images/menu-placeholder.jpg');
                              <?php endforeach; ?>
                          </div>
                      </div>
-                 </div> <?php // Akhir swiper-container-wrapper ?>
+                 </div> <?php // Akhir swiper-container-wrapper relative ?>
                  <div class="swiper-button-prev swiper-button-prev-full !absolute !top-1/2 !-translate-y-1/2 !-left-0 text-accent-primary opacity-70 hover:opacity-100 transition-opacity z-10 cursor-pointer p-2"><i class="fas fa-chevron-left text-xl"></i></div>
                  <div class="swiper-button-next swiper-button-next-full !absolute !top-1/2 !-translate-y-1/2 !-right-0 text-accent-primary opacity-70 hover:opacity-100 transition-opacity z-10 cursor-pointer p-2"><i class="fas fa-chevron-right text-xl"></i></div>
              </div>
@@ -297,7 +297,7 @@ $placeholderImage = UrlHelper::baseUrl('images/menu-placeholder.jpg');
 <section id="testimonials" class="section-padding bg-bg-dark-secondary">
      <div class="container mx-auto px-4 sm:px-6 lg:px-8">
          <h2 class="text-4xl md:text-5xl font-bold text-center mb-16 text-white" data-aos="fade-up">Apa Kata Pelanggan Kami</h2>
-         <div class="swiper-container-wrapper max-w-4xl mx-auto"> <?php // Wrapper penting untuk overflow:hidden ?>
+         <div class="swiper-container-wrapper relative max-w-6xl mx-auto"> <?php // Wrapper penting untuk overflow:hidden ?>
              <div class="swiper-container testimonial-slider-v2 relative" data-aos="fade-up" data-aos-delay="100">
                  <div class="swiper-wrapper pb-16">
                       <?php // Contoh slide testimonial ?>
@@ -317,7 +317,7 @@ $placeholderImage = UrlHelper::baseUrl('images/menu-placeholder.jpg');
                          </div>
                      </div>
                      <div class="swiper-slide">
-                         <div class="bg-bg-dark rounded-lg shadow-xl p-8 text-center border border-border-dark relative">
+                         <div class="bg-bg-dark relative rounded-lg shadow-xl p-8 text-center border border-border-dark relative">
                              <img loading="lazy" src="<?= UrlHelper::baseUrl('images/experience-illustration-1.jpg') ?>"
                                   alt="Avatar Pelanggan 2"
                                   class="w-20 h-20 rounded-full mx-auto mb-5 border-4 border-bg-dark-secondary
@@ -332,7 +332,7 @@ $placeholderImage = UrlHelper::baseUrl('images/menu-placeholder.jpg');
                          </div>
                      </div>
                      <div class="swiper-slide">
-                         <div class="bg-bg-dark rounded-lg shadow-xl p-8 text-center border border-border-dark relative">
+                         <div class="bg-bg-dark relative rounded-lg shadow-xl p-8 text-center border border-border-dark relative">
                              <img loading="lazy" src="<?= UrlHelper::baseUrl('images/experience-illustration-1.jpg') ?>"
                                   alt="Avatar Pelanggan 2"
                                   class="w-20 h-20 rounded-full mx-auto mb-5 border-4 border-bg-dark-secondary
@@ -347,7 +347,7 @@ $placeholderImage = UrlHelper::baseUrl('images/menu-placeholder.jpg');
                          </div>
                      </div>
                      <div class="swiper-slide">
-                         <div class="bg-bg-dark rounded-lg shadow-xl p-8 text-center border border-border-dark relative">
+                         <div class="bg-bg-dark relative rounded-lg shadow-xl p-8 text-center border border-border-dark relative">
                              <img loading="lazy" src="<?= UrlHelper::baseUrl('images/experience-illustration-1.jpg') ?>"
                                   alt="Avatar Pelanggan 2"
                                   class="w-20 h-20 rounded-full mx-auto mb-5 border-4 border-bg-dark-secondary
@@ -364,7 +364,7 @@ $placeholderImage = UrlHelper::baseUrl('images/menu-placeholder.jpg');
                      </div>
                  <div class="swiper-pagination !bottom-0 !relative !mt-8"></div>
              </div>
-         </div> <?php // Akhir swiper-container-wrapper ?>
+         </div> <?php // Akhir swiper-container-wrapper relative ?>
     </div>
 </section>
 
