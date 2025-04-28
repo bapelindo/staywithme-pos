@@ -147,5 +147,5 @@ $todayDate = date('Y-m-d'); // Untuk batas max date input
     window.popularItemsReportData = <?= json_encode($popularItemsForChart) ?>;
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
 <script src="<?= UrlHelper::baseUrl('js/admin-reports.js') ?>" defer></script>

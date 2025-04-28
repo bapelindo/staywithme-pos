@@ -17,7 +17,7 @@ $placeholderImage = UrlHelper::baseUrl('images/menu-placeholder.jpg');
 
 <section class="relative py-24 md:py-36 overflow-hidden min-h-[calc(100vh-70px)] flex items-center -mt-6 md:-mt-8" id="hero">
     <div aria-hidden="true" class="absolute inset-0 z-0 opacity-40">
-         <img loading="lazy" src="<?= UrlHelper::baseUrl('images/background.svg') ?>" alt="Ilustrasi Latar Belakang Kafe Gelap Abstrak" class="absolute inset-0 w-full h-full object-cover">
+         <img src="<?= UrlHelper::baseUrl('images/background.svg') ?>" alt="Ilustrasi Latar Belakang Kafe Gelap Abstrak" class="absolute inset-0 w-full h-full object-cover">
         <div class="absolute inset-0 bg-gradient-to-br from-bg-dark-primary via-bg-dark-primary/70 to-bg-dark-secondary"></div>
     </div>
     <div aria-hidden="true" class="absolute top-1/4 left-10 w-16 h-16 rounded-full bg-accent-primary/10 blur-2xl animate-pulse"></div>
