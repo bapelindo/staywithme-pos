@@ -92,5 +92,30 @@ class ReportController extends Controller {
 
         $this->view('admin.reports.index', $data, 'admin_layout');
     }
+        public function summary()
+    {
+        AuthHelper::requireAdmin();
+        $reportModel = $this->model('Report');
+
+        $data = [
+            'title' => 'Ringkasan Penjualan',
+            'summary' => $reportModel->getSalesSummary(),
+            'top_items' => $reportModel->getTopSellingItems(5),
+            'chart_data' => $reportModel->getSalesDataForChart()
+        ];
+        
+        extract($data);
+        
+        // Path dinamis yang andal untuk memuat view dan layout
+        $appPath = dirname(__DIR__, 2); 
+        $layoutPath = $appPath . '/views/layouts/admin_layout.php';
+        $viewPath = $appPath . '/views/admin/reports/summary.php';
+
+        if (file_exists($layoutPath) && file_exists($viewPath)) {
+            require_once $layoutPath;
+        } else {
+            die("File view atau layout tidak ditemukan.");
+        }
+    }
 }
 ?>
