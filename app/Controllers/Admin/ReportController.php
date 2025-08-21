@@ -104,18 +104,7 @@ class ReportController extends Controller {
             'chart_data' => $reportModel->getSalesDataForChart()
         ];
         
-        extract($data);
-        
-        // Path dinamis yang andal untuk memuat view dan layout
-        $appPath = dirname(__DIR__, 2); 
-        $layoutPath = $appPath . '/views/layouts/admin_layout.php';
-        $viewPath = $appPath . '/views/admin/reports/summary.php';
-
-        if (file_exists($layoutPath) && file_exists($viewPath)) {
-            require_once $layoutPath;
-        } else {
-            die("File view atau layout tidak ditemukan.");
-        }
+        $this->view('admin.reports.summary', $data, 'admin_layout');
     }
 }
 ?>
