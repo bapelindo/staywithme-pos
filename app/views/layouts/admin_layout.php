@@ -85,7 +85,7 @@ use App\Helpers\SessionHelper;
                                                     $relativeAdminPath === '/reports/';
                         }
                     ?>
-                    <li><a href="<?= UrlHelper::baseUrl('/admin/dashboard') ?>" class="sidebar-link flex items-center px-3 py-2.5 rounded-md text-sm font-medium text-slate-700 transition duration-150 <?= isAdminLinkActive('/', $relativeAdminPath) ? 'active' : '' ?>">
+                    <li><a href="<?= UrlHelper::baseUrl('/admin/dashboard') ?>" class="sidebar-link flex items-center px-3 py-2.5 rounded-md text-sm font-medium text-slate-700 transition duration-150 <?= isAdminLinkActive('/dashboard', $relativeAdminPath) ? 'active' : '' ?>">
                         <i class="fa-solid fa-gauge-high fa-fw"></i>
                         Dashboard
                     </a></li>

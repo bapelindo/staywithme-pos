@@ -1,6 +1,7 @@
 <?php
 use App\Helpers\SanitizeHelper;
 use App\Helpers\UrlHelper;
+use App\Helpers\NumberHelper;
 
 // Data dari DashboardController
 $userName = $userName ?? 'User';
@@ -55,3 +56,130 @@ $unavailableItemCount = $unavailableItemCount ?? 0;
         <a href="<?= UrlHelper::baseUrl('/cds') ?>" target="_blank" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium py-2 px-4 rounded-lg transition">Buka CDS</a>
     </div>
 </div>
+
+<div class="container mx-auto">
+    <!-- Header and Period Selector -->
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <h1 class="text-xl font-semibold text-gray-900"><?= htmlspecialchars($pageTitle) ?></h1>
+        <div class="flex items-center bg-white border rounded-lg p-1 shadow-sm">
+            <a href="<?= UrlHelper::baseUrl('admin/dashboard?period=daily') ?>" 
+               class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors <?= $period === 'daily' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100' ?>">
+               Hari Ini
+            </a>
+            <a href="<?= UrlHelper::baseUrl('admin/dashboard?period=weekly') ?>"
+               class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors <?= $period === 'weekly' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100' ?>">
+               7 Hari
+            </a>
+            <a href="<?= UrlHelper::baseUrl('admin/dashboard?period=monthly') ?>"
+               class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors <?= $period === 'monthly' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100' ?>">
+               Bulan Ini
+            </a>
+        </div>
+    </div>
+
+    <!-- Metrics Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <!-- Total Penjualan -->
+        <div class="bg-white border rounded-lg shadow-sm p-4">
+            <h3 class="text-sm font-medium text-gray-500">Total Penjualan</h3>
+            <p class="text-2xl font-semibold text-gray-900 mt-1"><?= NumberHelper::format_rupiah($metrics['total_sales']) ?></p>
+        </div>
+        <!-- Akumulasi dari Awal Bulan -->
+        <div class="bg-white border rounded-lg shadow-sm p-4">
+            <h3 class="text-sm font-medium text-gray-500">Akumulasi Bulan Ini</h3>
+            <p class="text-2xl font-semibold text-gray-900 mt-1"><?= NumberHelper::format_rupiah($mtd_sales) ?></p>
+        </div>
+        <!-- Proyeksi Bulan Ini -->
+        <div class="bg-white border rounded-lg shadow-sm p-4">
+            <h3 class="text-sm font-medium text-gray-500">Proyeksi Bulan Ini</h3>
+            <p class="text-2xl font-semibold text-gray-900 mt-1"><?= NumberHelper::format_rupiah($monthly_projection) ?></p>
+        </div>
+        <!-- Penjualan Belum Dibayar & Terbayar -->
+        <div class="bg-white border rounded-lg shadow-sm p-4">
+             <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Belum Dibayar</h3>
+                    <p class="text-lg font-semibold text-amber-600 mt-1"><?= NumberHelper::format_rupiah($metrics['unpaid_sales']) ?></p>
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Terbayar</h3>
+                    <p class="text-lg font-semibold text-green-600 mt-1"><?= NumberHelper::format_rupiah($metrics['paid_sales']) ?></p>
+                </div>
+            </div>
+        </div>
+        <!-- Transaksi -->
+        <div class="bg-white border rounded-lg shadow-sm p-4">
+            <h3 class="text-sm font-medium text-gray-500">Transaksi</h3>
+            <p class="text-2xl font-semibold text-gray-900 mt-1"><?= number_format($metrics['transactions']) ?></p>
+        </div>
+        <!-- Penjualan per Transaksi -->
+        <div class="bg-white border rounded-lg shadow-sm p-4">
+            <h3 class="text-sm font-medium text-gray-500">Penjualan per Transaksi</h3>
+            <p class="text-2xl font-semibold text-gray-900 mt-1"><?= NumberHelper::format_rupiah($metrics['sales_per_transaction']) ?></p>
+        </div>
+        <!-- Produk Terjual -->
+        <div class="bg-white border rounded-lg shadow-sm p-4">
+            <h3 class="text-sm font-medium text-gray-500">Produk Terjual</h3>
+            <p class="text-2xl font-semibold text-gray-900 mt-1"><?= number_format($metrics['total_products']) ?></p>
+        </div>
+        <!-- Produk per Transaksi -->
+        <div class="bg-white border rounded-lg shadow-sm p-4">
+            <h3 class="text-sm font-medium text-gray-500">Produk per Transaksi</h3>
+            <p class="text-2xl font-semibold text-gray-900 mt-1"><?= number_format($metrics['products_per_transaction'], 2) ?></p>
+        </div>
+    </div>
+
+    <!-- Sales Chart -->
+    <div class="bg-white border rounded-lg shadow-sm p-4">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Grafik Penjualan</h2>
+        <div class="relative" style="height: 300px;">
+            <canvas id="salesChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const formatRupiah = (value) => new Intl.NumberFormat('id-ID', { 
+        style: 'currency', 
+        currency: 'IDR', 
+        minimumFractionDigits: 0 
+    }).format(value);
+
+    const salesCtx = document.getElementById('salesChart')?.getContext('2d');
+    if (salesCtx) {
+        new Chart(salesCtx, {
+            type: 'line',
+            data: {
+                labels: <?= json_encode(array_column($chart_data, 'label')); ?>,
+                datasets: [{
+                    label: 'Penjualan',
+                    data: <?= json_encode(array_column($chart_data, 'sales')); ?>,
+                    borderColor: '#4f46e5',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#4f46e5'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: value => formatRupiah(value) }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: { label: c => formatRupiah(c.parsed.y) }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
