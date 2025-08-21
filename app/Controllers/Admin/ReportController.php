@@ -146,14 +146,10 @@ class ReportController extends Controller {
             'endDate' => $endDate,
             'today' => $reportData['today'],
             'summary' => $summary,
-            'financials' => [
-                'gross_sales' => $reportData['current_period']['total_revenue'],
-                'cogs' => $reportData['current_period']['cogs'],
-                'gross_profit' => $reportData['current_period']['gross_profit'],
-            ],
+            'financials' => $reportData['current_period'],
             'payment_methods' => $reportData['payment_methods'],
             'payment_chart_data' => $paymentDataForChart,
-            'top_items' => $reportModel->getTopSellingItems(5, $startDate, $endDate),
+            'top_items' => $reportModel->getTopSellingItems($startDate, $endDate, 5),
             'chart_data' => $reportModel->getSalesDataForChart($startDate, $endDate),
             'previous_period_range' => $reportData['previous_period_range']
         ];
@@ -170,7 +166,7 @@ class ReportController extends Controller {
 
         $reportModel = $this->model('Report');
         $reportData = $reportModel->getFullSalesReport($startDate, $endDate);
-        $topItems = $reportModel->getTopSellingItems(100, $startDate, $endDate); // Export more items
+        $topItems = $reportModel->getTopSellingItems($startDate, $endDate, 100); // Export more items
 
         header('Content-Type: text/csv');
         header('Content-Disposition: attachment; filename="sales_summary_'.$startDate.'_to_'.$endDate.'.csv"');
@@ -210,6 +206,37 @@ class ReportController extends Controller {
 
         fclose($output);
         exit;
+    }
+
+    public function financials()
+    {
+        AuthHelper::requireAdmin();
+
+        $today = date('Y-m-d');
+        $defaultStartDate = date('Y-m-01');
+        
+        $startDateInput = $_GET['start_date'] ?? $defaultStartDate;
+        $endDateInput = $_GET['end_date'] ?? $today;
+
+        $startDate = SanitizeHelper::string($startDateInput);
+        $endDate = SanitizeHelper::string($endDateInput);
+        $dateFormatRegex = '/^\d{4}-\d{2}-\d{2}$/';
+        if (!preg_match($dateFormatRegex, $startDate)) { $startDate = $defaultStartDate; }
+        if (!preg_match($dateFormatRegex, $endDate)) { $endDate = $today; }
+        if ($endDate < $startDate) { $endDate = $startDate; }
+
+        $reportModel = $this->model('Report');
+        $reportData = $reportModel->getFullSalesReport($startDate, $endDate);
+
+        $data = [
+            'pageTitle' => 'Rincian Finansial',
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'financials' => $reportData['current_period'],
+            'previous_period_range' => $reportData['previous_period_range']
+        ];
+        
+        $this->view('admin.reports.financials', $data, 'admin_layout');
     }
 }
 ?>

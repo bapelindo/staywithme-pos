@@ -97,6 +97,7 @@ $router->addRoute('POST', '/admin/users/destroy/{id}', 'Admin\\UserController@de
 // Laporan (Reports)
 $router->addRoute('GET', '/admin/reports', 'Admin\\ReportController@index');         // Halaman utama laporan (bisa filter via query string ?start_date=...&end_date=...)
 $router->addRoute('GET', '/admin/reports/summary', 'Admin\\ReportController@summary');
+$router->addRoute('GET', '/admin/reports/financials', 'Admin\\ReportController@financials'); // Add this line
 $router->addRoute('GET', '/admin/reports/summary/export', 'Admin\\ReportController@exportSummary');
 // Rute Pengaturan (jika ditambahkan nanti)
 // $router->addRoute('GET', '/admin/settings', 'Admin\\SettingsController@index');
