@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS `menu_items` (
   `name` varchar(150) NOT NULL COMMENT 'Nama item menu',
   `description` text DEFAULT NULL COMMENT 'Deskripsi item menu',
   `price` decimal(12,2) NOT NULL COMMENT 'Harga item menu (gunakan DECIMAL untuk uang)',
+  `cost` decimal(12,2) DEFAULT 0.00 COMMENT 'Harga pokok penjualan (HPP) per item',
   `image_path` varchar(255) DEFAULT NULL COMMENT 'Path ke file gambar item menu',
   `is_available` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Status ketersediaan item (1=Tersedia, 0=Habis)',
   `created_at` timestamp NULL DEFAULT current_timestamp(),
@@ -54,8 +55,8 @@ CREATE TABLE IF NOT EXISTS `menu_items` (
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Detail item menu yang dijual';
 
 -- Dumping data for table staywithme_db.menu_items: ~1 rows (approximately)
-INSERT INTO `menu_items` (`id`, `category_id`, `name`, `description`, `price`, `image_path`, `is_available`, `created_at`, `updated_at`) VALUES
-	(1, 1, 'Dark Chocolate Ice', 'Dark Chocolate yang manis', 15000.00, 'assets/uploads/menu/menu_680ab5e714fcb8.22453703.jpeg', 1, '2025-04-24 22:06:31', '2025-04-24 22:06:31');
+INSERT INTO `menu_items` (`id`, `category_id`, `name`, `description`, `price`, `cost`, `image_path`, `is_available`, `created_at`, `updated_at`) VALUES
+	(1, 1, 'Dark Chocolate Ice', 'Dark Chocolate yang manis', 15000.00, 7000.00, 'assets/uploads/menu/menu_680ab5e714fcb8.22453703.jpeg', 1, '2025-04-24 22:06:31', '2025-04-24 22:06:31');
 
 -- Dumping structure for table staywithme_db.orders
 CREATE TABLE IF NOT EXISTS `orders` (

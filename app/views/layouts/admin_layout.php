@@ -76,6 +76,14 @@ use App\Helpers\SessionHelper;
                         if (isset($relativeAdminPath) && is_string($relativeAdminPath)) {
                             $isReportActive = isReportLinkActive('/reports', $relativeAdminPath);
                         }
+                        
+                        $isSalesReportsActive = false;
+                        if (isset($relativeAdminPath) && is_string($relativeAdminPath)) {
+                            $isSalesReportsActive = str_starts_with($relativeAdminPath, '/reports/summary') || 
+                                                    str_starts_with($relativeAdminPath, '/reports/sales') || 
+                                                    $relativeAdminPath === '/reports' || 
+                                                    $relativeAdminPath === '/reports/';
+                        }
                     ?>
                     <li><a href="<?= UrlHelper::baseUrl('/admin/dashboard') ?>" class="sidebar-link flex items-center px-3 py-2.5 rounded-md text-sm font-medium text-slate-700 transition duration-150 <?= isAdminLinkActive('/', $relativeAdminPath) ? 'active' : '' ?>">
                         <i class="fa-solid fa-gauge-high fa-fw"></i>
@@ -116,7 +124,7 @@ use App\Helpers\SessionHelper;
                                 <svg class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-90': open }" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
                             </button>
                             <ul x-show="open" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform -translate-y-2" x-transition:enter-end="opacity-100 transform translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 transform translate-y-0" x-transition:leave-end="opacity-0 transform -translate-y-2" class="dropdown-indent-1 pr-2 space-y-1">
-                                <li x-data="{ openSales: <?= isReportLinkActive('/reports/sales', $relativeAdminPath) ? 'true' : 'false' ?> }" class="space-y-1">
+                                <li x-data="{ openSales: <?= $isSalesReportsActive ? 'true' : 'false' ?> }" class="space-y-1">
                                     <button @click="openSales = !openSales" class="flex items-center justify-between w-full px-3 py-2 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-800 transition duration-150">
                                         <span>Laporan Penjualan</span>
                                         <svg class="w-3 h-3 transition-transform duration-200" :class="{ 'rotate-90': openSales }" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
