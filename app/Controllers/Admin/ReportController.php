@@ -293,4 +293,85 @@ class ReportController extends Controller
         // --- 6. Load the View with the Data ---
         $this->view('admin.reports.sales_detail', $data, 'admin_layout');
     }
+   public function productSales()
+    {
+        AuthHelper::requireAdmin();
+
+        // 1. Handle filters
+        $today = date('Y-m-d');
+        $defaultStartDate = date('Y-m-01');
+        
+        $startDate = SanitizeHelper::string($_GET['start_date'] ?? $defaultStartDate);
+        $endDate = SanitizeHelper::string($_GET['end_date'] ?? $today);
+        $selectedCategory = SanitizeHelper::string($_GET['category'] ?? 'all');
+        $searchTerm = SanitizeHelper::string(trim($_GET['search'] ?? ''));
+
+        if (!$this->validateDate($startDate)) { $startDate = $defaultStartDate; }
+        if (!$this->validateDate($endDate)) { $endDate = $today; }
+        if (strtotime($endDate) < strtotime($startDate)) { $endDate = $startDate; }
+
+        // 2. Fetch data from model
+        $reportModel = $this->model('Report');
+        $categoryModel = $this->model('Category');
+
+        $reportData = $reportModel->getProductSalesReport($startDate, $endDate, $selectedCategory, $searchTerm);
+        $allCategories = $categoryModel->getAllSorted();
+
+        // 3. Calculate metrics and percentages
+        $totalRevenue = array_sum(array_column($reportData, 'total_sales'));
+        $totalQuantity = array_sum(array_column($reportData, 'total_quantity_sold'));
+        $totalCogs = array_sum(array_column($reportData, 'total_cogs'));
+        $totalGrossProfit = $totalRevenue - $totalCogs;
+        
+        foreach ($reportData as &$item) {
+            $item['percentage_of_total_sales'] = $totalRevenue > 0 ? ($item['total_sales'] / $totalRevenue) * 100 : 0;
+            $item['percentage_of_total_quantity'] = $totalQuantity > 0 ? ($item['total_quantity_sold'] / $totalQuantity) * 100 : 0;
+        }
+        unset($item);
+
+        // 4. Prepare data for the chart (Top 10 products by sales)
+        $chartItems = array_slice($reportData, 0, 10);
+        $chartData = [
+            'labels' => array_column($chartItems, 'product_name'),
+            'datasets' => [
+                [
+                    'label' => 'Total Penjualan',
+                    'data' => array_column($chartItems, 'total_sales'),
+                    'backgroundColor' => 'rgba(79, 70, 229, 0.7)',
+                    'borderColor' => 'rgba(79, 70, 229, 1)',
+                    'borderWidth' => 1,
+                    'yAxisID' => 'y',
+                ],
+                [
+                    'label' => 'Jumlah Terjual',
+                    'data' => array_column($chartItems, 'total_quantity_sold'),
+                    'backgroundColor' => 'rgba(30, 64, 175, 0.5)',
+                    'borderColor' => 'rgba(30, 64, 175, 1)',
+                    'borderWidth' => 1,
+                    'yAxisID' => 'y1',
+                    'type' => 'line',
+                    'tension' => 0.2
+                ]
+            ]
+        ];
+
+        // 5. Send data to the view
+        $data = [
+            'pageTitle' => 'Laporan Penjualan Produk',
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'categories' => $allCategories,
+            'selectedCategory' => $selectedCategory,
+            'searchTerm' => $searchTerm,
+            'reportData' => $reportData,
+            'metrics' => [
+                'total_revenue' => $totalRevenue,
+                'total_quantity' => $totalQuantity,
+                'total_gross_profit' => $totalGrossProfit,
+            ],
+            'chartData' => $chartData,
+        ];
+        
+        $this->view('admin.reports.product_sales', $data, 'admin_layout');
+    }
 }

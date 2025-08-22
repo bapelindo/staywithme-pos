@@ -13,7 +13,7 @@ class Dashboard extends Model
     {
         $this->pdo = Database::getInstance()->getConnection();
     }
-
+    
     private function getDateCondition($period, $date = null)
     {
         $baseDate = $date ? "'$date'" : 'CURRENT_DATE';
@@ -33,50 +33,66 @@ class Dashboard extends Model
         $dateCondition = $this->getDateCondition($period, $date);
 
         $sql = "SELECT
-                    COALESCE(SUM(total_amount), 0) as total_sales,
-                    COALESCE(SUM(CASE WHEN status = 'paid' THEN total_amount ELSE 0 END), 0) as paid_sales,
-                    COALESCE(SUM(CASE WHEN status != 'paid' AND status != 'cancelled' THEN total_amount ELSE 0 END), 0) as unpaid_sales,
-                    COUNT(id) as transactions
+                    COALESCE(SUM(CASE WHEN status IN ('paid', 'served') THEN total_amount ELSE 0 END), 0) as total_sales,
+                    COALESCE(SUM(CASE WHEN status IN ('paid', 'served') THEN total_amount ELSE 0 END), 0) as paid_sales,
+                    COALESCE(SUM(CASE WHEN status = 'pending_payment' THEN total_amount ELSE 0 END), 0) as unpaid_sales,
+                    COUNT(CASE WHEN status IN ('paid', 'served') THEN id ELSE NULL END) as transactions
                 FROM orders
                 WHERE {$dateCondition}";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute();
         $metrics = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        $sql = "SELECT COALESCE(SUM(oi.quantity), 0) as total_products
+        $sql_products = "SELECT COALESCE(SUM(oi.quantity), 0) as total_products
                 FROM order_items oi
                 JOIN orders o ON oi.order_id = o.id
-                WHERE {$dateCondition}";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute();
-        $metrics['total_products'] = $stmt->fetchColumn();
+                WHERE {$dateCondition} AND o.status IN ('paid', 'served')";
+        
+        $stmt_products = $this->pdo->prepare($sql_products);
+        $stmt_products->execute();
+        $metrics['total_products'] = $stmt_products->fetchColumn();
 
-        $metrics['sales_per_transaction'] = $metrics['transactions'] > 0 ? $metrics['total_sales'] / $metrics['transactions'] : 0;
-        $metrics['products_per_transaction'] = $metrics['transactions'] > 0 ? $metrics['total_products'] / $metrics['transactions'] : 0;
+        $metrics['sales_per_transaction'] = ($metrics['transactions'] ?? 0) > 0 ? ($metrics['total_sales'] ?? 0) / $metrics['transactions'] : 0;
+        $metrics['products_per_transaction'] = ($metrics['transactions'] ?? 0) > 0 ? ($metrics['total_products'] ?? 0) / $metrics['transactions'] : 0;
 
         return $metrics;
     }
 
-    public function getMonthToDateSales()
+    /**
+     * === PERBAIKAN DI SINI ===
+     * Method ini sekarang menerima parameter tanggal.
+     */
+    public function getMonthToDateSales($date = null)
     {
+        $baseDate = $date ? $this->pdo->quote($date) : 'CURRENT_DATE';
+        
         $sql = "SELECT COALESCE(SUM(total_amount), 0) as mtd_sales
                 FROM orders
-                WHERE DATE(created_at) >= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01') AND DATE(created_at) <= CURRENT_DATE";
+                WHERE status IN ('paid', 'served') 
+                AND DATE(created_at) >= DATE_FORMAT($baseDate, '%Y-%m-01') 
+                AND DATE(created_at) <= DATE($baseDate)";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute();
         return $stmt->fetchColumn();
     }
 
-    public function getMonthlyProjection()
+    /**
+     * === PERBAIKAN DI SINI ===
+     * Method ini sekarang menerima parameter tanggal.
+     */
+    public function getMonthlyProjection($date = null)
     {
+        $baseDate = $date ? $this->pdo->quote($date) : 'CURRENT_DATE';
+
         $sql = "SELECT 
-            (AVG(daily_total) * DAY(LAST_DAY(CURRENT_DATE))) as projection
+            (AVG(daily_total) * DAY(LAST_DAY($baseDate))) as projection
             FROM (
                 SELECT DATE(created_at) as sale_date, 
                        SUM(total_amount) as daily_total
                 FROM orders
-                WHERE DATE(created_at) >= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01')
-                AND DATE(created_at) <= CURRENT_DATE
+                WHERE status IN ('paid', 'served')
+                AND DATE(created_at) >= DATE_FORMAT($baseDate, '%Y-%m-01')
+                AND DATE(created_at) <= DATE($baseDate)
                 GROUP BY DATE(created_at)
             ) as daily_totals";
         
@@ -89,7 +105,6 @@ class Dashboard extends Model
     {
         $currentDate = new \DateTime($date);
 
-        // Helper function to get date offsets
         $getPrevDate = function ($p, $d) {
             $current = new \DateTime($d);
             switch ($p) {
@@ -138,7 +153,7 @@ class Dashboard extends Model
                 {$labelKey} as label_key,
                 SUM(total_amount) as sales
             FROM orders
-            WHERE {$dateCondition}
+            WHERE {$dateCondition} AND status IN ('paid', 'served')
             GROUP BY {$groupBy}
             
             UNION ALL
@@ -148,7 +163,7 @@ class Dashboard extends Model
                 {$labelKey} as label_key,
                 SUM(total_amount) as sales
             FROM orders
-            WHERE {$prevDateCondition}
+            WHERE {$prevDateCondition} AND status IN ('paid', 'served')
             GROUP BY {$groupBy}
         ";
 
@@ -156,7 +171,6 @@ class Dashboard extends Model
         $stmt->execute();
         $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Populate the full label set with data from the database
         foreach ($results as $row) {
             $key = $row['label_key'];
             if (isset($fullLabelSet[$key])) {
@@ -169,5 +183,49 @@ class Dashboard extends Model
         }
         
         return array_values($fullLabelSet);
+    }
+    
+    public function getSalesForecastNext7Days(): array
+    {
+        $sql = "
+            SELECT 
+                DAYOFWEEK(sale_date) as day_of_week,
+                AVG(daily_total) as average_sales
+            FROM (
+                SELECT 
+                    DATE(created_at) as sale_date, 
+                    SUM(total_amount) as daily_total
+                FROM orders
+                WHERE 
+                    status IN ('paid', 'served') AND
+                    created_at >= DATE_SUB(CURRENT_DATE, INTERVAL 90 DAY)
+                GROUP BY DATE(created_at)
+            ) as daily_sales
+            GROUP BY DAYOFWEEK(sale_date)
+        ";
+
+        try {
+            $stmt = $this->pdo->query($sql);
+            $results = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+
+            $forecast = [];
+            $days_in_indonesian = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+
+            for ($i = 1; $i <= 7; $i++) {
+                $date = new \DateTime('+' . $i . ' day');
+                $dayOfWeek = $date->format('w') + 1;
+                
+                $forecast[] = [
+                    'date' => $date->format('Y-m-d'),
+                    'day_name' => $days_in_indonesian[$date->format('w')],
+                    'projected_sales' => (float)($results[$dayOfWeek] ?? 0)
+                ];
+            }
+            return $forecast;
+
+        } catch (\PDOException $e) {
+            error_log("Error getting sales forecast: " . $e->getMessage());
+            return [];
+        }
     }
 }

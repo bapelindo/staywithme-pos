@@ -1,4 +1,6 @@
 <?php 
+// File: app/Views/admin/reports/financials.php
+
 use App\Helpers\NumberHelper;
 use App\Helpers\UrlHelper;
 ?>
@@ -78,7 +80,7 @@ use App\Helpers\UrlHelper;
                     $revenueComponents = [
                         ['label' => 'Penjualan Kotor', 'value' => $financials['gross_sales'] ?? 0],
                         ['label' => 'Biaya Layanan', 'value' => $financials['service_charge'] ?? 0],
-                        ['label' => 'Biaya Layanan MDR', 'value' => $financials['mdr_service_fee'] ?? 0], // <-- BARIS PENYEBAB ERROR
+                        // BARIS PENYEBAB ERROR DIHAPUS
                         ['label' => 'Pajak', 'value' => $financials['tax'] ?? 0],
                     ];
                     foreach ($revenueComponents as $item): 

@@ -153,8 +153,8 @@ class Order extends Model {
      * Mengupdate status order.
      */
     public function updateStatus(int $orderId, string $newStatus): bool {
-         // ...(Kode updateStatus lengkap seperti sebelumnya)...
-        $allowedStatuses = ['pending', 'received', 'preparing', 'ready', 'served', 'paid', 'cancelled'];
+        // PERBAIKAN: Tambahkan 'pending_payment' dan hapus 'pending' yang tidak terpakai.
+        $allowedStatuses = ['pending_payment', 'received', 'preparing', 'ready', 'served', 'paid', 'cancelled'];
         if ($orderId <= 0 || !in_array($newStatus, $allowedStatuses)) {
              error_log("Invalid status '{$newStatus}' or Order ID {$orderId}.");
              return false;
@@ -178,7 +178,8 @@ class Order extends Model {
     public function findByStatus(string|array $status, string $orderBy = 'o.order_time ASC', ?int $limit = null): array {
          // ...(Kode findByStatus lengkap seperti sebelumnya)...
         $statuses = is_array($status) ? $status : [$status];
-        $allowedStatuses = ['pending', 'received', 'preparing', 'ready', 'served', 'paid', 'cancelled'];
+        // PERBAIKAN: Tambahkan 'pending_payment'
+        $allowedStatuses = ['pending_payment', 'received', 'preparing', 'ready', 'served', 'paid', 'cancelled'];
         $validStatuses = array_intersect($statuses, $allowedStatuses);
         if (empty($validStatuses)) return [];
         $allowedOrderBy = ['o.order_time ASC', 'o.order_time DESC', 'o.updated_at ASC', 'o.updated_at DESC', 'o.id ASC', 'o.id DESC'];
@@ -203,7 +204,8 @@ class Order extends Model {
       */
      public function getActiveOrdersForDisplay(array $statuses = ['received', 'preparing'], ?int $lastOrderId = null): array {
          // ...(Kode getActiveOrdersForDisplay lengkap seperti sebelumnya)...
-         $allowedStatuses = ['pending', 'received', 'preparing', 'ready', 'served', 'paid', 'cancelled'];
+         // PERBAIKAN: Tambahkan 'pending_payment'
+         $allowedStatuses = ['pending_payment', 'received', 'preparing', 'ready', 'served', 'paid', 'cancelled'];
          $validStatuses = array_intersect($statuses, $allowedStatuses);
          if (empty($validStatuses)) return [];
          $placeholders = implode(',', array_fill(0, count($validStatuses), '?'));

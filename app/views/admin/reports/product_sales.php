@@ -214,5 +214,34 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
-/* ... (CSS styles for filters, metrics, and table) ... */
+.filter-label {
+    @apply block text-sm font-medium text-gray-600 mb-1;
+}
+.filter-input {
+    @apply w-full bg-white border border-gray-300 rounded-lg shadow-sm text-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all;
+}
+.btn-filter {
+    @apply w-12 h-10 bg-indigo-600 text-white rounded-lg shadow-sm hover:bg-indigo-700 transition-all flex items-center justify-center;
+}
+.btn-export {
+    @apply flex items-center bg-white border border-gray-300 text-gray-700 text-sm font-semibold py-2 px-4 rounded-lg shadow-sm hover:bg-gray-50 transition-all;
+}
+.metric-card-clean {
+    @apply bg-white p-6 rounded-xl shadow-lg border border-gray-200 text-center;
+}
+.metric-label-clean {
+    @apply text-sm font-semibold text-gray-500 mb-1;
+}
+.metric-value-clean {
+    @apply text-3xl font-bold text-gray-800;
+}
+.clean-table {
+    @apply w-full;
+}
+.clean-table th {
+    @apply px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider bg-gray-50;
+}
+.clean-table td {
+    @apply px-6 py-4 text-sm text-gray-700;
+}
 </style>

@@ -162,7 +162,42 @@ class MenuController extends Controller {
     }
 
 
-     public function toggleAvailability(int $id) { /* ... (Kode AJAX tetap sama) ... */ AuthHelper::requireRole(['admin', 'staff']); /* ... */ }
+    
+
+    public function toggleAvailability(int $id) {
+        // Hanya izinkan role admin dan staff, dan hanya metode POST
+        AuthHelper::requireRole(['admin', 'staff']);
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            return $this->jsonResponse(['success' => false, 'message' => 'Metode tidak valid.'], 405);
+        }
+
+        $safeId = SanitizeHelper::integer($id);
+        if ($safeId <= 0) {
+            return $this->jsonResponse(['success' => false, 'message' => 'ID Item tidak valid.'], 400);
+        }
+
+        // Cari item menu yang ada
+        $menuItem = $this->menuItemModel->findById($safeId);
+        if (!$menuItem) {
+            return $this->jsonResponse(['success' => false, 'message' => 'Item menu tidak ditemukan.'], 404);
+        }
+
+        // Tentukan status ketersediaan yang baru (kebalikannya)
+        $newAvailability = !(bool)$menuItem['is_available'];
+
+        // Update status di database menggunakan model
+        if ($this->menuItemModel->setAvailability($safeId, $newAvailability)) {
+            // Jika berhasil, kirim respons JSON sukses beserta status baru
+            return $this->jsonResponse([
+                'success' => true,
+                'is_available' => $newAvailability,
+                'message' => 'Status ketersediaan berhasil diubah.'
+            ]);
+        } else {
+            // Jika gagal update, kirim respons JSON error
+            return $this->jsonResponse(['success' => false, 'message' => 'Gagal memperbarui status di database.'], 500);
+        }
+    }
 
     // === METHOD KATEGORI (Gunakan kunci flash standar) ===
     public function categories() { AuthHelper::requireAdmin(); $categories = $this->categoryModel->getAllSorted(); $this->view('admin.menu.categories', ['pageTitle' => 'Kelola Kategori Menu','categories' => $categories], 'admin_layout'); }

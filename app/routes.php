@@ -98,9 +98,11 @@ $router->addRoute('GET', '/admin/reports/summary', 'Admin\\ReportController@summ
 $router->addRoute('GET', '/admin/reports/financials', 'Admin\\ReportController@financials');
 $router->addRoute('GET', '/admin/reports/sales-detail', 'Admin\\ReportController@salesDetail');
 $router->addRoute('GET', '/admin/reports/summary/export', 'Admin\\ReportController@exportSummary');
-// Rute Pengaturan (jika ditambahkan nanti)
-// $router->addRoute('GET', '/admin/settings', 'Admin\\SettingsController@index');
-// $router->addRoute('POST', '/admin/settings/update', 'Admin\\SettingsController@update');
+$router->addRoute('GET', '/admin/reports/product-sales', 'Admin\\ReportController@productSales');
+
+// Rute Pengaturan
+$router->addRoute('GET', '/admin/settings', 'Admin\\SettingsController@index');
+$router->addRoute('POST', '/admin/settings/update', 'Admin\\SettingsController@update');
 
 
 // =============================================
