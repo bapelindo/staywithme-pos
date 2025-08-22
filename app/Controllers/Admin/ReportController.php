@@ -7,6 +7,7 @@ use App\Core\Controller;
 use App\Helpers\AuthHelper;
 use App\Helpers\SanitizeHelper;
 use App\Models\Report;
+use App\Models\Category; // Ditambahkan untuk mengambil daftar kategori
 use App\Models\Order;
 use App\Models\OrderItem;
 use DateTime;
@@ -293,11 +294,12 @@ class ReportController extends Controller
         // --- 6. Load the View with the Data ---
         $this->view('admin.reports.sales_detail', $data, 'admin_layout');
     }
-   public function productSales()
+    
+    public function productSales()
     {
         AuthHelper::requireAdmin();
 
-        // 1. Handle filters
+        // 1. Handle filters, including new graph filters
         $today = date('Y-m-d');
         $defaultStartDate = date('Y-m-01');
         
@@ -305,7 +307,9 @@ class ReportController extends Controller
         $endDate = SanitizeHelper::string($_GET['end_date'] ?? $today);
         $selectedCategory = SanitizeHelper::string($_GET['category'] ?? 'all');
         $searchTerm = SanitizeHelper::string(trim($_GET['search'] ?? ''));
-
+        $groupBy = SanitizeHelper::string($_GET['group_by'] ?? 'day');
+        $chartMetric = SanitizeHelper::string($_GET['chart_metric'] ?? 'penjualan');
+        
         if (!$this->validateDate($startDate)) { $startDate = $defaultStartDate; }
         if (!$this->validateDate($endDate)) { $endDate = $today; }
         if (strtotime($endDate) < strtotime($startDate)) { $endDate = $startDate; }
@@ -314,46 +318,16 @@ class ReportController extends Controller
         $reportModel = $this->model('Report');
         $categoryModel = $this->model('Category');
 
-        $reportData = $reportModel->getProductSalesReport($startDate, $endDate, $selectedCategory, $searchTerm);
+        $reportData = $reportModel->getProductSalesReportV2($startDate, $endDate, $selectedCategory, $searchTerm);
         $allCategories = $categoryModel->getAllSorted();
-
-        // 3. Calculate metrics and percentages
+        
+        // 3. Calculate metrics
         $totalRevenue = array_sum(array_column($reportData, 'total_sales'));
         $totalQuantity = array_sum(array_column($reportData, 'total_quantity_sold'));
-        $totalCogs = array_sum(array_column($reportData, 'total_cogs'));
-        $totalGrossProfit = $totalRevenue - $totalCogs;
-        
-        foreach ($reportData as &$item) {
-            $item['percentage_of_total_sales'] = $totalRevenue > 0 ? ($item['total_sales'] / $totalRevenue) * 100 : 0;
-            $item['percentage_of_total_quantity'] = $totalQuantity > 0 ? ($item['total_quantity_sold'] / $totalQuantity) * 100 : 0;
-        }
-        unset($item);
+        $totalGrossProfit = array_sum(array_column($reportData, 'gross_profit'));
 
-        // 4. Prepare data for the chart (Top 10 products by sales)
-        $chartItems = array_slice($reportData, 0, 10);
-        $chartData = [
-            'labels' => array_column($chartItems, 'product_name'),
-            'datasets' => [
-                [
-                    'label' => 'Total Penjualan',
-                    'data' => array_column($chartItems, 'total_sales'),
-                    'backgroundColor' => 'rgba(79, 70, 229, 0.7)',
-                    'borderColor' => 'rgba(79, 70, 229, 1)',
-                    'borderWidth' => 1,
-                    'yAxisID' => 'y',
-                ],
-                [
-                    'label' => 'Jumlah Terjual',
-                    'data' => array_column($chartItems, 'total_quantity_sold'),
-                    'backgroundColor' => 'rgba(30, 64, 175, 0.5)',
-                    'borderColor' => 'rgba(30, 64, 175, 1)',
-                    'borderWidth' => 1,
-                    'yAxisID' => 'y1',
-                    'type' => 'line',
-                    'tension' => 0.2
-                ]
-            ]
-        ];
+        // 4. Prepare data for the chart
+        $chartData = $reportModel->getProductSalesChartData($startDate, $endDate, $selectedCategory, $searchTerm, $groupBy, $chartMetric);
 
         // 5. Send data to the view
         $data = [
@@ -370,6 +344,8 @@ class ReportController extends Controller
                 'total_gross_profit' => $totalGrossProfit,
             ],
             'chartData' => $chartData,
+            'groupBy' => $groupBy,
+            'chartMetric' => $chartMetric,
         ];
         
         $this->view('admin.reports.product_sales', $data, 'admin_layout');

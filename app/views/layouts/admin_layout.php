@@ -1,218 +1,199 @@
 <?php
-// app/Views/admin/reports/product_sales.php (CORRECTED & REDESIGNED)
+// File: app/Views/layouts/admin_layout.php
 
-use App\Helpers\NumberHelper;
-use App\Helpers\UrlHelper;
 use App\Helpers\SanitizeHelper;
-use App\Helpers\DateHelper; // <-- FIX: Added this line
-
-// Data from Controller (remains the same)
-$pageTitle = $pageTitle ?? 'Laporan Penjualan Produk';
-$startDate = $startDate ?? date('Y-m-01');
-$endDate = $endDate ?? date('Y-m-d');
-$categories = $categories ?? [];
-$selectedCategory = $selectedCategory ?? 'all';
-$searchTerm = $searchTerm ?? '';
-$reportData = $reportData ?? [];
-$metrics = $metrics ?? [
-    'total_revenue' => 0,
-    'total_quantity' => 0,
-    'total_gross_profit' => 0,
-];
-$chartData = $chartData ?? ['labels' => [], 'datasets' => []];
+use App\Helpers\UrlHelper;
+use App\Helpers\AuthHelper;
+use App\Helpers\SessionHelper;
 ?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= isset($pageTitle) ? SanitizeHelper::html($pageTitle) . ' - ' : '' ?>Admin Panel</title>
+    <link rel="stylesheet" href="<?= \App\Helpers\UrlHelper::baseUrl('css/admin_output.css') ?>">
+    <link rel="stylesheet" href="<?= \App\Helpers\UrlHelper::baseUrl('css/all.min.css') ?>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4, h5, h6 { font-family: 'Poppins', sans-serif; }
+        [x-cloak] { display: none !important; }
+        .sidebar-link.active { background-color: #4f46e5; color: white; }
+        .sidebar-link:not(.active):hover { background-color: #eef2ff; color: #3730a3; }
+        .flash-message-overlap { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 1000; max-width: 24rem; width: 90%; pointer-events: none; }
+        .flash-message-overlap > div { pointer-events: auto; margin-bottom: 0.75rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
+        .sidebar-link i.fa-fw { margin-right: 0.75rem; }
 
-<div class="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-    <div class="flex flex-wrap justify-between items-center gap-4 mb-8">
-        <div>
-            <h1 class="text-3xl font-bold text-gray-800">
-                <?= SanitizeHelper::html($pageTitle) ?>
-            </h1>
-            <p class="text-sm text-gray-500 mt-1">
-                Periode: <?= SanitizeHelper::html(DateHelper::formatIndonesian($startDate, 'dateonly')) ?> - <?= SanitizeHelper::html(DateHelper::formatIndonesian($endDate, 'dateonly')) ?>
-            </p>
-        </div>
-        <div class="flex items-center space-x-2">
-            <a href="#" class="btn-export">
-                <i class="fas fa-file-export mr-2"></i>
-                <span>Export CSV</span>
-            </a>
-        </div>
-    </div>
+        .dropdown-indent-1 { padding-left: 0.75rem; }
+        .dropdown-indent-2 { padding-left: 0.5rem; }
+    </style>
+    <script> var APP_BASE_URL = "<?= rtrim(UrlHelper::baseUrl(), '/') ?>"; </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-slate-100">
 
-    <div class="mb-10">
-        <form action="<?= UrlHelper::baseUrl('admin/reports/product-sales') ?>" method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4 items-end">
-            <div>
-                <label for="start_date" class="filter-label">Tanggal Mulai</label>
-                <input type="date" name="start_date" id="start_date" value="<?= SanitizeHelper::html($startDate) ?>" class="filter-input" />
-            </div>
-            <div>
-                <label for="end_date" class="filter-label">Tanggal Akhir</label>
-                <input type="date" name="end_date" id="end_date" value="<?= SanitizeHelper::html($endDate) ?>" class="filter-input" />
-            </div>
-            <div>
-                <label for="category" class="filter-label">Kategori</label>
-                <select name="category" id="category" class="filter-input">
-                    <option value="all">Semua Kategori</option>
-                    <?php foreach ($categories as $category): ?>
-                        <option value="<?= SanitizeHelper::html($category['id']) ?>" <?= (int)$selectedCategory === $category['id'] ? 'selected' : '' ?>>
-                            <?= SanitizeHelper::html($category['name']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="flex space-x-2">
-                <div class="flex-grow">
-                    <label for="search" class="filter-label">Cari Produk</label>
-                    <input type="text" name="search" id="search" placeholder="Nama produk..." value="<?= SanitizeHelper::html($searchTerm) ?>" class="filter-input" />
-                </div>
-                <button type="submit" class="btn-filter self-end" aria-label="Terapkan Filter">
-                    <i class="fas fa-search"></i>
+    <div class="flex h-screen bg-slate-100 overflow-hidden">
+        <div id="sidebar-backdrop" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden lg:hidden"></div>
+
+        <aside id="admin-sidebar" class="fixed inset-y-0 left-0 bg-white shadow-lg w-64 z-40 transform -translate-x-full transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 flex flex-col">
+            <div class="flex items-center justify-between p-4 border-b h-16 flex-shrink-0">
+                <a href="<?= UrlHelper::baseUrl('/admin/dashboard') ?>" class="text-2xl font-bold text-indigo-600">Admin POS</a>
+                <button id="sidebar-close-btn" class="text-slate-500 hover:text-slate-700 lg:hidden">
+                    <i class="fas fa-times fa-fw"></i>
                 </button>
             </div>
-        </form>
-    </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <div class="metric-card-clean">
-            <h3 class="metric-label-clean">Total Penjualan</h3>
-            <p class="metric-value-clean"><?= NumberHelper::format_rupiah($metrics['total_revenue']) ?></p>
-        </div>
-        <div class="metric-card-clean">
-            <h3 class="metric-label-clean">Produk Terjual</h3>
-            <p class="metric-value-clean"><?= number_format($metrics['total_quantity']) ?></p>
-        </div>
-        <div class="metric-card-clean">
-            <h3 class="metric-label-clean">Total Laba Kotor</h3>
-            <p class="metric-value-clean text-green-600"><?= NumberHelper::format_rupiah($metrics['total_gross_profit']) ?></p>
-        </div>
-    </div>
-
-    <div class="bg-white rounded-xl shadow-lg border border-gray-200">
-        <div class="p-6 border-b border-gray-200">
-            <h3 class="text-xl font-semibold text-gray-800">Visualisasi & Detail Data</h3>
-        </div>
-
-        <div class="p-6">
-            <div class="relative h-96">
-                <canvas id="productSalesChart"></canvas>
-            </div>
-        </div>
-
-        <div class="w-full overflow-x-auto">
-            <table class="w-full clean-table">
-                <thead>
-                    <tr>
-                        <th>Produk</th>
-                        <th class="text-center">Jumlah</th>
-                        <th class="text-right">Penjualan</th>
-                        <th class="text-right">Laba Kotor</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                    <?php if (empty($reportData)): ?>
-                        <tr>
-                            <td colspan="4" class="text-center py-12 text-gray-500">
-                                <i class="fas fa-chart-pie text-4xl mb-3 text-gray-300"></i>
-                                <p class="font-medium">Tidak ada data untuk ditampilkan</p>
-                                <p class="text-sm">Silakan sesuaikan filter Anda.</p>
-                            </td>
-                        </tr>
-                    <?php else: ?>
-                        <?php foreach ($reportData as $item): ?>
-                            <tr>
-                                <td>
-                                    <div class="font-medium text-gray-800"><?= SanitizeHelper::html($item['product_name']) ?></div>
-                                    <div class="text-xs text-gray-500"><?= SanitizeHelper::html($item['category_name']) ?></div>
-                                </td>
-                                <td class="text-center"><?= number_format($item['total_quantity_sold']) ?></td>
-                                <td class="text-right"><?= NumberHelper::format_rupiah($item['total_sales']) ?></td>
-                                <td class="text-right font-semibold text-green-600"><?= NumberHelper::format_rupiah($item['gross_profit']) ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const formatRupiah = (value) => new Intl.NumberFormat('id-ID', { 
-        style: 'currency', currency: 'IDR', minimumFractionDigits: 0 
-    }).format(value);
-
-    const chartData = <?= json_encode($chartData); ?>;
-    const ctx = document.getElementById('productSalesChart')?.getContext('2d');
-    
-    if (ctx && chartData.labels.length > 0) {
-        new Chart(ctx, {
-            type: 'bar',
-            data: chartData,
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: { color: '#6B7280' }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        ticks: { 
-                            callback: value => new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(value),
-                            color: '#6B7280'
-                        },
-                        grid: {
-                            color: '#E5E7EB',
-                            borderDash: [3, 3]
-                        },
-                        title: { display: true, text: 'Total Penjualan (Rp)' }
-                    },
-                    y1: {
-                        beginAtZero: true,
-                        position: 'right',
-                        grid: { drawOnChartArea: false },
-                        ticks: { color: '#6B7280' },
-                        title: { display: true, text: 'Jumlah Terjual' }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { usePointStyle: true, padding: 20, color: '#4B5563' }
-                    },
-                    tooltip: {
-                        backgroundColor: '#1F2937',
-                        titleColor: '#F9FAFB',
-                        bodyColor: '#F3F4F6',
-                        borderColor: '#374151',
-                        borderWidth: 1,
-                        padding: 10,
-                        callbacks: { 
-                            label: (context) => {
-                                let label = context.dataset.label || '';
-                                if (label) { label += ': '; }
-                                if (context.dataset.yAxisID === 'y1') {
-                                    label += context.parsed.y;
-                                } else {
-                                    label += formatRupiah(context.parsed.y);
-                                }
-                                return label;
-                            }
+            <nav class="py-4 px-2 flex-grow overflow-y-auto no-scrollbar">
+                <ul class="space-y-1">
+                    <?php
+                        $currentPath = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
+                        $baseAdminPath = trim(parse_url(UrlHelper::baseUrl('/admin'), PHP_URL_PATH), '/');
+                        $relativeAdminPath = '';
+                        if (!empty($baseAdminPath) && str_starts_with($currentPath, $baseAdminPath)) {
+                             $relativeAdminPath = substr($currentPath, strlen($baseAdminPath));
+                        } elseif ($currentPath === $baseAdminPath) {
+                            $relativeAdminPath = '';
                         }
-                    }
-                },
-                interaction: { intersect: false, mode: 'index' }
-            }
-        });
-    }
-});
-</script>
 
-<style>
-/* ... (CSS styles for filters, metrics, and table) ... */
-</style>
+                        function isAdminLinkActive($linkPath, $currentRelativePath) {
+                            $normalizedLinkPath = ltrim($linkPath, '/');
+                             if ($normalizedLinkPath === '' && $currentRelativePath === '') return true;
+                            if ($normalizedLinkPath !== '' && str_starts_with($currentRelativePath, '/' . $normalizedLinkPath)) return true;
+                            return false;
+                        }
+
+                        function isReportLinkActive($baseReportPath, $currentRelativePath) {
+                            if (!is_string($baseReportPath) || !is_string($currentRelativePath)) return false;
+                            return str_starts_with($currentRelativePath, ltrim($baseReportPath, '/'));
+                        }
+
+                        $isReportActive = isReportLinkActive('/reports', $relativeAdminPath ?? '');
+                        
+                        $isSalesReportsActive = ($relativeAdminPath ?? '') === '/reports' || 
+                                                str_starts_with($relativeAdminPath ?? '', '/reports/summary') ||
+                                                str_starts_with($relativeAdminPath ?? '', '/reports/sales-detail');
+
+                        $isProductReportsActive = str_starts_with($relativeAdminPath ?? '', '/reports/product');
+                    ?>
+                    <li><a href="<?= UrlHelper::baseUrl('/admin/dashboard') ?>" class="sidebar-link flex items-center px-3 py-2.5 rounded-md text-sm font-medium text-slate-700 transition duration-150 <?= isAdminLinkActive('/', $relativeAdminPath) ? 'active' : '' ?>">
+                        <i class="fa-solid fa-gauge-high fa-fw"></i>
+                        Dashboard
+                    </a></li>
+                     <li><a href="<?= UrlHelper::baseUrl('/admin/kds') ?>" target="_blank" class="sidebar-link flex items-center px-3 py-2.5 rounded-md text-sm font-medium text-slate-700 transition duration-150">
+                         <i class="fa-solid fa-desktop fa-fw"></i>
+                        Kitchen Display (KDS)
+                    </a></li>
+                    <li><a href="<?= UrlHelper::baseUrl('/cds') ?>" target="_blank" class="sidebar-link flex items-center px-3 py-2.5 rounded-md text-sm font-medium text-slate-700 transition duration-150">
+                        <i class="fa-solid fa-tv fa-fw"></i>
+                        Customer Display (CDS)
+                    </a></li>
+                    <li><a href="<?= UrlHelper::baseUrl('/admin/orders') ?>" class="sidebar-link flex items-center px-3 py-2.5 rounded-md text-sm font-medium text-slate-700 transition duration-150 <?= isAdminLinkActive('/orders', $relativeAdminPath) ? 'active' : '' ?>">
+                        <i class="fa-solid fa-receipt fa-fw"></i>
+                        Pesanan
+                        <span id="new-order-count-badge" class="ml-auto bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+                    </a></li>
+                    <li><a href="<?= UrlHelper::baseUrl('/admin/menu') ?>" class="sidebar-link flex items-center px-3 py-2.5 rounded-md text-sm font-medium text-slate-700 transition duration-150 <?= (isAdminLinkActive('/menu', $relativeAdminPath) || isAdminLinkActive('/categories', $relativeAdminPath)) ? 'active' : '' ?>">
+                         <i class="fa-solid fa-utensils fa-fw"></i>
+                         Menu & Kategori
+                    </a></li>
+                     <li><a href="<?= UrlHelper::baseUrl('/admin/tables') ?>" class="sidebar-link flex items-center px-3 py-2.5 rounded-md text-sm font-medium text-slate-700 transition duration-150 <?= isAdminLinkActive('/tables', $relativeAdminPath) ? 'active' : '' ?>">
+                         <i class="fa-solid fa-table-cells fa-fw"></i>
+                         Meja
+                    </a></li>
+                    <?php if (AuthHelper::getUserRole() === 'admin'): ?>
+                        <li><a href="<?= UrlHelper::baseUrl('/admin/users') ?>" class="sidebar-link flex items-center px-3 py-2.5 rounded-md text-sm font-medium text-slate-700 transition duration-150 <?= isAdminLinkActive('/users', $relativeAdminPath) ? 'active' : '' ?>">
+                            <i class="fa-solid fa-users fa-fw"></i>
+                            Pengguna
+                        </a></li>
+                        <li x-data="{ open: <?= $isReportActive ? 'true' : 'false' ?> }" class="space-y-1">
+                            <button @click="open = !open" class="sidebar-link flex items-center justify-between w-full px-3 py-2.5 rounded-md text-sm font-medium text-slate-700 transition duration-150 <?= $isReportActive ? 'active' : '' ?>">
+                                <span class="flex items-center">
+                                    <i class="fa-solid fa-chart-line fa-fw"></i>
+                                    Laporan
+                                </span>
+                                <svg class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-90': open }" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
+                            </button>
+                            <ul x-show="open" x-cloak x-transition class="dropdown-indent-1 pr-2 space-y-1">
+                                <li><a href="<?= UrlHelper::baseUrl('admin/reports/summary') ?>" class="block px-3 py-1.5 rounded-md text-xs text-slate-500 hover:bg-indigo-50 hover:text-indigo-700 <?= isAdminLinkActive('/reports/summary', $relativeAdminPath) ? 'font-semibold text-indigo-700' : '' ?>">Ringkasan Penjualan</a></li>
+                                <li><a href="<?= UrlHelper::baseUrl('admin/reports/product-sales') ?>" class="block px-3 py-1.5 rounded-md text-xs text-slate-500 hover:bg-indigo-50 hover:text-indigo-700 <?= isAdminLinkActive('/reports/product-sales', $relativeAdminPath) ? 'font-semibold text-indigo-700' : '' ?>">Penjualan per Produk</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="<?= UrlHelper::baseUrl('/admin/settings') ?>" class="sidebar-link flex items-center px-3 py-2.5 rounded-md text-sm font-medium text-slate-700 transition duration-150 <?= isAdminLinkActive('/settings', $relativeAdminPath) ? 'active' : '' ?>">
+                            <i class="fa-solid fa-gears fa-fw"></i>
+                            Pengaturan
+                        </a></li>
+                    <?php endif; ?>
+                </ul>
+            </nav>
+
+            <div class="p-4 border-t mt-auto flex-shrink-0">
+                 <a href="<?= UrlHelper::baseUrl('/admin/logout') ?>" class="flex items-center w-full px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:bg-red-50 transition duration-150">
+                    <i class="fa-solid fa-right-from-bracket fa-fw"></i>
+                    Logout
+                </a>
+            </div>
+        </aside>
+
+        <div class="flex-1 flex flex-col overflow-hidden">
+             <header class="bg-white shadow-sm border-b h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8">
+                 <button id="sidebar-open-btn" class="text-slate-500 hover:text-slate-700 lg:hidden">
+                     <i class="fas fa-bars fa-fw"></i>
+                 </button>
+                 <h1 class="text-lg font-semibold text-slate-700 hidden md:block">
+                     <?= isset($pageTitle) ? SanitizeHelper::html($pageTitle) : 'Admin Dashboard' ?>
+                 </h1>
+                 <div class="text-sm text-slate-600">
+                     Halo, <span class="font-medium"><?= SanitizeHelper::html(AuthHelper::getUserName() ?? 'User') ?></span>!
+                     (<span class="text-xs"><?= SanitizeHelper::html(ucfirst(AuthHelper::getUserRole() ?? '')) ?></span>)
+                 </div>
+            </header>
+
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-slate-100 p-4 sm:p-6 lg:p-8">
+                 <?php
+                    if (isset($viewPath) && file_exists($viewPath)) {
+                        require $viewPath;
+                    } else {
+                        echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">';
+                        echo '<strong class="font-bold">Error!</strong>';
+                        echo '<span class="block sm:inline"> Admin view content ('. htmlspecialchars($viewPath ?? 'path not set', ENT_QUOTES) .') could not be loaded or found.</span>';
+                        echo '</div>';
+                    }
+                 ?>
+            </main>
+        </div>
+    </div>
+
+     <div class="flash-message-overlap">
+        <?php
+        if (method_exists('App\Helpers\SessionHelper', 'displayAllFlashMessages')) {
+            SessionHelper::displayAllFlashMessages('p-4 rounded-md text-sm border', [
+                 'success' => 'bg-green-100 border-green-300 text-green-800',
+                 'error'   => 'bg-red-100 border-red-300 text-red-800',
+                 'info'    => 'bg-blue-100 border-blue-300 text-blue-800',
+                 'warning' => 'bg-yellow-100 border-yellow-300 text-yellow-800'
+            ], 'overlap');
+        } else {
+             echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">';
+             echo 'Error: SessionHelper::displayAllFlashMessages() method not found.';
+             echo '</div>';
+        }
+        ?>
+     </div>
+
+    <script src="<?= UrlHelper::baseUrl('js/admin-main.js') ?>" defer></script>
+    <script src="<?= UrlHelper::baseUrl('js/admin-notifications.js') ?>" defer></script>
+    <?php
+        if (!empty($scripts) && is_array($scripts)) {
+            foreach ($scripts as $script) {
+                echo '<script src="' . SanitizeHelper::html(UrlHelper::baseUrl($script)) . '" defer></script>' . "\n";
+            }
+        }
+    ?>
+    </body>
+</html>

@@ -6,6 +6,7 @@ use App\Core\Model;
 use App\Core\Database;
 use PDO;
 use DateTime;
+use PDOException; // Ditambahkan untuk penanganan error
 
 class Report extends Model
 {
@@ -27,7 +28,6 @@ class Report extends Model
 
     private function buildSalesQuery($columns, $startDate, $endDate, $filterBy, $searchTerm, $statusFilter)
     {
-        // === PERBAIKAN LOGIKA QUERY ===
         // LEFT JOIN diubah menjadi INNER JOIN ke payments untuk memastikan hanya transaksi yang sudah dibayar yang masuk.
         $sql = "SELECT {$columns}
                 FROM payments p
@@ -42,13 +42,11 @@ class Report extends Model
         $params[':startDate'] = $startDate;
         $params[':endDate'] = $endDate;
 
-        // Filter status pesanan (opsional, jika diperlukan)
         if (!empty($statusFilter) && $statusFilter !== 'all') {
             $whereClauses[] = "o.status = :status";
             $params[':status'] = $statusFilter;
         }
 
-        // Filter pencarian
         if (!empty($searchTerm)) {
             $searchCondition = "(
                 o.order_number LIKE :searchTerm1 OR
@@ -81,7 +79,6 @@ class Report extends Model
                     p.payment_method,
                     p.amount_paid";
 
-        // Menggunakan status 'all' secara default untuk detail, karena filter utama adalah tanggal pembayaran
         $queryInfo = $this->buildSalesQuery($columns, $startDate, $endDate, $filterBy, $searchTerm, 'all');
         
         $dateColumnSort = ($filterBy === 'payment_time') ? 'p.payment_time' : 'o.created_at';
@@ -99,7 +96,6 @@ class Report extends Model
                     SUM(o.total_amount - COALESCE(o.refunds, 0)) as net_sales,
                     SUM(p.amount_paid) as total_payments";
 
-        // Menggunakan status 'all' secara default untuk metrik, karena filter utama adalah tanggal pembayaran
         $queryInfo = $this->buildSalesQuery($columns, $startDate, $endDate, $filterBy, $searchTerm, 'all');
 
         $stmt = $this->pdo->prepare($queryInfo['sql']);
@@ -225,49 +221,124 @@ class Report extends Model
         return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 
-public function getProductSalesReport($startDate, $endDate, $categoryId = 'all', $searchTerm = '')
-{
-    $sql = "SELECT
-                mi.id as product_id,
-                mi.name as product_name,
-                mi.cost as product_cost,
-                c.name as category_name,
-                SUM(oi.quantity) as total_quantity_sold,
-                SUM(oi.subtotal) as total_sales,
-                (SUM(oi.quantity) * mi.cost) as total_cogs,
-                (SUM(oi.subtotal) - (SUM(oi.quantity) * mi.cost)) as gross_profit
-            FROM order_items oi
-            JOIN menu_items mi ON oi.menu_item_id = mi.id
-            JOIN orders o ON oi.order_id = o.id
-            JOIN categories c ON mi.category_id = c.id
-            WHERE o.status IN ('paid', 'served')
-            AND DATE(o.order_time) BETWEEN :startDate AND :endDate";
+    /**
+     * getProductSalesReportV2
+     * Mengambil data laporan penjualan produk yang detail untuk tabel.
+     * Termasuk placeholder untuk data refund yang belum didukung skema.
+     */
+    public function getProductSalesReportV2($startDate, $endDate, $categoryId = 'all', $searchTerm = '')
+    {
+        $sql = "SELECT
+                    mi.id as product_id,
+                    mi.name as product_name,
+                    mi.cost as product_cost,
+                    c.name as category_name,
+                    SUM(oi.quantity) as total_quantity_sold,
+                    SUM(oi.subtotal) as total_sales,
+                    -- Placeholders for refund data as schema doesn't support per-item refund tracking
+                    0.00 as total_refund_amount,
+                    0 as total_refund_quantity,
+                    (SUM(oi.quantity) * mi.cost) as total_cogs,
+                    0.00 as total_cogs_refund, -- Placeholder
+                    (SUM(oi.subtotal) - (SUM(oi.quantity) * mi.cost)) as gross_profit
+                FROM order_items oi
+                JOIN menu_items mi ON oi.menu_item_id = mi.id
+                JOIN orders o ON oi.order_id = o.id
+                JOIN categories c ON mi.category_id = c.id
+                WHERE o.status IN ('paid', 'served')
+                AND DATE(o.order_time) BETWEEN :startDate AND :endDate";
 
-    $params = [
-        ':startDate' => $startDate,
-        ':endDate' => $endDate,
-    ];
+        $params = [
+            ':startDate' => $startDate,
+            ':endDate' => $endDate,
+        ];
 
-    if ($categoryId !== 'all' && is_numeric($categoryId)) {
-        $sql .= " AND mi.category_id = :categoryId";
-        $params[':categoryId'] = (int)$categoryId;
+        if ($categoryId !== 'all' && is_numeric($categoryId)) {
+            $sql .= " AND mi.category_id = :categoryId";
+            $params[':categoryId'] = (int)$categoryId;
+        }
+
+        if (!empty($searchTerm)) {
+            $sql .= " AND mi.name LIKE :searchTerm";
+            $params[':searchTerm'] = '%' . $searchTerm . '%';
+        }
+
+        $sql .= " GROUP BY mi.id, mi.name, c.name, mi.cost
+                  ORDER BY total_sales DESC";
+        
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error getting V2 product sales report: " . $e->getMessage());
+            return [];
+        }
     }
 
-    if (!empty($searchTerm)) {
-        $sql .= " AND mi.name LIKE :searchTerm";
-        $params[':searchTerm'] = '%' . $searchTerm . '%';
-    }
+    /**
+     * getProductSalesChartData
+     * Mengambil data agregat untuk grafik penjualan produk.
+     */
+    public function getProductSalesChartData($startDate, $endDate, $categoryId, $searchTerm, $groupBy, $metric)
+    {
+        $dateFormats = [
+            'day' => '%Y-%m-%d',
+            'month' => '%Y-%m',
+            'year' => '%Y'
+        ];
+        $dateFormat = $dateFormats[$groupBy] ?? '%Y-%m-%d';
 
-    $sql .= " GROUP BY mi.id, mi.name, c.name, mi.cost
-              ORDER BY total_sales DESC";
-    
-    try {
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {
-        error_log("Error getting product sales report: " . $e->getMessage());
-        return [];
+        $metricSql = $metric === 'produk' ? 'SUM(oi.quantity)' : 'SUM(oi.subtotal)';
+        $metricLabel = $metric === 'produk' ? 'Jumlah Produk' : 'Penjualan (Rp)';
+
+        $sql = "SELECT
+                    DATE_FORMAT(o.order_time, '{$dateFormat}') as period,
+                    {$metricSql} as value
+                FROM order_items oi
+                JOIN menu_items mi ON oi.menu_item_id = mi.id
+                JOIN orders o ON oi.order_id = o.id
+                JOIN categories c ON mi.category_id = c.id
+                WHERE o.status IN ('paid', 'served')
+                AND DATE(o.order_time) BETWEEN :startDate AND :endDate";
+
+        $params = [
+            ':startDate' => $startDate,
+            ':endDate' => $endDate,
+        ];
+
+        if ($categoryId !== 'all' && is_numeric($categoryId)) {
+            $sql .= " AND mi.category_id = :categoryId";
+            $params[':categoryId'] = (int)$categoryId;
+        }
+
+        if (!empty($searchTerm)) {
+            $sql .= " AND mi.name LIKE :searchTerm";
+            $params[':searchTerm'] = '%' . $searchTerm . '%';
+        }
+
+        $sql .= " GROUP BY period ORDER BY period ASC";
+
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            return [
+                'labels' => array_column($results, 'period'),
+                'datasets' => [
+                    [
+                        'label' => $metricLabel,
+                        'data' => array_column($results, 'value'),
+                        'backgroundColor' => 'rgba(79, 70, 229, 0.7)',
+                        'borderColor' => 'rgba(79, 70, 229, 1)',
+                        'borderWidth' => 1
+                    ]
+                ]
+            ];
+        } catch (PDOException $e) {
+            error_log("Error getting product sales chart data: " . $e->getMessage());
+            return ['labels' => [], 'datasets' => []];
+        }
     }
-}
 }
