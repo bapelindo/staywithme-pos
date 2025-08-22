@@ -79,10 +79,11 @@ use App\Helpers\SessionHelper;
                         
                         $isSalesReportsActive = false;
                         if (isset($relativeAdminPath) && is_string($relativeAdminPath)) {
-                            $isSalesReportsActive = str_starts_with($relativeAdminPath, '/reports/summary') || 
-                                                    str_starts_with($relativeAdminPath, '/reports/sales') || 
-                                                    $relativeAdminPath === '/reports' || 
-                                                    $relativeAdminPath === '/reports/';
+                            $isSalesReportsActive = str_starts_with($relativeAdminPath, '/reports/summary') ||
+                                                        str_starts_with($relativeAdminPath, '/reports/sales-detail') ||
+                                                        str_starts_with($relativeAdminPath, '/reports/sales') ||
+                                                        $relativeAdminPath === '/reports' ||
+                                                        $relativeAdminPath === '/reports/';
                         }
                     ?>
                     <li><a href="<?= UrlHelper::baseUrl('/admin/dashboard') ?>" class="sidebar-link flex items-center px-3 py-2.5 rounded-md text-sm font-medium text-slate-700 transition duration-150 <?= isAdminLinkActive('/', $relativeAdminPath) ? 'active' : '' ?>">
@@ -132,8 +133,8 @@ use App\Helpers\SessionHelper;
      
                                      <ul x-show="openSales" x-cloak x-transition class="dropdown-indent-2 space-y-1">
                                         <li><a href="<?= UrlHelper::baseUrl('admin/reports/summary') ?>" class="block px-3 py-1.5 rounded-md text-xs text-slate-500 hover:bg-indigo-50 hover:text-indigo-700 <?= isAdminLinkActive('/reports/summary', $relativeAdminPath) ? 'font-semibold text-indigo-700' : '' ?>">Ringkasan Penjualan</a></li>
-                                         <li><a href="<?= UrlHelper::baseUrl('/admin/reports/sales/detail') ?>" class="block px-3 py-1.5 rounded-md text-xs text-slate-500 hover:bg-indigo-50 hover:text-indigo-700 <?= isAdminLinkActive('/reports/sales/detail', $relativeAdminPath) ? 'font-semibold text-indigo-700' : '' ?>">Detail Penjualan</a></li>
-                                         <li><a href="<?= UrlHelper::baseUrl('/admin/reports') ?>" class="block px-3 py-1.5 rounded-md text-xs text-slate-500 hover:bg-indigo-50 hover:text-indigo-700 <?= ($relativeAdminPath === '/reports' || $relativeAdminPath === '/reports/') ? 'font-semibold text-indigo-700' : '' ?>">Grafik Penjualan</a></li>
+                                        <li><a href="<?= UrlHelper::baseUrl('admin/reports/sales-detail') ?>" class="block px-3 py-1.5 rounded-md text-xs text-slate-500 hover:bg-indigo-50 hover:text-indigo-700 <?= isAdminLinkActive('/reports/sales-detail', $relativeAdminPath) ? 'font-semibold text-indigo-700' : '' ?>">Detail Penjualan</a></li>
+                                        <li><a href="<?= UrlHelper::baseUrl('/admin/reports') ?>" class="block px-3 py-1.5 rounded-md text-xs text-slate-500 hover:bg-indigo-50 hover:text-indigo-700 <?= ($relativeAdminPath === '/reports' || $relativeAdminPath === '/reports/') ? 'font-semibold text-indigo-700' : '' ?>">Grafik Penjualan</a></li>
                                      </ul>
                                 </li>
                                 <li x-data="{ openProduct: <?= isReportLinkActive('/reports/product', $relativeAdminPath) ? 'true' : 'false' ?> }" class="space-y-1">

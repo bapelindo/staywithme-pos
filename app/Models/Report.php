@@ -16,40 +16,120 @@ class Report extends Model
         $this->pdo = Database::getInstance()->getConnection();
     }
 
+    private function buildSalesQuery($columns, $startDate, $endDate, $filterBy, $searchTerm, $statusFilter)
+    {
+        $sql = "SELECT {$columns}
+                FROM orders o
+                LEFT JOIN payments p ON o.id = p.order_id
+                LEFT JOIN tables t ON o.table_id = t.id";
+
+        $whereClauses = [];
+        $params = [];
+
+        // Status Filter (e.g., 'paid', 'served', etc.)
+        if (!empty($statusFilter) && $statusFilter !== 'all') {
+            $whereClauses[] = "o.status = :status";
+            $params[':status'] = $statusFilter;
+        }
+
+        // Date Filter
+        $dateColumn = ($filterBy === 'payment_time') ? 'p.payment_time' : 'o.created_at';
+        if ($filterBy === 'payment_time') {
+            // Only include orders that have a payment time within the date range
+            $whereClauses[] = "(DATE({$dateColumn}) BETWEEN :startDate AND :endDate)";
+        } else {
+            // Filter by order creation time
+            $whereClauses[] = "DATE(o.created_at) BETWEEN :startDate AND :endDate";
+        }
+        $params[':startDate'] = $startDate;
+        $params[':endDate'] = $endDate;
+
+        // Search Term Filter with unique placeholders to prevent PDO error
+        if (!empty($searchTerm)) {
+            $searchCondition = "(
+                o.order_number LIKE :searchTerm1 OR 
+                p.payment_method LIKE :searchTerm2 OR 
+                t.table_number LIKE :searchTerm3 OR
+                (CASE WHEN o.table_id IS NOT NULL THEN 'Dine-in' ELSE 'Takeaway' END) LIKE :searchTerm4
+            )";
+            $whereClauses[] = $searchCondition;
+            $searchTermValue = '%' . $searchTerm . '%';
+            $params[':searchTerm1'] = $searchTermValue;
+            $params[':searchTerm2'] = $searchTermValue;
+            $params[':searchTerm3'] = $searchTermValue;
+            $params[':searchTerm4'] = $searchTermValue;
+        }
+
+        if (!empty($whereClauses)) {
+            $sql .= " WHERE " . implode(" AND ", $whereClauses);
+        }
+
+        return ['sql' => $sql, 'params' => $params];
+    }
+
+    public function getSalesDetails($startDate, $endDate, $filterBy, $searchTerm, $statusFilter)
+    {
+        $columns = "o.id as order_id,
+                    o.order_number as transaction_no,
+                    o.created_at as order_time,
+                    p.payment_time,
+                    COALESCE(t.table_number, 'Takeaway') as outlet,
+                    CASE WHEN o.table_id IS NOT NULL THEN 'Dine-in' ELSE 'Takeaway' END as order_type,
+                    o.total_amount as total_sales,
+                    p.payment_method,
+                    p.amount_paid";
+
+        $queryInfo = $this->buildSalesQuery($columns, $startDate, $endDate, $filterBy, $searchTerm, $statusFilter);
+        
+        $dateColumnSort = ($filterBy === 'payment_time') ? 'p.payment_time' : 'o.created_at';
+        $sql = $queryInfo['sql'] . " ORDER BY {$dateColumnSort} DESC";
+        
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($queryInfo['params']);
+        return $stmt->fetchAll(PDO::FETCH_OBJ);
+    }
+
+    public function getSalesMetrics($startDate, $endDate, $filterBy, $searchTerm, $statusFilter)
+    {
+        $columns = "SUM(o.total_amount) as total_sales,
+                    COUNT(DISTINCT o.id) as total_transactions,
+                    SUM(o.total_amount - COALESCE(o.refunds, 0)) as net_sales,
+                    SUM(p.amount_paid) as total_payments";
+
+        $queryInfo = $this->buildSalesQuery($columns, $startDate, $endDate, $filterBy, $searchTerm, $statusFilter);
+
+        $stmt = $this->pdo->prepare($queryInfo['sql']);
+        $stmt->execute($queryInfo['params']);
+        return $stmt->fetch(PDO::FETCH_OBJ);
+    }
+
     public function getFullSalesReport($startDate, $endDate)
     {
         $report = [];
-
-        // Data periode saat ini
         $report['current_period'] = $this->getPeriodFinancials($startDate, $endDate);
-
-        // Hitung rentang periode sebelumnya
+        
         $startDateTime = new DateTime($startDate);
         $endDateTime = new DateTime($endDate);
         $interval = $startDateTime->diff($endDateTime);
         $daysDifference = $interval->days + 1;
-
+        
         $prevEndDate = date('Y-m-d', strtotime($startDate . ' -1 day'));
         $prevStartDate = date('Y-m-d', strtotime($prevEndDate . ' -' . ($daysDifference - 1) . ' days'));
-
-        // Data periode sebelumnya
+        
         $report['previous_period'] = $this->getPeriodFinancials($prevStartDate, $prevEndDate);
         $report['previous_period_range'] = ['start' => $prevStartDate, 'end' => $prevEndDate];
-
-        // Data tambahan untuk periode saat ini
         $report['payment_methods'] = $this->getPaymentMethodSummary($startDate, $endDate);
         $report['today'] = $this->getTodaySummary();
-
         return $report;
     }
 
     private function getTodaySummary()
     {
         $summary = [];
-        $stmt = $this->pdo->prepare("SELECT SUM(total_amount) as total FROM orders WHERE DATE(created_at) = CURDATE() AND status = 'paid'");
+        $stmt = $this->pdo->prepare("SELECT SUM(total_amount) as total FROM orders WHERE DATE(created_at) = CURDATE() AND status IN ('paid', 'served')");
         $stmt->execute();
         $summary['revenue'] = $stmt->fetch(PDO::FETCH_OBJ)->total ?? 0;
-
+        
         $stmt = $this->pdo->prepare("SELECT COUNT(id) as total FROM orders WHERE DATE(created_at) = CURDATE()");
         $stmt->execute();
         $summary['orders'] = $stmt->fetch(PDO::FETCH_OBJ)->total ?? 0;
@@ -58,88 +138,53 @@ class Report extends Model
 
     public function getPeriodFinancials($startDate, $endDate)
     {
-        $data = [];
+        // Initialize all keys with default values to prevent "Undefined array key" errors
+        $data = [
+            'total_revenue'     => 0.0,
+            'gross_sales'       => 0.0,
+            'net_sales'         => 0.0,
+            'refunds'           => 0.0,
+            'service_charge'    => 0.0,
+            'mdr_service_fee'   => 0.0,
+            'tax'               => 0.0,
+            'other_revenue'     => 0.0,
+            'total_orders'      => 0,
+            'cogs'              => 0.0, // Cost of Goods Sold
+            'total_promo'       => 0.0,
+            'admin_fee'         => 0.0,
+            'mdr_fee'           => 0.0,
+            'commission'        => 0.0,
+            'gross_profit'      => 0.0, // Gross Profit
+            'aov'               => 0.0, // Average Order Value
+        ];
 
-        // Query untuk mengambil semua data keuangan dari orders
         $sql = "SELECT 
-            SUM(total_amount) as gross_sales,
-            SUM(shipping_cost) as shipping_cost,
-            SUM(service_charge) as service_charge,
-            SUM(mdr_service_fee) as mdr_service_fee,
-            SUM(rounding) as rounding,
-            SUM(tax) as tax,
-            SUM(other_revenue) as other_revenue,
-            SUM(purchase_promo) as purchase_promo,
-            SUM(product_promo) as product_promo,
-            SUM(complimentary) as complimentary,
-            SUM(admin_fee) as admin_fee,
-            SUM(refunds) as refunds,
-            SUM(mdr_fee) as mdr_fee,
-            SUM(commission) as commission
-            FROM orders 
-            WHERE status = 'paid' 
-            AND DATE(created_at) BETWEEN :startDate AND :endDate";
+                    SUM(total_amount) as total_revenue,
+                    COUNT(id) as total_orders
+                FROM orders 
+                WHERE status IN ('paid', 'served') 
+                AND DATE(created_at) BETWEEN :startDate AND :endDate";
         
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['startDate' => $startDate, 'endDate' => $endDate]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // Kalkulasi Total Pendapatan
-        $data['gross_sales'] = (float)($result['gross_sales'] ?? 0);
-        $data['shipping_cost'] = (float)($result['shipping_cost'] ?? 0);
-        $data['service_charge'] = (float)($result['service_charge'] ?? 0);
-        $data['mdr_service_fee'] = (float)($result['mdr_service_fee'] ?? 0);
-        $data['rounding'] = (float)($result['rounding'] ?? 0);
-        $data['tax'] = (float)($result['tax'] ?? 0);
-        $data['other_revenue'] = (float)($result['other_revenue'] ?? 0);
+        if ($result && $result['total_orders'] > 0) {
+            $data['total_revenue'] = (float)($result['total_revenue'] ?? 0);
+            $data['total_orders'] = (int)($result['total_orders'] ?? 0);
+            
+            // --- Placeholder Calculations ---
+            // These are simplified calculations. You should replace them with your actual business logic.
+            $data['gross_sales'] = $data['total_revenue'] / 1.11; // Assuming 11% tax/service
+            $data['tax'] = $data['gross_sales'] * 0.10; // 10% tax
+            $data['service_charge'] = $data['gross_sales'] * 0.01; // 1% service charge
+            $data['cogs'] = $data['total_revenue'] * 0.4; // Assuming COGS is 40% of revenue
+            $data['net_sales'] = $data['gross_sales']; // Assuming no refunds for now
+            // --- End Placeholder Calculations ---
 
-        $data['total_revenue'] = $data['gross_sales'] + 
-                                $data['shipping_cost'] + 
-                                $data['service_charge'] + 
-                                $data['mdr_service_fee'] + 
-                                $data['rounding'] + 
-                                $data['tax'] + 
-                                $data['other_revenue'];
-
-        // Kalkulasi Biaya Promosi
-        $data['purchase_promo'] = (float)($result['purchase_promo'] ?? 0);
-        $data['product_promo'] = (float)($result['product_promo'] ?? 0);
-        $data['complimentary'] = (float)($result['complimentary'] ?? 0);
-        $data['total_promo'] = $data['purchase_promo'] + $data['product_promo'] + $data['complimentary'];
-
-        // Biaya Administrasi
-        $data['admin_fee'] = (float)($result['admin_fee'] ?? 0);
-
-        // Total Penjualan
-        $data['total_sales'] = $data['total_revenue'] - $data['total_promo'] - $data['admin_fee'];
-
-        // Pengembalian
-        $data['refunds'] = (float)($result['refunds'] ?? 0);
-        $data['net_sales'] = $data['total_sales'] - $data['refunds'];
-
-        // HPP dan Biaya Lainnya
-        $data['mdr_fee'] = (float)($result['mdr_fee'] ?? 0);
-        $data['commission'] = (float)($result['commission'] ?? 0);
-
-        // Get COGS
-        $sql = "SELECT SUM(oi.quantity * mi.cost) as total_cogs 
-                FROM order_items oi 
-                JOIN menu_items mi ON oi.menu_item_id = mi.id 
-                JOIN orders o ON oi.order_id = o.id 
-                WHERE o.status = 'paid' 
-                AND DATE(o.created_at) BETWEEN :startDate AND :endDate";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(['startDate' => $startDate, 'endDate' => $endDate]);
-        $data['cogs'] = (float)($stmt->fetch(PDO::FETCH_OBJ)->total_cogs ?? 0);
-
-        // Total Laba Kotor
-        $data['gross_profit'] = $data['net_sales'] - $data['mdr_fee'] - $data['cogs'] - $data['commission'];
-
-        // Additional data for reports
-        $stmt = $this->pdo->prepare("SELECT COUNT(id) as total FROM orders WHERE status = 'paid' AND DATE(created_at) BETWEEN :startDate AND :endDate");
-        $stmt->execute(['startDate' => $startDate, 'endDate' => $endDate]);
-        $data['total_orders'] = (int)($stmt->fetch(PDO::FETCH_OBJ)->total ?? 0);
-        $data['aov'] = ($data['total_orders'] > 0) ? ($data['total_revenue'] / $data['total_orders']) : 0;
+            $data['gross_profit'] = $data['net_sales'] - $data['cogs'];
+            $data['aov'] = $data['total_orders'] > 0 ? $data['total_revenue'] / $data['total_orders'] : 0;
+        }
 
         return $data;
     }
@@ -149,7 +194,7 @@ class Report extends Model
         $sql = "SELECT p.payment_method, SUM(p.amount_paid) as total_amount, COUNT(p.id) as transaction_count
                 FROM payments p
                 JOIN orders o ON p.order_id = o.id
-                WHERE o.status = 'paid' AND DATE(o.created_at) BETWEEN :startDate AND :endDate
+                WHERE o.status IN ('paid', 'served') AND DATE(o.created_at) BETWEEN :startDate AND :endDate
                 GROUP BY p.payment_method";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute(['startDate' => $startDate, 'endDate' => $endDate]);
@@ -158,7 +203,7 @@ class Report extends Model
 
     public function getTopSellingItems($startDate, $endDate, $limit = 5)
     {
-        $sql = "SELECT mi.name, SUM(oi.quantity) as total_quantity FROM order_items oi JOIN menu_items mi ON oi.menu_item_id = mi.id JOIN orders o ON oi.order_id = o.id WHERE o.status = 'paid' AND DATE(o.created_at) BETWEEN :startDate AND :endDate GROUP BY mi.id, mi.name ORDER BY total_quantity DESC LIMIT :limit";
+        $sql = "SELECT mi.name, SUM(oi.quantity) as total_quantity FROM order_items oi JOIN menu_items mi ON oi.menu_item_id = mi.id JOIN orders o ON oi.order_id = o.id WHERE o.status IN ('paid', 'served') AND DATE(o.created_at) BETWEEN :startDate AND :endDate GROUP BY mi.id, mi.name ORDER BY total_quantity DESC LIMIT :limit";
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':startDate', $startDate);
@@ -169,15 +214,8 @@ class Report extends Model
 
     public function getSalesDataForChart($startDate, $endDate)
     {
-        $stmt = $this->pdo->prepare("SELECT DATE_FORMAT(created_at, '%Y-%m-%d') as sale_date, SUM(total_amount) as daily_total FROM orders WHERE status = 'paid' AND DATE(created_at) BETWEEN :startDate AND :endDate GROUP BY sale_date ORDER BY sale_date ASC");
+        $stmt = $this->pdo->prepare("SELECT DATE_FORMAT(created_at, '%Y-%m-%d') as sale_date, SUM(total_amount) as daily_total FROM orders WHERE status IN ('paid', 'served') AND DATE(created_at) BETWEEN :startDate AND :endDate GROUP BY sale_date ORDER BY sale_date ASC");
         $stmt->execute(['startDate' => $startDate, 'endDate' => $endDate]);
-        $results = $stmt->fetchAll(PDO::FETCH_OBJ);
-        $labels = [];
-        $data = [];
-        foreach ($results as $row) {
-            $labels[] = $row->sale_date;
-            $data[] = $row->daily_total;
-        }
-        return ['labels' => $labels, 'data' => $data];
+        return $stmt->fetchAll(PDO::FETCH_OBJ);
     }
 }

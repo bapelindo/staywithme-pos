@@ -87,32 +87,87 @@ class Dashboard extends Model
 
     public function getSalesChartData($period, $date = null)
     {
+        $currentDate = new \DateTime($date);
+
+        // Helper function to get date offsets
+        $getPrevDate = function ($p, $d) {
+            $current = new \DateTime($d);
+            switch ($p) {
+                case 'weekly': return $current->modify('-1 week')->format('Y-m-d');
+                case 'monthly': return $current->modify('first day of last month')->format('Y-m-d');
+                default: return $current->modify('-1 day')->format('Y-m-d');
+            }
+        };
+
+        $prevDate = $getPrevDate($period, $date);
         $dateCondition = $this->getDateCondition($period, $date);
+        $prevDateCondition = $this->getDateCondition($period, $prevDate);
+
         $groupBy = '';
-        $labelSelect = '';
+        $labelKey = '';
+        $fullLabelSet = [];
 
         switch ($period) {
             case 'weekly':
-                $groupBy = "DATE(created_at)";
-                $labelSelect = "DATE_FORMAT(created_at, '%a, %d')"; // Mon, 21
+                $groupBy = "DAYOFWEEK(created_at)";
+                $labelKey = "DAYOFWEEK(created_at)";
+                $days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                for ($i = 1; $i <= 7; $i++) {
+                    $fullLabelSet[$i] = ['label' => $days[$i-1], 'current_sales' => 0, 'previous_sales' => 0];
+                }
                 break;
             case 'monthly':
-                $groupBy = "DATE(created_at)";
-                $labelSelect = "DATE_FORMAT(created_at, '%d %b')"; // 21 Aug
+                $groupBy = "DAY(created_at)";
+                $labelKey = "DAY(created_at)";
+                $daysInMonth = (clone $currentDate)->format('t');
+                for ($i = 1; $i <= $daysInMonth; $i++) {
+                    $fullLabelSet[$i] = ['label' => sprintf('%02d', $i), 'current_sales' => 0, 'previous_sales' => 0];
+                }
                 break;
             default: // daily
                 $groupBy = "HOUR(created_at)";
-                $labelSelect = "CONCAT(HOUR(created_at), ':00')";
+                $labelKey = "HOUR(created_at)";
+                for ($i = 0; $i < 24; $i++) {
+                    $fullLabelSet[$i] = ['label' => $i . ':00', 'current_sales' => 0, 'previous_sales' => 0];
+                }
         }
 
-        $sql = "SELECT {$labelSelect} as label, SUM(total_amount) as sales
-                FROM orders
-                WHERE {$dateCondition}
-                GROUP BY {$groupBy}
-                ORDER BY created_at ASC";
-        
+        $sql = "
+            SELECT
+                'current' as period_type,
+                {$labelKey} as label_key,
+                SUM(total_amount) as sales
+            FROM orders
+            WHERE {$dateCondition}
+            GROUP BY {$groupBy}
+            
+            UNION ALL
+            
+            SELECT
+                'previous' as period_type,
+                {$labelKey} as label_key,
+                SUM(total_amount) as sales
+            FROM orders
+            WHERE {$prevDateCondition}
+            GROUP BY {$groupBy}
+        ";
+
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Populate the full label set with data from the database
+        foreach ($results as $row) {
+            $key = $row['label_key'];
+            if (isset($fullLabelSet[$key])) {
+                if ($row['period_type'] === 'current') {
+                    $fullLabelSet[$key]['current_sales'] = (float)$row['sales'];
+                } else {
+                    $fullLabelSet[$key]['previous_sales'] = (float)$row['sales'];
+                }
+            }
+        }
+        
+        return array_values($fullLabelSet);
     }
 }

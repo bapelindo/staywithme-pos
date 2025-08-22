@@ -38,6 +38,8 @@ class DashboardController extends Controller
                 $nextDate = (clone $currentDate)->modify('+1 day')->format('Y-m-d');
         }
 
+        $chartData = $dashboardModel->getSalesChartData($period, $date);
+
         $data = [
             'pageTitle' => 'Dashboard Penjualan',
             'period' => $period,
@@ -47,7 +49,7 @@ class DashboardController extends Controller
             'metrics' => $dashboardModel->getSalesMetrics($period, $date),
             'mtd_sales' => $dashboardModel->getMonthToDateSales(),
             'monthly_projection' => $dashboardModel->getMonthlyProjection(),
-            'chart_data' => $dashboardModel->getSalesChartData($period, $date),
+            'chart_data' => $chartData,
         ];
 
         // 3. Load View Dashboard

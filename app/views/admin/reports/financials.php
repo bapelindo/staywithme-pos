@@ -28,28 +28,25 @@ use App\Helpers\UrlHelper;
         </div>
     </div>
 
-    <!-- Financial Overview -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <!-- Summary Card -->
         <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Ringkasan Keuangan</h3>
             <div class="grid grid-cols-2 gap-4">
                 <div class="p-4 bg-indigo-50 rounded-lg">
                     <div class="text-sm text-gray-600">Total Pendapatan</div>
-                    <div class="text-xl font-bold text-indigo-600 mt-1"><?= NumberHelper::format_rupiah($financials['total_revenue']) ?></div>
+                    <div class="text-xl font-bold text-indigo-600 mt-1"><?= NumberHelper::format_rupiah($financials['total_revenue'] ?? 0) ?></div>
                 </div>
                 <div class="p-4 bg-red-50 rounded-lg">
                     <div class="text-sm text-gray-600">Total Biaya</div>
-                    <div class="text-xl font-bold text-red-600 mt-1"><?= NumberHelper::format_rupiah($financials['total_promo'] + $financials['admin_fee'] + $financials['mdr_fee'] + $financials['cogs'] + $financials['commission']) ?></div>
+                    <div class="text-xl font-bold text-red-600 mt-1"><?= NumberHelper::format_rupiah(($financials['total_promo'] ?? 0) + ($financials['admin_fee'] ?? 0) + ($financials['mdr_fee'] ?? 0) + ($financials['cogs'] ?? 0) + ($financials['commission'] ?? 0)) ?></div>
                 </div>
                 <div class="p-4 bg-green-50 rounded-lg col-span-2">
                     <div class="text-sm text-gray-600">Laba Kotor</div>
-                    <div class="text-2xl font-bold text-green-600 mt-1"><?= NumberHelper::format_rupiah($financials['gross_profit']) ?></div>
+                    <div class="text-2xl font-bold text-green-600 mt-1"><?= NumberHelper::format_rupiah($financials['gross_profit'] ?? 0) ?></div>
                 </div>
             </div>
         </div>
 
-        <!-- Chart Card -->
         <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">Distribusi Biaya</h3>
             <div class="relative h-[250px]">
@@ -58,7 +55,6 @@ use App\Helpers\UrlHelper;
         </div>
     </div>
 
-    <!-- Detailed Financial Tables -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200">
         <div class="border-b border-gray-200">
             <nav class="flex -mb-px" aria-label="Tabs">
@@ -68,7 +64,6 @@ use App\Helpers\UrlHelper;
             </nav>
         </div>
 
-        <!-- Revenue Details Tab -->
         <div id="revenue" class="tab-content p-6 space-y-4">
             <table class="w-full">
                 <thead>
@@ -81,13 +76,13 @@ use App\Helpers\UrlHelper;
                 <tbody class="divide-y divide-gray-200">
                     <?php
                     $revenueComponents = [
-                        ['label' => 'Penjualan Kotor', 'value' => $financials['gross_sales']],
-                        ['label' => 'Biaya Layanan', 'value' => $financials['service_charge']],
-                        ['label' => 'Biaya Layanan MDR', 'value' => $financials['mdr_service_fee']],
-                        ['label' => 'Pajak', 'value' => $financials['tax']],
+                        ['label' => 'Penjualan Kotor', 'value' => $financials['gross_sales'] ?? 0],
+                        ['label' => 'Biaya Layanan', 'value' => $financials['service_charge'] ?? 0],
+                        ['label' => 'Biaya Layanan MDR', 'value' => $financials['mdr_service_fee'] ?? 0], // <-- BARIS PENYEBAB ERROR
+                        ['label' => 'Pajak', 'value' => $financials['tax'] ?? 0],
                     ];
                     foreach ($revenueComponents as $item): 
-                        $percentage = $financials['total_revenue'] > 0 ? 
+                        $percentage = ($financials['total_revenue'] ?? 0) > 0 ? 
                             ($item['value'] / $financials['total_revenue'] * 100) : 0;
                     ?>
                     <tr class="hover:bg-gray-50">
@@ -98,16 +93,14 @@ use App\Helpers\UrlHelper;
                     <?php endforeach; ?>
                     <tr class="bg-indigo-50">
                         <td class="py-3 text-sm font-medium text-gray-900">TOTAL PENDAPATAN</td>
-                        <td class="py-3 text-sm text-right font-bold text-indigo-600"><?= NumberHelper::format_rupiah($financials['total_revenue']) ?></td>
+                        <td class="py-3 text-sm text-right font-bold text-indigo-600"><?= NumberHelper::format_rupiah($financials['total_revenue'] ?? 0) ?></td>
                         <td class="py-3 text-sm text-right font-medium text-indigo-600">100%</td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
-        <!-- Costs Details Tab (hidden by default) -->
         <div id="costs" class="tab-content hidden p-6 space-y-4">
-            <!-- Similar table structure for costs -->
             <table class="w-full">
                 <thead>
                     <tr>
@@ -119,14 +112,14 @@ use App\Helpers\UrlHelper;
                 <tbody class="divide-y divide-gray-200">
                     <?php
                     $costComponents = [
-                        ['label' => 'HPP', 'value' => $financials['cogs']],
-                        ['label' => 'Biaya Promosi', 'value' => $financials['total_promo']],
-                        ['label' => 'Biaya Admin', 'value' => $financials['admin_fee']],
-                        ['label' => 'Komisi', 'value' => $financials['commission']],
-                        ['label' => 'Biaya MDR', 'value' => $financials['mdr_fee']],
+                        ['label' => 'HPP', 'value' => $financials['cogs'] ?? 0],
+                        ['label' => 'Biaya Promosi', 'value' => $financials['total_promo'] ?? 0],
+                        ['label' => 'Biaya Admin', 'value' => $financials['admin_fee'] ?? 0],
+                        ['label' => 'Komisi', 'value' => $financials['commission'] ?? 0],
+                        ['label' => 'Biaya MDR', 'value' => $financials['mdr_fee'] ?? 0],
                     ];
                     foreach ($costComponents as $item): 
-                        $percentage = $financials['total_revenue'] > 0 ? 
+                        $percentage = ($financials['total_revenue'] ?? 0) > 0 ? 
                             ($item['value'] / $financials['total_revenue'] * 100) : 0;
                     ?>
                     <tr class="hover:bg-gray-50">
@@ -137,44 +130,33 @@ use App\Helpers\UrlHelper;
                     <?php endforeach; ?>
                     <tr class="bg-red-50">
                         <td class="py-3 text-sm font-medium text-gray-900">TOTAL BIAYA</td>
-                        <td class="py-3 text-sm text-right font-bold text-red-600"><?= NumberHelper::format_rupiah($financials['total_promo'] + $financials['admin_fee'] + $financials['mdr_fee'] + $financials['cogs'] + $financials['commission']) ?></td>
-                        <td class="py-3 text-sm text-right font-medium text-red-600">100%</td>
+                        <td class="py-3 text-sm text-right font-bold text-red-600"><?= NumberHelper::format_rupiah(($financials['total_promo'] ?? 0) + ($financials['admin_fee'] ?? 0) + ($financials['mdr_fee'] ?? 0) + ($financials['cogs'] ?? 0) + ($financials['commission'] ?? 0)) ?></td>
+                        <td class="py-3 text-sm text-right font-medium text-red-600"><?= number_format((($financials['total_promo'] ?? 0) + ($financials['admin_fee'] ?? 0) + ($financials['mdr_fee'] ?? 0) + ($financials['cogs'] ?? 0) + ($financials['commission'] ?? 0)) / (($financials['total_revenue'] ?? 0) ?: 1) * 100, 1) ?>%</td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
-        <!-- Profit Details Tab (hidden by default) -->
         <div id="profit" class="tab-content hidden p-6 space-y-4">
-            <!-- Similar table structure for profit calculation -->
             <table class="w-full">
                 <thead>
                     <tr>
                         <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider pb-4">Komponen</th>
                         <th class="text-right text-xs font-medium text-gray-500 uppercase tracking-wider pb-4">Jumlah</th>
-                        <th class="text-right text-xs font-medium text-gray-500 uppercase tracking-wider pb-4">% dari Total</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
-                    <?php
-                    $profitComponents = [
-                        ['label' => 'Pendapatan', 'value' => $financials['total_revenue']],
-                        ['label' => 'Biaya', 'value' => $financials['total_promo'] + $financials['admin_fee'] + $financials['mdr_fee'] + $financials['cogs'] + $financials['commission']],
-                    ];
-                    foreach ($profitComponents as $item): 
-                        $percentage = $financials['total_revenue'] > 0 ? 
-                            ($item['value'] / $financials['total_revenue'] * 100) : 0;
-                    ?>
                     <tr class="hover:bg-gray-50">
-                        <td class="py-3 text-sm text-gray-900"><?= $item['label'] ?></td>
-                        <td class="py-3 text-sm text-right font-medium text-gray-900"><?= NumberHelper::format_rupiah($item['value']) ?></td>
-                        <td class="py-3 text-sm text-right text-gray-500"><?= number_format($percentage, 1) ?>%</td>
+                        <td class="py-3 text-sm text-gray-900">Total Pendapatan</td>
+                        <td class="py-3 text-sm text-right font-medium text-gray-900"><?= NumberHelper::format_rupiah($financials['total_revenue'] ?? 0) ?></td>
                     </tr>
-                    <?php endforeach; ?>
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-3 text-sm text-gray-900">(Total Biaya)</td>
+                        <td class="py-3 text-sm text-right font-medium text-red-600"><?= NumberHelper::format_rupiah(-(($financials['total_promo'] ?? 0) + ($financials['admin_fee'] ?? 0) + ($financials['mdr_fee'] ?? 0) + ($financials['cogs'] ?? 0) + ($financials['commission'] ?? 0))) ?></td>
+                    </tr>
                     <tr class="bg-green-50">
-                        <td class="py-3 text-sm font-medium text-gray-900">TOTAL LABA</td>
-                        <td class="py-3 text-sm text-right font-bold text-green-600"><?= NumberHelper::format_rupiah($financials['gross_profit']) ?></td>
-                        <td class="py-3 text-sm text-right font-medium text-green-600">100%</td>
+                        <td class="py-3 text-sm font-medium text-gray-900">LABA KOTOR</td>
+                        <td class="py-3 text-sm text-right font-bold text-green-600"><?= NumberHelper::format_rupiah($financials['gross_profit'] ?? 0) ?></td>
                     </tr>
                 </tbody>
             </table>
@@ -188,16 +170,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Tab Switching Logic
     document.querySelectorAll('.tab-btn').forEach(button => {
         button.addEventListener('click', () => {
-            // Remove active states
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active', 'border-indigo-500', 'text-indigo-600');
                 btn.classList.add('border-transparent', 'text-gray-500');
             });
-            // Hide all content
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.add('hidden');
             });
-            // Show active content
             button.classList.add('active', 'border-indigo-500', 'text-indigo-600');
             button.classList.remove('border-transparent', 'text-gray-500');
             document.getElementById(button.dataset.target).classList.remove('hidden');
@@ -206,47 +185,53 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Cost Distribution Chart
     const ctx = document.getElementById('costDistributionChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['HPP', 'Biaya Promosi', 'Biaya Admin', 'Komisi', 'Biaya MDR'],
-            datasets: [{
-                data: [
-                    <?= $financials['cogs'] ?>,
-                    <?= $financials['total_promo'] ?>,
-                    <?= $financials['admin_fee'] ?>,
-                    <?= $financials['commission'] ?>,
-                    <?= $financials['mdr_fee'] ?>
-                ],
-                backgroundColor: [
-                    '#ef4444', // red
-                    '#f59e0b', // amber
-                    '#10b981', // emerald
-                    '#6366f1', // indigo
-                    '#8b5cf6'  // violet
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'right',
-                    labels: {
-                        generateLabels: function(chart) {
-                            const data = chart.data;
-                            const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
-                            return data.labels.map((label, i) => ({
-                                text: `${label} (${((data.datasets[0].data[i]/total)*100).toFixed(1)}%)`,
-                                fillStyle: data.datasets[0].backgroundColor[i],
-                                index: i
-                            }));
+    const financials = <?= json_encode($financials ?? []) ?>;
+    const costData = [
+        financials.cogs ?? 0,
+        financials.total_promo ?? 0,
+        financials.admin_fee ?? 0,
+        financials.commission ?? 0,
+        financials.mdr_fee ?? 0
+    ];
+
+    if (costData.some(v => v > 0)) {
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['HPP', 'Biaya Promosi', 'Biaya Admin', 'Komisi', 'Biaya MDR'],
+                datasets: [{
+                    data: costData,
+                    backgroundColor: [
+                        '#ef4444', '#f59e0b', '#10b981', '#6366f1', '#8b5cf6'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            generateLabels: function(chart) {
+                                const data = chart.data;
+                                if (data.labels.length && data.datasets.length) {
+                                    const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                    return data.labels.map((label, i) => ({
+                                        text: `${label} (${total > 0 ? ((data.datasets[0].data[i]/total)*100).toFixed(1) : 0}%)`,
+                                        fillStyle: data.datasets[0].backgroundColor[i],
+                                        index: i
+                                    }));
+                                }
+                                return [];
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        });
+    } else {
+        ctx.canvas.parentNode.innerHTML = '<div class="flex items-center justify-center h-full text-gray-500">Tidak ada data biaya.</div>';
+    }
 });
 </script>
