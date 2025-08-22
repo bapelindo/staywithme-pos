@@ -17,15 +17,37 @@ class DashboardController extends Controller
             $period = 'daily';
         }
 
+        // Ambil dan validasi tanggal dari query string
+        $date = $_GET['date'] ?? date('Y-m-d');
+        $currentDate = new \DateTime($date);
+
         $dashboardModel = $this->model('Dashboard');
+
+        // Siapkan tanggal untuk navigasi
+        switch ($period) {
+            case 'weekly':
+                $prevDate = (clone $currentDate)->modify('-1 week')->format('Y-m-d');
+                $nextDate = (clone $currentDate)->modify('+1 week')->format('Y-m-d');
+                break;
+            case 'monthly':
+                $prevDate = (clone $currentDate)->modify('first day of last month')->format('Y-m-d');
+                $nextDate = (clone $currentDate)->modify('first day of next month')->format('Y-m-d');
+                break;
+            default: // daily
+                $prevDate = (clone $currentDate)->modify('-1 day')->format('Y-m-d');
+                $nextDate = (clone $currentDate)->modify('+1 day')->format('Y-m-d');
+        }
 
         $data = [
             'pageTitle' => 'Dashboard Penjualan',
             'period' => $period,
-            'metrics' => $dashboardModel->getSalesMetrics($period),
+            'currentDate' => $currentDate->format('Y-m-d'),
+            'prevDate' => $prevDate,
+            'nextDate' => $nextDate,
+            'metrics' => $dashboardModel->getSalesMetrics($period, $date),
             'mtd_sales' => $dashboardModel->getMonthToDateSales(),
             'monthly_projection' => $dashboardModel->getMonthlyProjection(),
-            'chart_data' => $dashboardModel->getSalesChartData($period),
+            'chart_data' => $dashboardModel->getSalesChartData($period, $date),
         ];
 
         // 3. Load View Dashboard

@@ -60,19 +60,41 @@ $unavailableItemCount = $unavailableItemCount ?? 0;
 <div class="container mx-auto">
     <!-- Header and Period Selector -->
     <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <h1 class="text-xl font-semibold text-gray-900"><?= htmlspecialchars($pageTitle) ?></h1>
+        <div>
+            <h1 class="text-xl font-semibold text-gray-900"><?= htmlspecialchars($pageTitle) ?></h1>
+            <p class="text-sm text-gray-500">
+                <?php
+                $date = new DateTime($currentDate);
+                if ($period === 'daily') {
+                    echo $date->format('l, j F Y');
+                } elseif ($period === 'weekly') {
+                    $startOfWeek = (clone $date)->modify('monday this week')->format('j M');
+                    $endOfWeek = (clone $date)->modify('sunday this week')->format('j M Y');
+                    echo "Minggu: $startOfWeek - $endOfWeek";
+                } elseif ($period === 'monthly') {
+                    echo "Bulan: " . $date->format('F Y');
+                }
+                ?>
+            </p>
+        </div>
         <div class="flex items-center bg-white border rounded-lg p-1 shadow-sm">
-            <a href="<?= UrlHelper::baseUrl('admin/dashboard?period=daily') ?>" 
+            <a href="<?= UrlHelper::baseUrl('admin/dashboard?period=' . $period . '&date=' . $prevDate) ?>" class="p-2 text-gray-500 hover:text-gray-700">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            </a>
+            <a href="<?= UrlHelper::baseUrl('admin/dashboard?period=daily' . '&date=' . date('Y-m-d')) ?>"
                class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors <?= $period === 'daily' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100' ?>">
                Hari Ini
             </a>
-            <a href="<?= UrlHelper::baseUrl('admin/dashboard?period=weekly') ?>"
+            <a href="<?= UrlHelper::baseUrl('admin/dashboard?period=weekly' . '&date=' . date('Y-m-d')) ?>"
                class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors <?= $period === 'weekly' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100' ?>">
-               7 Hari
+               Minggu Ini
             </a>
-            <a href="<?= UrlHelper::baseUrl('admin/dashboard?period=monthly') ?>"
+            <a href="<?= UrlHelper::baseUrl('admin/dashboard?period=monthly' . '&date=' . date('Y-m-d')) ?>"
                class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors <?= $period === 'monthly' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100' ?>">
                Bulan Ini
+            </a>
+            <a href="<?= UrlHelper::baseUrl('admin/dashboard?period=' . $period . '&date=' . $nextDate) ?>" class="p-2 text-gray-500 hover:text-gray-700">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
             </a>
         </div>
     </div>

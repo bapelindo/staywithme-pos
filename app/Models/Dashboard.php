@@ -14,21 +14,23 @@ class Dashboard extends Model
         $this->pdo = Database::getInstance()->getConnection();
     }
 
-    private function getDateCondition($period)
+    private function getDateCondition($period, $date = null)
     {
+        $baseDate = $date ? "'$date'" : 'CURRENT_DATE';
+
         switch ($period) {
             case 'weekly':
-                return "DATE(created_at) >= DATE_SUB(CURRENT_DATE, INTERVAL 6 DAY) AND DATE(created_at) <= CURRENT_DATE";
+                return "YEARWEEK(created_at, 1) = YEARWEEK($baseDate, 1)";
             case 'monthly':
-                return "DATE(created_at) >= DATE_FORMAT(CURRENT_DATE, '%Y-%m-01') AND DATE(created_at) <= CURRENT_DATE";
+                return "YEAR(created_at) = YEAR($baseDate) AND MONTH(created_at) = MONTH($baseDate)";
             default: // daily
-                return "DATE(created_at) = CURRENT_DATE";
+                return "DATE(created_at) = DATE($baseDate)";
         }
     }
 
-    public function getSalesMetrics($period)
+    public function getSalesMetrics($period, $date = null)
     {
-        $dateCondition = $this->getDateCondition($period);
+        $dateCondition = $this->getDateCondition($period, $date);
 
         $sql = "SELECT
                     COALESCE(SUM(total_amount), 0) as total_sales,
@@ -83,9 +85,9 @@ class Dashboard extends Model
         return $result['projection'] ?? 0;
     }
 
-    public function getSalesChartData($period)
+    public function getSalesChartData($period, $date = null)
     {
-        $dateCondition = $this->getDateCondition($period);
+        $dateCondition = $this->getDateCondition($period, $date);
         $groupBy = '';
         $labelSelect = '';
 
