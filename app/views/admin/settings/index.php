@@ -52,9 +52,9 @@ $settings = $settings ?? [];
                          <p class="text-xs text-slate-500 mt-1">Estimasi biaya promosi dari total pendapatan.</p>
                     </div>
                      <div>
-                        <label for="default_admin_fee" class="block text-sm font-medium text-slate-700 mb-1">Biaya Admin (Rp)</label>
-                        <input type="number" step="0.01" id="default_admin_fee" name="default_admin_fee" value="<?= SanitizeHelper::html($settings['default_admin_fee'] ?? '0') ?>" class="w-full form-input">
-                        <p class="text-xs text-slate-500 mt-1">Biaya admin tetap per periode laporan.</p>
+                        <label for="default_admin_fee" class="block text-sm font-medium text-slate-700 mb-1">Biaya Admin per Transaksi (Rp)</label>
+                        <input type="number" step="1" id="default_admin_fee" name="default_admin_fee" value="<?= SanitizeHelper::html($settings['default_admin_fee'] ?? '0') ?>" class="w-full form-input">
+                        <p class="text-xs text-slate-500 mt-1">Biaya tambahan yang dikenakan pada setiap transaksi/pesanan.</p>
                     </div>
                       <div>
                         <label for="default_mdr_fee_percentage" class="block text-sm font-medium text-slate-700 mb-1">Persentase Biaya MDR (%)</label>

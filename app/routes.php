@@ -99,6 +99,8 @@ $router->addRoute('GET', '/admin/reports/financials', 'Admin\\ReportController@f
 $router->addRoute('GET', '/admin/reports/sales-detail', 'Admin\\ReportController@salesDetail');
 $router->addRoute('GET', '/admin/reports/summary/export', 'Admin\\ReportController@exportSummary');
 $router->addRoute('GET', '/admin/reports/product-sales', 'Admin\\ReportController@productSales');
+$router->addRoute('GET', '/admin/reports/category-sales', 'Admin\\ReportController@productByCategory');
+$router->addRoute('GET', '/admin/reports/cash-summary', 'Admin\\ReportController@cashSummary');
 
 // Rute Pengaturan
 $router->addRoute('GET', '/admin/settings', 'Admin\\SettingsController@index');
@@ -110,5 +112,3 @@ $router->addRoute('POST', '/admin/settings/update', 'Admin\\SettingsController@u
 // =============================================
 // Router di Core/Router.php akan secara otomatis menangani kasus jika tidak ada rute
 // yang cocok dengan menampilkan pesan 404 atau view error 404 jika ada.
-
-?>

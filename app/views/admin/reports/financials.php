@@ -1,5 +1,5 @@
 <?php 
-// File: app/Views/admin/reports/financials.php
+// File: app/Views/admin/reports/financials.php (REBUILT & FINAL V6)
 
 use App\Helpers\NumberHelper;
 use App\Helpers\UrlHelper;
@@ -40,7 +40,15 @@ use App\Helpers\UrlHelper;
                 </div>
                 <div class="p-4 bg-red-50 rounded-lg">
                     <div class="text-sm text-gray-600">Total Biaya</div>
-                    <div class="text-xl font-bold text-red-600 mt-1"><?= NumberHelper::format_rupiah(($financials['total_promo'] ?? 0) + ($financials['admin_fee'] ?? 0) + ($financials['mdr_fee'] ?? 0) + ($financials['cogs'] ?? 0) + ($financials['commission'] ?? 0)) ?></div>
+                    <div class="text-xl font-bold text-red-600 mt-1"><?= NumberHelper::format_rupiah(
+                        ($financials['total_promo_cost'] ?? 0) + 
+                        ($financials['mdr_fee'] ?? 0) + 
+                        ($financials['cogs'] ?? 0) + 
+                        ($financials['commission'] ?? 0) + 
+                        ($financials['admin_fee'] ?? 0) +
+                        ($financials['service_charge'] ?? 0) + // Ditambahkan
+                        ($financials['tax'] ?? 0) // Ditambahkan
+                    ) ?></div>
                 </div>
                 <div class="p-4 bg-green-50 rounded-lg col-span-2">
                     <div class="text-sm text-gray-600">Laba Kotor</div>
@@ -57,154 +65,156 @@ use App\Helpers\UrlHelper;
         </div>
     </div>
 
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div class="border-b border-gray-200">
-            <nav class="flex -mb-px" aria-label="Tabs">
-                <button class="tab-btn active px-6 py-4 border-b-2 border-indigo-500 text-sm font-medium text-indigo-600" data-target="revenue">Pendapatan</button>
-                <button class="tab-btn px-6 py-4 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-target="costs">Biaya</button>
-                <button class="tab-btn px-6 py-4 border-b-2 border-transparent text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-target="profit">Laba</button>
-            </nav>
-        </div>
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 space-y-8">
 
-        <div id="revenue" class="tab-content p-6 space-y-4">
+        <div>
+            <h3 class="text-lg font-semibold text-gray-900 border-b pb-2 mb-4">PENDAPATAN</h3>
             <table class="w-full">
-                <thead>
-                    <tr>
-                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider pb-4">Komponen</th>
-                        <th class="text-right text-xs font-medium text-gray-500 uppercase tracking-wider pb-4">Jumlah</th>
-                        <th class="text-right text-xs font-medium text-gray-500 uppercase tracking-wider pb-4">% dari Total</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                    <?php
-                    $revenueComponents = [
-                        ['label' => 'Penjualan Kotor', 'value' => $financials['gross_sales'] ?? 0],
-                        ['label' => 'Biaya Layanan', 'value' => $financials['service_charge'] ?? 0],
-                        // BARIS PENYEBAB ERROR DIHAPUS
-                        ['label' => 'Pajak', 'value' => $financials['tax'] ?? 0],
-                    ];
-                    foreach ($revenueComponents as $item): 
-                        $percentage = ($financials['total_revenue'] ?? 0) > 0 ? 
-                            ($item['value'] / $financials['total_revenue'] * 100) : 0;
-                    ?>
+                <tbody class="divide-y divide-gray-200 text-sm">
                     <tr class="hover:bg-gray-50">
-                        <td class="py-3 text-sm text-gray-900"><?= $item['label'] ?></td>
-                        <td class="py-3 text-sm text-right font-medium text-gray-900"><?= NumberHelper::format_rupiah($item['value']) ?></td>
-                        <td class="py-3 text-sm text-right text-gray-500"><?= number_format($percentage, 1) ?>%</td>
+                        <td class="py-2 pl-2 text-gray-600">Penjualan Kotor</td>
+                        <td class="py-2 pr-2 text-right font-medium text-gray-800"><?= NumberHelper::format_rupiah($financials['gross_sales'] ?? 0) ?></td>
                     </tr>
-                    <?php endforeach; ?>
-                    <tr class="bg-indigo-50">
-                        <td class="py-3 text-sm font-medium text-gray-900">TOTAL PENDAPATAN</td>
-                        <td class="py-3 text-sm text-right font-bold text-indigo-600"><?= NumberHelper::format_rupiah($financials['total_revenue'] ?? 0) ?></td>
-                        <td class="py-3 text-sm text-right font-medium text-indigo-600">100%</td>
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-2 pl-2 text-gray-600">Biaya Pelayanan</td>
+                        <td class="py-2 pr-2 text-right font-medium text-gray-800"><?= NumberHelper::format_rupiah($financials['service_charge'] ?? 0) ?></td>
+                    </tr>
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-2 pl-2 text-gray-600">Biaya Pelayanan MDR</td>
+                        <td class="py-2 pr-2 text-right font-medium text-gray-800"><?= NumberHelper::format_rupiah($financials['mdr_service_fee'] ?? 0) ?></td>
+                    </tr>
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-2 pl-2 text-gray-600">Biaya Administrasi</td>
+                        <td class="py-2 pr-2 text-right font-medium text-gray-800"><?= NumberHelper::format_rupiah($financials['admin_fee'] ?? 0) ?></td>
+                    </tr>
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-2 pl-2 text-gray-600">Pembulatan</td>
+                        <td class="py-2 pr-2 text-right font-medium text-gray-800"><?= NumberHelper::format_rupiah($financials['rounding'] ?? 0) ?></td>
+                    </tr>
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-2 pl-2 text-gray-600">Pajak</td>
+                        <td class="py-2 pr-2 text-right font-medium text-gray-800"><?= NumberHelper::format_rupiah($financials['tax'] ?? 0) ?></td>
+                    </tr>
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-2 pl-2 text-gray-600">Lainnya</td>
+                        <td class="py-2 pr-2 text-right font-medium text-gray-800"><?= NumberHelper::format_rupiah($financials['other_revenue'] ?? 0) ?></td>
                     </tr>
                 </tbody>
+                <tfoot>
+                    <tr class="font-bold bg-gray-50">
+                        <td class="py-3 pl-2 text-gray-800">TOTAL PENDAPATAN</td>
+                        <td class="py-3 pr-2 text-right text-indigo-600 text-base"><?= NumberHelper::format_rupiah($financials['total_revenue'] ?? 0) ?></td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
 
-        <div id="costs" class="tab-content hidden p-6 space-y-4">
+        <div>
+            <h3 class="text-lg font-semibold text-gray-900 border-b pb-2 mb-4">BIAYA PROMOSI</h3>
             <table class="w-full">
-                <thead>
-                    <tr>
-                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider pb-4">Komponen</th>
-                        <th class="text-right text-xs font-medium text-gray-500 uppercase tracking-wider pb-4">Jumlah</th>
-                        <th class="text-right text-xs font-medium text-gray-500 uppercase tracking-wider pb-4">% dari Total</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                    <?php
-                    $costComponents = [
-                        ['label' => 'HPP', 'value' => $financials['cogs'] ?? 0],
-                        ['label' => 'Biaya Promosi', 'value' => $financials['total_promo'] ?? 0],
-                        ['label' => 'Biaya Admin', 'value' => $financials['admin_fee'] ?? 0],
-                        ['label' => 'Komisi', 'value' => $financials['commission'] ?? 0],
-                        ['label' => 'Biaya MDR', 'value' => $financials['mdr_fee'] ?? 0],
-                    ];
-                    foreach ($costComponents as $item): 
-                        $percentage = ($financials['total_revenue'] ?? 0) > 0 ? 
-                            ($item['value'] / $financials['total_revenue'] * 100) : 0;
-                    ?>
+                <tbody class="divide-y divide-gray-200 text-sm">
                     <tr class="hover:bg-gray-50">
-                        <td class="py-3 text-sm text-gray-900"><?= $item['label'] ?></td>
-                        <td class="py-3 text-sm text-right font-medium text-gray-900"><?= NumberHelper::format_rupiah($item['value']) ?></td>
-                        <td class="py-3 text-sm text-right text-gray-500"><?= number_format($percentage, 1) ?>%</td>
+                        <td class="py-2 pl-2 text-gray-600">Promo Pembelian</td>
+                        <td class="py-2 pr-2 text-right font-medium text-gray-800"><?= NumberHelper::format_rupiah($financials['purchase_promo'] ?? 0) ?></td>
                     </tr>
-                    <?php endforeach; ?>
-                    <tr class="bg-red-50">
-                        <td class="py-3 text-sm font-medium text-gray-900">TOTAL BIAYA</td>
-                        <td class="py-3 text-sm text-right font-bold text-red-600"><?= NumberHelper::format_rupiah(($financials['total_promo'] ?? 0) + ($financials['admin_fee'] ?? 0) + ($financials['mdr_fee'] ?? 0) + ($financials['cogs'] ?? 0) + ($financials['commission'] ?? 0)) ?></td>
-                        <td class="py-3 text-sm text-right font-medium text-red-600"><?= number_format((($financials['total_promo'] ?? 0) + ($financials['admin_fee'] ?? 0) + ($financials['mdr_fee'] ?? 0) + ($financials['cogs'] ?? 0) + ($financials['commission'] ?? 0)) / (($financials['total_revenue'] ?? 0) ?: 1) * 100, 1) ?>%</td>
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-2 pl-2 text-gray-600">Promo Produk</td>
+                        <td class="py-2 pr-2 text-right font-medium text-gray-800"><?= NumberHelper::format_rupiah($financials['product_promo'] ?? 0) ?></td>
+                    </tr>
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-2 pl-2 text-gray-600">Komplimen</td>
+                        <td class="py-2 pr-2 text-right font-medium text-gray-800"><?= NumberHelper::format_rupiah($financials['complimentary'] ?? 0) ?></td>
                     </tr>
                 </tbody>
+                <tfoot>
+                    <tr class="font-bold bg-gray-50">
+                        <td class="py-3 pl-2 text-gray-800">TOTAL BIAYA PROMOSI</td>
+                        <td class="py-3 pr-2 text-right text-red-600 text-base"><?= NumberHelper::format_rupiah($financials['total_promo_cost'] ?? 0) ?></td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
 
-        <div id="profit" class="tab-content hidden p-6 space-y-4">
+        <div>
+            <h3 class="text-lg font-semibold text-gray-900 border-b pb-2 mb-4">PENJUALAN BERSIH</h3>
             <table class="w-full">
-                <thead>
-                    <tr>
-                        <th class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider pb-4">Komponen</th>
-                        <th class="text-right text-xs font-medium text-gray-500 uppercase tracking-wider pb-4">Jumlah</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
+                <tbody class="divide-y divide-gray-200 text-sm">
                     <tr class="hover:bg-gray-50">
-                        <td class="py-3 text-sm text-gray-900">Total Pendapatan</td>
-                        <td class="py-3 text-sm text-right font-medium text-gray-900"><?= NumberHelper::format_rupiah($financials['total_revenue'] ?? 0) ?></td>
+                        <td class="py-2 pl-2 text-gray-600">Total Pendapatan</td>
+                        <td class="py-2 pr-2 text-right font-medium text-gray-800"><?= NumberHelper::format_rupiah($financials['total_revenue'] ?? 0) ?></td>
                     </tr>
                     <tr class="hover:bg-gray-50">
-                        <td class="py-3 text-sm text-gray-900">(Total Biaya)</td>
-                        <td class="py-3 text-sm text-right font-medium text-red-600"><?= NumberHelper::format_rupiah(-(($financials['total_promo'] ?? 0) + ($financials['admin_fee'] ?? 0) + ($financials['mdr_fee'] ?? 0) + ($financials['cogs'] ?? 0) + ($financials['commission'] ?? 0))) ?></td>
-                    </tr>
-                    <tr class="bg-green-50">
-                        <td class="py-3 text-sm font-medium text-gray-900">LABA KOTOR</td>
-                        <td class="py-3 text-sm text-right font-bold text-green-600"><?= NumberHelper::format_rupiah($financials['gross_profit'] ?? 0) ?></td>
+                        <td class="py-2 pl-2 text-gray-600">Pengembalian</td>
+                        <td class="py-2 pr-2 text-right font-medium text-red-600"><?= NumberHelper::format_rupiah(-($financials['refunds'] ?? 0)) ?></td>
                     </tr>
                 </tbody>
+                <tfoot>
+                    <tr class="font-bold bg-gray-50">
+                        <td class="py-3 pl-2 text-gray-800">TOTAL PENJUALAN BERSIH</td>
+                        <td class="py-3 pr-2 text-right text-emerald-600 text-base"><?= NumberHelper::format_rupiah($financials['net_sales'] ?? 0) ?></td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
+        
+        <div>
+            <h3 class="text-lg font-semibold text-gray-900 border-b pb-2 mb-4">LABA KOTOR</h3>
+            <table class="w-full">
+                <tbody class="divide-y divide-gray-200 text-sm">
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-2 pl-2 text-gray-600">Penjualan Bersih</td>
+                        <td class="py-2 pr-2 text-right font-medium text-gray-800"><?= NumberHelper::format_rupiah($financials['net_sales'] ?? 0) ?></td>
+                    </tr>
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-2 pl-2 text-gray-600">Biaya MDR</td>
+                        <td class="py-2 pr-2 text-right font-medium text-red-600"><?= NumberHelper::format_rupiah(-($financials['mdr_fee'] ?? 0)) ?></td>
+                    </tr>
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-2 pl-2 text-gray-600">HPP</td>
+                        <td class="py-2 pr-2 text-right font-medium text-red-600"><?= NumberHelper::format_rupiah(-($financials['cogs'] ?? 0)) ?></td>
+                    </tr>
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-2 pl-2 text-gray-600">Komisi</td>
+                        <td class="py-2 pr-2 text-right font-medium text-red-600"><?= NumberHelper::format_rupiah(-($financials['commission'] ?? 0)) ?></td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr class="font-bold bg-green-50">
+                        <td class="py-3 pl-2 text-gray-800">TOTAL LABA KOTOR</td>
+                        <td class="py-3 pr-2 text-right text-green-600 text-base"><?= NumberHelper::format_rupiah($financials['gross_profit'] ?? 0) ?></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Tab Switching Logic
-    document.querySelectorAll('.tab-btn').forEach(button => {
-        button.addEventListener('click', () => {
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active', 'border-indigo-500', 'text-indigo-600');
-                btn.classList.add('border-transparent', 'text-gray-500');
-            });
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.add('hidden');
-            });
-            button.classList.add('active', 'border-indigo-500', 'text-indigo-600');
-            button.classList.remove('border-transparent', 'text-gray-500');
-            document.getElementById(button.dataset.target).classList.remove('hidden');
-        });
-    });
-
     // Cost Distribution Chart
     const ctx = document.getElementById('costDistributionChart').getContext('2d');
     const financials = <?= json_encode($financials ?? []) ?>;
     const costData = [
         financials.cogs ?? 0,
-        financials.total_promo ?? 0,
+        financials.total_promo_cost ?? 0,
         financials.admin_fee ?? 0,
         financials.commission ?? 0,
-        financials.mdr_fee ?? 0
+        financials.mdr_fee ?? 0,
+        financials.service_charge ?? 0, // Ditambahkan
+        financials.tax ?? 0 // Ditambahkan
     ];
 
     if (costData.some(v => v > 0)) {
         new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: ['HPP', 'Biaya Promosi', 'Biaya Admin', 'Komisi', 'Biaya MDR'],
+                labels: ['HPP', 'Biaya Promosi', 'Biaya Admin', 'Komisi', 'Biaya MDR', 'Biaya Pelayanan', 'Pajak'], // Ditambahkan
                 datasets: [{
                     data: costData,
                     backgroundColor: [
-                        '#ef4444', '#f59e0b', '#10b981', '#6366f1', '#8b5cf6'
+                        '#ef4444', '#f59e0b', '#10b981', '#6366f1', '#8b5cf6', '#3b82f6', '#f472b6' // Warna ditambahkan
                     ]
                 }]
             },

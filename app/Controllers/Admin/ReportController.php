@@ -7,7 +7,7 @@ use App\Core\Controller;
 use App\Helpers\AuthHelper;
 use App\Helpers\SanitizeHelper;
 use App\Models\Report;
-use App\Models\Category; // Ditambahkan untuk mengambil daftar kategori
+use App\Models\Category;
 use App\Models\Order;
 use App\Models\OrderItem;
 use DateTime;
@@ -321,15 +321,61 @@ class ReportController extends Controller
         $reportData = $reportModel->getProductSalesReportV2($startDate, $endDate, $selectedCategory, $searchTerm);
         $allCategories = $categoryModel->getAllSorted();
         
-        // 3. Calculate metrics
+        // 3. Calculate metrics for the summary boxes
         $totalRevenue = array_sum(array_column($reportData, 'total_sales'));
         $totalQuantity = array_sum(array_column($reportData, 'total_quantity_sold'));
         $totalGrossProfit = array_sum(array_column($reportData, 'gross_profit'));
 
-        // 4. Prepare data for the chart
-        $chartData = $reportModel->getProductSalesChartData($startDate, $endDate, $selectedCategory, $searchTerm, $groupBy, $chartMetric);
+        // 4. Prepare data for the multi-line chart
+        $flatChartData = $reportModel->getProductSalesTrendByProduct($startDate, $endDate, $selectedCategory, $searchTerm, $groupBy, $chartMetric);
 
-        // 5. Send data to the view
+        $labels = [];
+        $products = [];
+        $pivotedData = [];
+
+        foreach ($flatChartData as $row) {
+            $period = $row['period'];
+            $productName = $row['product_name'];
+            if (!in_array($period, $labels)) {
+                $labels[] = $period;
+            }
+            if (!in_array($productName, $products)) {
+                $products[] = $productName;
+            }
+            $pivotedData[$productName][$period] = (float)$row['value'];
+        }
+        sort($labels);
+        
+        $datasets = [];
+        $colors = [
+            '#4F46E5', '#059669', '#D97706', '#DB2777', '#6B7280', 
+            '#06B6D4', '#EF4444', '#F59E0B', '#84CC16', '#A855F7'
+        ];
+        $colorIndex = 0;
+
+        foreach ($products as $productName) {
+            $dataPoints = [];
+            foreach ($labels as $label) {
+                $dataPoints[] = $pivotedData[$productName][$label] ?? 0;
+            }
+            $color = $colors[$colorIndex % count($colors)];
+            $datasets[] = [
+                'label' => $productName,
+                'data' => $dataPoints,
+                'borderColor' => $color,
+                'backgroundColor' => $color . '1A', // Transparan
+                'fill' => true,
+                'tension' => 0.3,
+            ];
+            $colorIndex++;
+        }
+
+        $chartData = [
+            'labels' => $labels,
+            'datasets' => $datasets,
+        ];
+
+        // 5. Send all data to the view
         $data = [
             'pageTitle' => 'Laporan Penjualan Produk',
             'startDate' => $startDate,
@@ -349,5 +395,135 @@ class ReportController extends Controller
         ];
         
         $this->view('admin.reports.product_sales', $data, 'admin_layout');
+    }
+    
+    public function productByCategory() {
+        AuthHelper::requireAdmin();
+        $today = date('Y-m-d');
+        $defaultStartDate = date('Y-m-01');
+
+        $startDate = SanitizeHelper::string($_GET['start_date'] ?? $defaultStartDate);
+        $endDate = SanitizeHelper::string($_GET['end_date'] ?? $today);
+        $searchTerm = SanitizeHelper::string(trim($_GET['search'] ?? ''));
+        $groupBy = SanitizeHelper::string($_GET['group_by'] ?? 'day');
+        $chartMetric = SanitizeHelper::string($_GET['chart_metric'] ?? 'penjualan');
+
+        if (!$this->validateDate($startDate)) { $startDate = $defaultStartDate; }
+        if (!$this->validateDate($endDate)) { $endDate = $today; }
+        if (strtotime($endDate) < strtotime($startDate)) { $endDate = $startDate; }
+
+        $reportModel = $this->model('Report');
+        $categoryModel = $this->model('Category');
+
+        $reportData = $reportModel->getProductSalesByCategory($startDate, $endDate, $searchTerm);
+        
+        $totalGlobalSales = array_sum(array_column($reportData, 'total_sales'));
+        $totalGlobalProducts = array_sum(array_column($reportData, 'total_products_sold'));
+        
+        $metrics = [
+            'total_categories' => count($reportData),
+            'total_sales' => $totalGlobalSales,
+        ];
+
+        // Fetch chart data
+        $flatChartData = $reportModel->getCategorySalesTrend($startDate, $endDate, $searchTerm, $groupBy, $chartMetric);
+        
+        $labels = [];
+        $categories = [];
+        $pivotedData = [];
+        foreach ($flatChartData as $row) {
+            $period = $row['period'];
+            $categoryName = $row['category_name'];
+            if (!in_array($period, $labels)) {
+                $labels[] = $period;
+            }
+            if (!in_array($categoryName, $categories)) {
+                $categories[] = $categoryName;
+            }
+            $pivotedData[$categoryName][$period] = (float)$row['value'];
+        }
+        sort($labels);
+
+        $datasets = [];
+        $colors = [
+            '#4F46E5', '#059669', '#D97706', '#DB2777', '#6B7280', 
+            '#06B6D4', '#EF4444', '#F59E0B', '#84CC16', '#A855F7'
+        ];
+        $colorIndex = 0;
+        
+        foreach ($categories as $categoryName) {
+            $dataPoints = [];
+            foreach ($labels as $label) {
+                $dataPoints[] = $pivotedData[$categoryName][$label] ?? 0;
+            }
+            $color = $colors[$colorIndex % count($colors)];
+            $datasets[] = [
+                'label' => $categoryName,
+                'data' => $dataPoints,
+                'borderColor' => $color,
+                'backgroundColor' => $color . '1A',
+                'fill' => false,
+                'tension' => 0.3,
+            ];
+            $colorIndex++;
+        }
+        
+        $chartData = [
+            'labels' => $labels,
+            'datasets' => $datasets,
+        ];
+
+        $data = [
+            'pageTitle' => 'Laporan Penjualan per Kategori',
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'searchTerm' => $searchTerm,
+            'reportData' => $reportData,
+            'metrics' => $metrics,
+            'totalGlobalSales' => $totalGlobalSales,
+            'totalGlobalProducts' => $totalGlobalProducts,
+            'chartData' => $chartData,
+            'groupBy' => $groupBy,
+            'chartMetric' => $chartMetric,
+        ];
+
+        $this->view('admin.reports.category_sales', $data, 'admin_layout');
+    }
+
+    public function cashSummary()
+    {
+        AuthHelper::requireRole(['admin', 'staff']);
+        $today = date('Y-m-d');
+        $defaultStartDate = date('Y-m-01');
+
+        $startDate = SanitizeHelper::string($_GET['start_date'] ?? $defaultStartDate);
+        $endDate = SanitizeHelper::string($_GET['end_date'] ?? $today);
+        $searchTerm = SanitizeHelper::string(trim($_GET['search'] ?? ''));
+
+        if (!$this->validateDate($startDate)) { $startDate = $defaultStartDate; }
+        if (!$this->validateDate($endDate)) { $endDate = $today; }
+        if (strtotime($endDate) < strtotime($startDate)) { $endDate = $startDate; }
+
+        $reportModel = $this->model('Report');
+        $cashTransactions = $reportModel->getCashTransactionsSummary($startDate, $endDate, $searchTerm);
+        
+        $totalIn = array_sum(array_column($cashTransactions, 'amount_in'));
+        $totalOut = array_sum(array_column($cashTransactions, 'amount_out'));
+        $netCash = $totalIn - $totalOut;
+
+        $data = [
+            'pageTitle' => 'Laporan Kas Kasir',
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'searchTerm' => $searchTerm,
+            'cashTransactions' => $cashTransactions,
+            'metrics' => [
+                'total_in' => $totalIn,
+                'total_out' => $totalOut,
+                'net_cash' => $netCash,
+            ],
+        ];
+
+        $this->view('admin.reports.cash_summary', $data, 'admin_layout');
     }
 }

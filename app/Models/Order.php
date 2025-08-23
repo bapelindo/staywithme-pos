@@ -16,12 +16,126 @@ use App\Helpers\SanitizeHelper;
 class Order extends Model {
     protected $table = 'orders';
 
-    // --- METHOD findById, createOrder, generateOrderNumber, updateStatus, dll DARI SEBELUMNYA ---
-    // ...(Kode method-method yang sudah ada sebelumnya tetap di sini)...
-
-     /**
-     * Mencari order berdasarkan ID.
+    /**
+     * Membuat order baru beserta item-itemnya dalam satu transaksi.
      */
+    
+    public function createOrder(int $tableId, array $items, ?string $notes = null): int|false {
+        if (empty($items) || $tableId <= 0) {
+            return false;
+        }
+        $orderNumber = $this->generateOrderNumber();
+        if (!$orderNumber) {
+             return false;
+        }
+
+        // 1. Ambil pengaturan pajak dan layanan
+        $settingsModel = new \App\Models\Settings();
+        $settings = $settingsModel->getAllSettings();
+        $adminFee = (float)($settings['default_admin_fee'] ?? 0);
+        $taxRate = (float)($settings['tax_percentage'] ?? 0) / 100;
+        $serviceRate = (float)($settings['service_charge_percentage'] ?? 0) / 100;
+
+        // Faktor pembagi untuk menghitung harga dasar dari harga inklusif
+        $inclusiveFactor = 1 + $taxRate + $serviceRate;
+        if ($inclusiveFactor == 0) $inclusiveFactor = 1; // Hindari pembagian dengan nol
+
+        $itemIds = array_column($items, 'menu_item_id');
+        if (empty($itemIds)) {
+             return false;
+        }
+        
+        // Inisialisasi total
+        $totalAmount = 0.00; // Ini akan menjadi jumlah dari harga menu
+        $totalTax = 0.00;
+        $totalServiceCharge = 0.00;
+
+        $placeholders = implode(',', array_fill(0, count($itemIds), '?'));
+        $sqlGetPrices = "SELECT id, price FROM menu_items WHERE id IN ($placeholders) AND is_available = 1";
+        
+        try {
+            $stmtPrices = $this->db->prepare($sqlGetPrices);
+            $paramIndex = 1;
+            foreach ($itemIds as $itemId) {
+                 $stmtPrices->bindValue($paramIndex++, $itemId, PDO::PARAM_INT);
+            }
+            $stmtPrices->execute();
+            $dbItems = $stmtPrices->fetchAll(PDO::FETCH_KEY_PAIR);
+            
+            if (count($dbItems) !== count($itemIds)) {
+                 error_log("createOrder failed: one or more menu items not found or unavailable.");
+                 return false;
+            }
+
+            $orderItemsData = [];
+            foreach ($items as $item) {
+                $menuItemId = (int)$item['menu_item_id'];
+                $quantity = (int)$item['quantity'];
+                if ($quantity <= 0 || !isset($dbItems[$menuItemId])) {
+                    return false;
+                }
+                
+                $priceAtOrder = (float)$dbItems[$menuItemId]; // Harga inklusif dari DB
+                $subtotal = $priceAtOrder * $quantity;
+                
+                // Tambahkan subtotal ke total akhir
+                $totalAmount += $subtotal;
+
+                // Hitung mundur untuk menemukan harga dasar, pajak, dan layanan untuk subtotal ini
+                $baseSubtotal = $subtotal / $inclusiveFactor;
+                $taxForSubtotal = $baseSubtotal * $taxRate;
+                $serviceForSubtotal = $baseSubtotal * $serviceRate;
+
+                // Akumulasi total
+                $totalTax += $taxForSubtotal;
+                $totalServiceCharge += $serviceForSubtotal;
+
+                $orderItemsData[] = [
+                    'menu_item_id' => $menuItemId, 'quantity' => $quantity,
+                    'price_at_order' => $priceAtOrder, 'subtotal' => $subtotal,
+                    'notes' => isset($item['notes']) ? SanitizeHelper::string($item['notes']) : null
+                ];
+            }
+            
+            // Tambahkan admin fee jika ada
+            $finalTotalAmount = $totalAmount + $adminFee;
+
+        } catch (PDOException $e) {
+            error_log("createOrder failed during price check/calculation: " . $e->getMessage());
+            return false;
+        }
+        
+        $this->db->beginTransaction();
+        try {
+            // **FIXED**: Menghapus kolom 'gross_sales' dari query INSERT
+            $sqlOrder = "INSERT INTO {$this->table} (table_id, order_number, service_charge, tax, admin_fee, total_amount, status, notes, order_time)
+                         VALUES (:table_id, :order_number, :service_charge, :tax, :admin_fee, :total_amount, 'pending_payment', :notes, NOW())";
+            $stmtOrder = $this->db->prepare($sqlOrder);
+            
+            $stmtOrder->bindValue(':table_id', $tableId, PDO::PARAM_INT);
+            $stmtOrder->bindValue(':order_number', $orderNumber, PDO::PARAM_STR);
+            $stmtOrder->bindValue(':service_charge', (string)round($totalServiceCharge, 2), PDO::PARAM_STR);
+            $stmtOrder->bindValue(':tax', (string)round($totalTax, 2), PDO::PARAM_STR);
+            $stmtOrder->bindValue(':admin_fee', (string)$adminFee, PDO::PARAM_STR);
+            $stmtOrder->bindValue(':total_amount', (string)round($finalTotalAmount, 2), PDO::PARAM_STR);
+            $stmtOrder->bindValue(':notes', $notes ? SanitizeHelper::string($notes) : null, PDO::PARAM_STR);
+
+            if (!$stmtOrder->execute()) throw new PDOException("Failed to insert order header.");
+            $orderId = (int)$this->db->lastInsertId();
+            
+            $orderItemModel = new OrderItem();
+            if (!$orderItemModel->createOrderItems($orderId, $orderItemsData)) throw new PDOException("Failed to insert order items.");
+            
+            $this->db->commit();
+            return $orderId;
+        } catch (PDOException $e) {
+            $this->db->rollBack();
+            error_log("createOrder failed during transaction: " . $e->getMessage());
+            return false;
+        }
+    }
+
+     // ... (metode-metode lain seperti findById, generateOrderNumber tetap sama) ...
      public function findById($id): array|false {
          if ($id <= 0) return false;
          try {
@@ -38,97 +152,7 @@ class Order extends Model {
              return false;
          }
      }
-
-    /**
-     * Membuat order baru beserta item-itemnya dalam satu transaksi.
-     */
-    public function createOrder(int $tableId, array $items, ?string $notes = null): int|false {
-        // ...(Kode createOrder lengkap seperti sebelumnya)...
-        if (empty($items) || $tableId <= 0) {
-            error_log("createOrder failed: Invalid input provided.");
-            return false;
-        }
-        $orderNumber = $this->generateOrderNumber();
-        if (!$orderNumber) {
-             error_log("createOrder failed: Could not generate order number.");
-             return false;
-        }
-        $menuItemModel = new MenuItem();
-        $itemIds = array_column($items, 'menu_item_id');
-        if (empty($itemIds)) {
-             error_log("createOrder failed: No valid menu item IDs provided.");
-             return false;
-        }
-        $itemPrices = [];
-        $totalAmount = 0.00;
-        $placeholders = implode(',', array_fill(0, count($itemIds), '?'));
-        $sqlGetPrices = "SELECT id, price FROM menu_items WHERE id IN ($placeholders) AND is_available = 1";
-        try {
-            $stmtPrices = $this->db->prepare($sqlGetPrices);
-            $paramIndex = 1;
-            foreach ($itemIds as $itemId) {
-                 $stmtPrices->bindValue($paramIndex++, $itemId, PDO::PARAM_INT);
-            }
-            $stmtPrices->execute();
-            $dbItems = $stmtPrices->fetchAll(PDO::FETCH_KEY_PAIR);
-            if (count($dbItems) !== count($itemIds)) {
-                 error_log("createOrder failed: Some menu items not found or are unavailable.");
-                 return false;
-            }
-            $orderItemsData = [];
-            foreach ($items as $item) {
-                $menuItemId = (int)$item['menu_item_id'];
-                $quantity = (int)$item['quantity'];
-                if ($quantity <= 0 || !isset($dbItems[$menuItemId])) {
-                    error_log("createOrder failed: Invalid quantity or item ID {$menuItemId} not found in fetched prices.");
-                    return false;
-                }
-                $priceAtOrder = (float)$dbItems[$menuItemId];
-                $subtotal = $priceAtOrder * $quantity;
-                $totalAmount += $subtotal;
-                $orderItemsData[] = [
-                    'menu_item_id' => $menuItemId, 'quantity' => $quantity,
-                    'price_at_order' => $priceAtOrder, 'subtotal' => $subtotal,
-                    'notes' => isset($item['notes']) ? SanitizeHelper::string($item['notes']) : null
-                ];
-            }
-        } catch (PDOException $e) {
-            error_log("createOrder failed during price check: " . $e->getMessage());
-            return false;
-        }
-         if (empty($orderItemsData)) {
-             error_log("createOrder failed: No valid items to process after validation.");
-             return false;
-         }
-        $this->db->beginTransaction();
-        try {
-            $sqlOrder = "INSERT INTO {$this->table} (table_id, order_number, total_amount, status, notes, order_time, created_at, updated_at)
-                         VALUES (:table_id, :order_number, :total_amount, 'pending_payment', :notes, NOW(), NOW(), NOW())";
-            $stmtOrder = $this->db->prepare($sqlOrder);
-            $stmtOrder->bindParam(':table_id', $tableId, PDO::PARAM_INT);
-            $stmtOrder->bindParam(':order_number', $orderNumber, PDO::PARAM_STR);
-            $totalAmountStr = (string)$totalAmount;
-            $stmtOrder->bindParam(':total_amount', $totalAmountStr, PDO::PARAM_STR);
-            $safeNotes = $notes ? SanitizeHelper::string($notes) : null;
-            $stmtOrder->bindParam(':notes', $safeNotes, PDO::PARAM_STR);
-            if (!$stmtOrder->execute()) throw new PDOException("Failed to insert order header.");
-            $orderId = (int)$this->db->lastInsertId();
-             if ($orderId == 0) throw new PDOException("Failed to get last insert ID for order.");
-            $orderItemModel = new OrderItem();
-            if (!$orderItemModel->createOrderItems($orderId, $orderItemsData)) throw new PDOException("Failed to insert order items.");
-            $this->db->commit();
-            return $orderId;
-        } catch (PDOException $e) {
-            $this->db->rollBack();
-            error_log("createOrder failed during transaction: " . $e->getMessage());
-            return false;
-        }
-    }
-    /**
-     * Generate nomor order unik (Contoh: STW-YYYYMMDD-NNNN)
-     */
     private function generateOrderNumber(): string|false {
-        // ...(Kode generateOrderNumber lengkap seperti sebelumnya)...
         $prefix = "SWM-";
         $timezone = new DateTimeZone('Asia/Jakarta');
         $datePart = (new DateTime('now', $timezone))->format('Ymd');
@@ -148,12 +172,7 @@ class Order extends Model {
              return false;
         }
     }
-
-    /**
-     * Mengupdate status order.
-     */
     public function updateStatus(int $orderId, string $newStatus): bool {
-        // PERBAIKAN: Tambahkan 'pending_payment' dan hapus 'pending' yang tidak terpakai.
         $allowedStatuses = ['pending_payment', 'received', 'preparing', 'ready', 'served', 'paid', 'cancelled'];
         if ($orderId <= 0 || !in_array($newStatus, $allowedStatuses)) {
              error_log("Invalid status '{$newStatus}' or Order ID {$orderId}.");
@@ -171,14 +190,8 @@ class Order extends Model {
             return false;
         }
     }
-
-    /**
-     * Mengambil order berdasarkan status tertentu, diurutkan.
-     */
     public function findByStatus(string|array $status, string $orderBy = 'o.order_time ASC', ?int $limit = null): array {
-         // ...(Kode findByStatus lengkap seperti sebelumnya)...
         $statuses = is_array($status) ? $status : [$status];
-        // PERBAIKAN: Tambahkan 'pending_payment'
         $allowedStatuses = ['pending_payment', 'received', 'preparing', 'ready', 'served', 'paid', 'cancelled'];
         $validStatuses = array_intersect($statuses, $allowedStatuses);
         if (empty($validStatuses)) return [];
@@ -198,13 +211,7 @@ class Order extends Model {
             error_log("Error fetching orders by status: " . $e->getMessage()); return [];
         }
     }
-
-     /**
-      * Mengambil order aktif (received, preparing) untuk display KDS/polling.
-      */
      public function getActiveOrdersForDisplay(array $statuses = ['received', 'preparing'], ?int $lastOrderId = null): array {
-         // ...(Kode getActiveOrdersForDisplay lengkap seperti sebelumnya)...
-         // PERBAIKAN: Tambahkan 'pending_payment'
          $allowedStatuses = ['pending_payment', 'received', 'preparing', 'ready', 'served', 'paid', 'cancelled'];
          $validStatuses = array_intersect($statuses, $allowedStatuses);
          if (empty($validStatuses)) return [];
@@ -224,28 +231,19 @@ class Order extends Model {
              error_log("Error fetching active orders for display: " . $e->getMessage()); return [];
          }
      }
-
-
-    /**
-     * Mengambil detail lengkap order beserta item-itemnya.
-     */
     public function getOrderWithDetails(int $orderId): ?array {
-        // === PERBAIKAN NAMA KOLOM ===
-        // Ganti 't.number' menjadi 't.table_number'
         $sql = "SELECT
                     o.id, o.order_number, o.table_id, o.status, o.total_amount,
                     o.notes AS order_notes, o.order_time, o.created_at, o.updated_at,
-                    t.table_number, -- <<< SUDAH DIPERBAIKI
+                    t.table_number,
                     t.qr_code_identifier
                 FROM orders o
-                JOIN tables t ON o.table_id = t.id -- Join dengan tabel 'tables'
+                JOIN tables t ON o.table_id = t.id
                 WHERE o.id = :order_id";
-        // === AKHIR PERBAIKAN ===
-
-        try { // Tambahkan try-catch block untuk penanganan error yang lebih baik
+        
+        try { 
             $stmt = $this->db->prepare($sql);
             if (!$stmt) {
-                 // Handle error persiapan query
                  error_log("PDO prepare failed for getOrderWithDetails: " . implode(":", $this->db->errorInfo()));
                  return null;
             }
@@ -254,10 +252,9 @@ class Order extends Model {
             $order = $stmt->fetch(\PDO::FETCH_ASSOC);
 
             if (!$order) {
-                return null; // Pesanan tidak ditemukan
+                return null;
             }
 
-            // Ambil item pesanan
             $itemSql = "SELECT
                             oi.quantity, oi.price_at_order, oi.subtotal, oi.notes,
                             mi.name as menu_item_name, mi.image_path
@@ -266,29 +263,22 @@ class Order extends Model {
                         WHERE oi.order_id = :order_id";
             $itemStmt = $this->db->prepare($itemSql);
              if (!$itemStmt) {
-                 // Handle error persiapan query item
                  error_log("PDO prepare failed for order items: " . implode(":", $this->db->errorInfo()));
-                 $order['items'] = []; // Set item kosong jika query gagal
+                 $order['items'] = [];
              } else {
                 $itemStmt->bindParam(':order_id', $orderId, \PDO::PARAM_INT);
                 $itemStmt->execute();
                 $order['items'] = $itemStmt->fetchAll(\PDO::FETCH_ASSOC);
              }
 
-            return $order; // Mengembalikan data order lengkap
+            return $order;
 
         } catch (\PDOException $e) {
-            // Log error eksekusi
              error_log("PDO Exception in getOrderWithDetails for order ID {$orderId}: " . $e->getMessage());
-             return null; // Kembalikan null jika terjadi error
+             return null;
         }
     }
-
-    /**
-      * Menghitung jumlah order berdasarkan table_id.
-      */
      public function countByTableId(int $tableId): int {
-         // ...(Kode countByTableId lengkap seperti sebelumnya)...
           if ($tableId <= 0) return 0;
          try {
              $stmt = $this->db->prepare("SELECT COUNT(*) FROM {$this->table} WHERE table_id = :table_id");
@@ -299,13 +289,9 @@ class Order extends Model {
              error_log("Error counting orders for table ID {$tableId}: " . $e->getMessage()); return 0;
          }
      }
-
-    /**
-     * Menghitung jumlah order berdasarkan satu atau beberapa status.
-     */
     public function countByStatus(string|array $status): int {
         $statuses = is_array($status) ? $status : [$status];
-        $allowedStatuses = ['pending_payment', 'received', 'preparing', 'ready', 'served', /* 'paid', */ 'cancelled']; // Sesuaikan array ini juga
+        $allowedStatuses = ['pending_payment', 'received', 'preparing', 'ready', 'served', 'cancelled'];
         $validStatuses = array_intersect($statuses, $allowedStatuses);
         if (empty($validStatuses)) return 0;
 
@@ -321,11 +307,7 @@ class Order extends Model {
             error_log("Error counting orders by status: " . $e->getMessage()); return 0;
         }
     }
-    /**
-     * Mengambil semua order dengan paginasi, diurutkan berdasarkan waktu order terbaru.
-     */
     public function getAllOrdersPaginated(int $limit, int $offset): array {
-        // ...(Kode getAllOrdersPaginated lengkap seperti sebelumnya)...
          $sql = "SELECT o.*, t.table_number FROM {$this->table} o JOIN tables t ON o.table_id = t.id ORDER BY o.order_time DESC LIMIT :limit OFFSET :offset";
         try {
             $stmt = $this->db->prepare($sql);
@@ -337,12 +319,7 @@ class Order extends Model {
             error_log("Error fetching all orders paginated: " . $e->getMessage()); return [];
         }
     }
-
-    /**
-     * Menghitung total semua order dalam database.
-     */
     public function countAllOrders(): int {
-        // ...(Kode countAllOrders lengkap seperti sebelumnya)...
         try {
             $stmt = $this->db->query("SELECT COUNT(*) FROM {$this->table}");
             return (int)$stmt->fetchColumn();
@@ -350,29 +327,23 @@ class Order extends Model {
             error_log("Error counting all orders: " . $e->getMessage()); return 0;
         }
     }
-
-     /**
-     * Mengambil order berdasarkan status dengan paginasi, urut terbaru.
-     */
-    public function getOrdersByStatusPaginated(string $status, int $limit, int $offset): array {
-        // Daftar status yang valid diambil dari database ENUM atau didefinisikan di sini
-        // Jika Anda menghapus 'paid', pastikan array ini juga diperbarui.
-         $allowedStatuses = ['pending_payment', 'received', 'preparing', 'ready', 'served', /* 'paid', */ 'cancelled']; // Sesuaikan jika 'paid' dihapus
+     public function getOrdersByStatusPaginated(string $status, int $limit, int $offset): array {
+         $allowedStatuses = ['pending_payment', 'received', 'preparing', 'ready', 'served', 'cancelled'];
 
         if (!in_array($status, $allowedStatuses)) {
              error_log("Attempted to filter orders by invalid status: {$status}");
-             return []; // Kembalikan kosong jika status tidak valid
+             return [];
         }
 
         $sql = "SELECT o.*, t.table_number
                 FROM {$this->table} o
                 JOIN tables t ON o.table_id = t.id
-                WHERE o.status = :status -- Filter berdasarkan status
-                ORDER BY o.order_time DESC -- Urutkan terbaru dulu
-                LIMIT :limit OFFSET :offset"; // Paginasi
+                WHERE o.status = :status
+                ORDER BY o.order_time DESC
+                LIMIT :limit OFFSET :offset";
         try {
             $stmt = $this->db->prepare($sql);
-            $stmt->bindParam(':status', $status, PDO::PARAM_STR); // Bind status yang dicari
+            $stmt->bindParam(':status', $status, PDO::PARAM_STR);
             $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
             $stmt->bindParam(':offset', $offset, PDO::PARAM_INT);
             $stmt->execute();
@@ -382,43 +353,31 @@ class Order extends Model {
             return [];
         }
     }
-
-     /**
-      * Mengambil order baru dengan status tertentu sejak ID terakhir yang dilihat.
-      */
       public function getNewOrdersSince(int $lastSeenId, string $status): array {
-        // Daftar status yang diizinkan untuk dicek (sesuaikan jika perlu)
         $allowedStatuses = ['pending_payment', 'received', 'preparing', 'ready', 'served', 'paid', 'cancelled'];
         if (!in_array($status, $allowedStatuses)) {
             error_log("Attempted to get new orders with invalid status: {$status}");
-            return []; // Jangan proses jika status tidak valid
+            return [];
         }
 
-        // Query untuk mengambil data order baru (termasuk nomor meja)
         $sql = "SELECT o.id, o.order_number, o.status, o.order_time, t.table_number
                 FROM {$this->table} o
-                JOIN tables t ON o.table_id = t.id -- Join untuk mendapatkan nomor meja
+                JOIN tables t ON o.table_id = t.id
                 WHERE o.status = :status AND o.id > :last_seen_id
-                ORDER BY o.id ASC"; // Urutkan berdasarkan ID terbaru
+                ORDER BY o.id ASC";
 
        try {
            $stmt = $this->db->prepare($sql);
            $stmt->bindParam(':status', $status, PDO::PARAM_STR);
            $stmt->bindParam(':last_seen_id', $lastSeenId, PDO::PARAM_INT);
            $stmt->execute();
-           return $stmt->fetchAll(PDO::FETCH_ASSOC); // Kembalikan semua order baru
+           return $stmt->fetchAll(PDO::FETCH_ASSOC);
        } catch (PDOException $e) {
            error_log("Error fetching new orders with status '{$status}' since ID {$lastSeenId}: " . $e->getMessage());
-           return []; // Kembalikan array kosong jika error
+           return [];
        }
     }
-
-
-    /**
-     * Mengambil ringkasan data penjualan untuk periode tanggal tertentu.
-     */
     public function getSalesReportSummary(string $startDate, string $endDate): array {
-        // ...(Kode getSalesReportSummary lengkap seperti sebelumnya)...
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $startDate) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $endDate)) {
              error_log("Invalid date format for sales report summary.");
              return ['total_orders' => 0, 'total_revenue' => 0.00, 'average_order_value' => 0.00];
@@ -448,26 +407,15 @@ class Order extends Model {
             return ['total_orders' => 0, 'total_revenue' => 0.00, 'average_order_value' => 0.00];
         }
     }
-
-    /**
-     * >> BARU <<
-     * Mengambil data tren penjualan harian (jumlah order & pendapatan)
-     * dalam rentang tanggal tertentu untuk grafik.
-     *
-     * @param string $startDate Format YYYY-MM-DD.
-     * @param string $endDate Format YYYY-MM-DD.
-     * @return array Data untuk Chart.js ['labels' => [], 'revenue' => [], 'orders' => []].
-     */
     public function getSalesTrendData(string $startDate, string $endDate): array {
          if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $startDate) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $endDate)) {
               error_log("Invalid date format for sales trend data.");
               return ['labels'=>[], 'revenue'=>[], 'orders'=>[]];
          }
         $endDateFull = $endDate . ' 23:59:59';
-        $revenueStatuses = ['paid', 'served']; // Status yg dihitung
+        $revenueStatuses = ['paid', 'served'];
         $placeholders = implode(',', array_fill(0, count($revenueStatuses), '?'));
 
-        // Query untuk agregasi per hari
         $sql = "SELECT
                     DATE(order_time) as order_date,
                     COUNT(*) as daily_orders,
@@ -483,7 +431,6 @@ class Order extends Model {
         try {
             $params = array_merge($revenueStatuses, [$startDate, $endDateFull]);
             $stmt = $this->db->prepare($sql);
-             // Bind parameter secara manual
             $paramIndex = 1;
             foreach($revenueStatuses as $st) $stmt->bindValue($paramIndex++, $st, PDO::PARAM_STR);
             $stmt->bindValue($paramIndex++, $startDate, PDO::PARAM_STR);
@@ -492,8 +439,6 @@ class Order extends Model {
             $stmt->execute();
             $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-            // Proses hasil query ke format Chart.js
-            // Opsional: Isi gap tanggal jika ada hari tanpa penjualan
             $currentDate = new DateTime($startDate);
             $endDateObj = new DateTime($endDate);
             $dataMap = [];
@@ -503,26 +448,24 @@ class Order extends Model {
 
             while ($currentDate <= $endDateObj) {
                 $dateString = $currentDate->format('Y-m-d');
-                $chartData['labels'][] = $dateString; // Atau format tanggal lain yg diinginkan
+                $chartData['labels'][] = $dateString;
                 if (isset($dataMap[$dateString])) {
                     $chartData['revenue'][] = (float)$dataMap[$dateString]['daily_revenue'];
                     $chartData['orders'][] = (int)$dataMap[$dateString]['daily_orders'];
                 } else {
-                    // Jika tidak ada data di hari itu, masukkan 0
                     $chartData['revenue'][] = 0;
                     $chartData['orders'][] = 0;
                 }
-                $currentDate->modify('+1 day'); // Maju ke hari berikutnya
+                $currentDate->modify('+1 day');
             }
 
         } catch (PDOException $e) {
             error_log("Error getting sales trend data ({$startDate} - {$endDate}): " . $e->getMessage());
-            // Kembalikan array kosong jika error
             return ['labels' => [], 'revenue' => [], 'orders' => []];
         }
 
         return $chartData;
     }
 
-} // Akhir kelas Order
+}
 ?>

@@ -172,6 +172,7 @@ function render_change_indicator($change) {
                     </div>
                     <div x-show="showPopover === 'revenue'" 
                          @click.away="showPopover = null"
+                         x-transition
                          class="absolute left-0 mt-2 w-full max-w-sm bg-white rounded-lg shadow-lg border border-gray-200 z-10">
                         <div class="p-4">
                             <h3 class="font-semibold text-gray-900 mb-2">Komponen Total Pendapatan</h3>
@@ -216,6 +217,7 @@ function render_change_indicator($change) {
                     </div>
                     <div x-show="showPopover === 'costs'" 
                          @click.away="showPopover = null"
+                         x-transition
                          class="absolute left-0 mt-2 w-full max-w-sm bg-white rounded-lg shadow-lg border border-gray-200 z-10">
                         <div class="p-4">
                             <h3 class="font-semibold text-gray-900 mb-2">Komponen Total Biaya</h3>
@@ -260,17 +262,18 @@ function render_change_indicator($change) {
                     </div>
                     <div x-show="showPopover === 'netSales'" 
                          @click.away="showPopover = null"
+                         x-transition
                          class="absolute left-0 mt-2 w-full max-w-sm bg-white rounded-lg shadow-lg border border-gray-200 z-10">
                         <div class="p-4">
                             <h3 class="font-semibold text-gray-900 mb-2">Komponen Penjualan Bersih</h3>
                             <div class="space-y-2">
                                 <div class="flex justify-between text-sm">
                                     <span class="text-gray-600">Total Penjualan</span>
-                                    <span class="font-medium"><?= NumberHelper::format_rupiah($financials['total_sales'] ?? 0) ?></span>
+                                    <span class="font-medium"><?= NumberHelper::format_rupiah($financials['total_revenue'] ?? 0) ?></span>
                                 </div>
                                 <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">Pengembalian</span>
-                                    <span class="font-medium"><?= NumberHelper::format_rupiah($financials['refunds'] ?? 0) ?></span>
+                                    <span class="text-gray-600">Pengembalian Dana</span>
+                                    <span class="font-medium text-red-600">- <?= NumberHelper::format_rupiah($financials['refunds'] ?? 0) ?></span>
                                 </div>
                                 <div class="pt-2 mt-2 border-t border-gray-200">
                                     <div class="flex justify-between font-medium">
@@ -278,7 +281,7 @@ function render_change_indicator($change) {
                                         <span class="text-emerald-600"><?= NumberHelper::format_rupiah($financials['net_sales'] ?? 0) ?></span>
                                     </div>
                                 </div>
-                            </div>
+                                </div>
                         </div>
                     </div>
                 </div>
@@ -295,10 +298,11 @@ function render_change_indicator($change) {
                         <?= NumberHelper::format_rupiah($financials['gross_profit'] ?? 0) ?>
                     </div>
                     <div class="text-sm text-gray-500 mt-1">
-                        Margin: <?= number_format(((float)($financials['gross_profit'] ?? 0) / ((float)($financials['total_revenue'] ?? 0) ?: 1)) * 100, 1) ?>%
+                        Margin: <?= number_format(((float)($financials['gross_profit'] ?? 0) / ((float)($financials['net_sales'] ?? 0) ?: 1)) * 100, 1) ?>%
                     </div>
                     <div x-show="showPopover === 'profit'" 
                          @click.away="showPopover = null"
+                         x-transition
                          class="absolute left-0 mt-2 w-full max-w-sm bg-white rounded-lg shadow-lg border border-gray-200 z-10">
                         <div class="p-4">
                             <h3 class="font-semibold text-gray-900 mb-2">Komponen Laba Kotor</h3>
@@ -308,16 +312,8 @@ function render_change_indicator($change) {
                                     <span class="font-medium"><?= NumberHelper::format_rupiah($financials['net_sales'] ?? 0) ?></span>
                                 </div>
                                 <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">HPP</span>
-                                    <span class="font-medium"><?= NumberHelper::format_rupiah($financials['cogs'] ?? 0) ?></span>
-                                </div>
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">Biaya MDR</span>
-                                    <span class="font-medium"><?= NumberHelper::format_rupiah($financials['mdr_fee'] ?? 0) ?></span>
-                                </div>
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">Komisi</span>
-                                    <span class="font-medium"><?= NumberHelper::format_rupiah($financials['commission'] ?? 0) ?></span>
+                                    <span class="text-gray-600">HPP (COGS)</span>
+                                    <span class="font-medium text-red-600">- <?= NumberHelper::format_rupiah($financials['cogs'] ?? 0) ?></span>
                                 </div>
                                 <div class="pt-2 mt-2 border-t border-gray-200">
                                     <div class="flex justify-between font-medium">
@@ -332,6 +328,7 @@ function render_change_indicator($change) {
             </div>
         </div>
     </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>

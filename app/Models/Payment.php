@@ -70,7 +70,7 @@ class Payment extends Model {
                // === PERUBAHAN DI SINI ===
                // Ubah status order menjadi 'received' agar masuk ke KDS
                $orderModel = new Order(); // Pastikan Order model bisa diakses
-               if ($orderModel->updateStatus($orderId, 'received')) { // <-- Ganti 'paid' menjadi 'received'
+               if ($orderModel->updateStatus($orderId, 'paid')) {
                // === AKHIR PERUBAHAN ===
                    $this->db->commit(); // Commit transaksi jika semua berhasil
                    return $paymentId;
