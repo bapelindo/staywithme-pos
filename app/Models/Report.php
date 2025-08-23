@@ -463,4 +463,159 @@ class Report extends Model
             return [];
         }
     }
+
+    public function getProfitAndLossData(string $startDate, string $endDate): array
+    {
+        $data = [
+            'revenue' => 0,
+            'cogs' => 0,
+            'gross_profit' => 0,
+            'expenses' => [],
+            'total_expenses' => 0,
+            'net_profit' => 0
+        ];
+
+        try {
+            // 1. Hitung Total Pendapatan (dari pesanan yang sudah selesai)
+            $sqlRevenue = "SELECT SUM(total_amount) as total_revenue
+                           FROM orders
+                           WHERE status IN ('served', 'paid')
+                           AND DATE(order_time) BETWEEN :startDate AND :endDate";
+            $stmtRevenue = $this->pdo->prepare($sqlRevenue);
+            $stmtRevenue->execute([':startDate' => $startDate, ':endDate' => $endDate]);
+            $data['revenue'] = (float)$stmtRevenue->fetchColumn();
+
+            // 2. Hitung Total Harga Pokok Penjualan (HPP/COGS)
+            $cogsRate = (float)($this->getSettings()['cogs_percentage'] ?? 40) / 100;
+            $sqlCogs = "SELECT SUM(CASE WHEN mi.cost > 0 THEN oi.quantity * mi.cost ELSE oi.subtotal * :cogsRate END) as total_cogs
+                        FROM order_items oi
+                        JOIN orders o ON oi.order_id = o.id
+                        JOIN menu_items mi ON oi.menu_item_id = mi.id
+                        WHERE o.status IN ('served', 'paid') AND DATE(o.order_time) BETWEEN :startDate AND :endDate";
+            $stmtCogs = $this->pdo->prepare($sqlCogs);
+            $stmtCogs->execute([':cogsRate' => $cogsRate, ':startDate' => $startDate, ':endDate' => $endDate]);
+            $data['cogs'] = (float)$stmtCogs->fetchColumn();
+
+            // 3. Hitung Laba Kotor
+            $data['gross_profit'] = $data['revenue'] - $data['cogs'];
+
+            // 4. Ambil dan kelompokkan Biaya Operasional dari kas keluar
+            // Kita KECUALIKAN 'Tutup Kasir' dan 'Kasbon Karyawan' karena bukan biaya operasional murni
+            $sqlExpenses = "SELECT category, SUM(amount) as total_amount
+                            FROM cash_transactions
+                            WHERE type = 'out'
+                            AND category NOT IN ('Tutup Kasir', 'Kasbon Karyawan') 
+                            AND DATE(transaction_time) BETWEEN :startDate AND :endDate
+                            GROUP BY category
+                            ORDER BY total_amount DESC";
+            $stmtExpenses = $this->pdo->prepare($sqlExpenses);
+            $stmtExpenses->execute([':startDate' => $startDate, ':endDate' => $endDate]);
+            $expenses = $stmtExpenses->fetchAll(PDO::FETCH_ASSOC);
+            
+            $data['expenses'] = $expenses;
+            $data['total_expenses'] = (float)array_sum(array_column($expenses, 'total_amount'));
+            
+            // 5. Hitung Laba Bersih
+            $data['net_profit'] = $data['gross_profit'] - $data['total_expenses'];
+
+        } catch (PDOException $e) {
+            error_log("Error getting Profit & Loss data: " . $e->getMessage());
+            return [];
+        }
+
+        return $data;
+    }
+
+    public function getClosedDrawers(int $limit, int $offset): array
+    {
+        $sql = "SELECT cd.*, u.username
+                FROM cash_drawers cd
+                JOIN users u ON cd.user_id = u.id
+                WHERE cd.status = 'closed'
+                ORDER BY cd.closed_at DESC
+                LIMIT :limit OFFSET :offset";
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error getting closed drawers: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    public function countClosedDrawers(): int
+    {
+        try {
+            $stmt = $this->pdo->query("SELECT COUNT(*) FROM cash_drawers WHERE status = 'closed'");
+            return (int)$stmt->fetchColumn();
+        } catch (PDOException $e) {
+            error_log("Error counting closed drawers: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    public function getClosingReportData(int $drawerId): ?array
+    {
+        $report = [];
+
+        $sqlDrawer = "SELECT cd.*, u.username
+                      FROM cash_drawers cd
+                      JOIN users u ON cd.user_id = u.id
+                      WHERE cd.id = :drawerId AND cd.status = 'closed'";
+        $stmtDrawer = $this->pdo->prepare($sqlDrawer);
+        $stmtDrawer->execute([':drawerId' => $drawerId]);
+        $drawerInfo = $stmtDrawer->fetch(PDO::FETCH_ASSOC);
+
+        if (!$drawerInfo) {
+            return null;
+        }
+        $report['drawer_info'] = $drawerInfo;
+        $openedAt = $drawerInfo['opened_at'];
+        $closedAt = $drawerInfo['closed_at'];
+
+        $sqlCashSales = "SELECT SUM(p.amount_paid)
+                         FROM payments p
+                         JOIN orders o ON p.order_id = o.id
+                         WHERE p.payment_method = 'cash'
+                         AND p.processed_by_user_id = :userId
+                         AND p.payment_time BETWEEN :openedAt AND :closedAt";
+        $stmtCashSales = $this->pdo->prepare($sqlCashSales);
+        $stmtCashSales->execute([
+            ':userId' => $drawerInfo['user_id'],
+            ':openedAt' => $openedAt,
+            ':closedAt' => $closedAt
+        ]);
+        $report['total_cash_sales'] = (float)$stmtCashSales->fetchColumn();
+
+        $sqlTransactions = "SELECT * FROM cash_transactions
+                            WHERE drawer_id = :drawerId
+                            ORDER BY transaction_time ASC";
+        $stmtTransactions = $this->pdo->prepare($sqlTransactions);
+        $stmtTransactions->execute([':drawerId' => $drawerId]);
+        $transactions = $stmtTransactions->fetchAll(PDO::FETCH_ASSOC);
+        $report['transactions'] = $transactions;
+        
+        $report['total_cash_in_other'] = 0;
+        $report['total_cash_out'] = 0;
+        foreach ($transactions as $trans) {
+            if ($trans['type'] === 'in' && !in_array($trans['category'], ['Modal Awal', 'Penjualan'])) {
+                $report['total_cash_in_other'] += (float)$trans['amount'];
+            }
+            if ($trans['type'] === 'out' && $trans['category'] !== 'Tutup Kasir') {
+                $report['total_cash_out'] += (float)$trans['amount'];
+            }
+        }
+        
+        $openingAmount = (float)$drawerInfo['opening_amount'];
+        $closingAmount = (float)$drawerInfo['closing_amount'];
+        $totalInflow = $openingAmount + $report['total_cash_sales'] + $report['total_cash_in_other'];
+        
+        $report['expected_cash'] = $totalInflow - $report['total_cash_out'];
+        $report['variance'] = $closingAmount - $report['expected_cash'];
+
+        return $report;
+    }
 }

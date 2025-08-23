@@ -6,6 +6,8 @@ namespace App\Controllers\Admin;
 use App\Core\Controller;
 use App\Helpers\AuthHelper;
 use App\Helpers\SanitizeHelper;
+use App\Helpers\SessionHelper;
+use App\Helpers\UrlHelper;
 use App\Models\Report;
 use App\Models\Category;
 use App\Models\Order;
@@ -114,7 +116,6 @@ class ReportController extends Controller
             return (($current - $previous) / abs($previous)) * 100;
         };
 
-        // Pastikan variabel ada sebelum diakses untuk menghindari error
         $currentPeriod = $reportData['current_period'] ?? [];
         $previousPeriod = $reportData['previous_period'] ?? [];
 
@@ -240,43 +241,36 @@ class ReportController extends Controller
     {
         AuthHelper::requireAdmin();
 
-        // --- 1. Set Default Values ---
         $today = date('Y-m-d');
-        $defaultStartDate = date('Y-m-01'); // Default is the first day of the current month.
+        $defaultStartDate = date('Y-m-01');
 
-        // --- 2. Get Input from GET Request (or use defaults) ---
         $startDateInput = $_GET['start_date'] ?? $defaultStartDate;
         $endDateInput = $_GET['end_date'] ?? $today;
         $filterBy = $_GET['filter_by'] ?? 'order_time';
         $searchTerm = $_GET['search_term'] ?? '';
         $statusFilter = $_GET['status_filter'] ?? 'paid';
 
-        // --- 3. Sanitize and Validate All Inputs ---
         $startDate = SanitizeHelper::string($startDateInput);
         $endDate = SanitizeHelper::string($endDateInput);
         $filterBy = in_array($filterBy, ['order_time', 'payment_time']) ? $filterBy : 'order_time';
         $searchTerm = SanitizeHelper::string(trim($searchTerm));
         $statusFilter = SanitizeHelper::string($statusFilter);
 
-        // Strict date validation
         if (!$this->validateDate($startDate)) {
             $startDate = $defaultStartDate;
         }
         if (!$this->validateDate($endDate)) {
             $endDate = $today;
         }
-        // Ensure end date is not before start date
         if (strtotime($endDate) < strtotime($startDate)) {
             $endDate = $startDate;
         }
 
-        // --- 4. Call the Model to Get Data ---
         $reportModel = $this->model('Report');
         
         $salesDetails = $reportModel->getSalesDetails($startDate, $endDate, $filterBy, $searchTerm, $statusFilter);
         $salesMetrics = $reportModel->getSalesMetrics($startDate, $endDate, $filterBy, $searchTerm, $statusFilter);
 
-        // --- 5. Prepare Data Array for the View ---
         $data = [
             'pageTitle' => 'Detail Penjualan',
             'startDate' => $startDate,
@@ -291,7 +285,6 @@ class ReportController extends Controller
             'totalPayments' => $salesMetrics->total_payments ?? 0,
         ];
         
-        // --- 6. Load the View with the Data ---
         $this->view('admin.reports.sales_detail', $data, 'admin_layout');
     }
     
@@ -299,7 +292,6 @@ class ReportController extends Controller
     {
         AuthHelper::requireAdmin();
 
-        // 1. Handle filters, including new graph filters
         $today = date('Y-m-d');
         $defaultStartDate = date('Y-m-01');
         
@@ -314,19 +306,16 @@ class ReportController extends Controller
         if (!$this->validateDate($endDate)) { $endDate = $today; }
         if (strtotime($endDate) < strtotime($startDate)) { $endDate = $startDate; }
 
-        // 2. Fetch data from model
         $reportModel = $this->model('Report');
         $categoryModel = $this->model('Category');
 
         $reportData = $reportModel->getProductSalesReportV2($startDate, $endDate, $selectedCategory, $searchTerm);
         $allCategories = $categoryModel->getAllSorted();
         
-        // 3. Calculate metrics for the summary boxes
         $totalRevenue = array_sum(array_column($reportData, 'total_sales'));
         $totalQuantity = array_sum(array_column($reportData, 'total_quantity_sold'));
         $totalGrossProfit = array_sum(array_column($reportData, 'gross_profit'));
 
-        // 4. Prepare data for the multi-line chart
         $flatChartData = $reportModel->getProductSalesTrendByProduct($startDate, $endDate, $selectedCategory, $searchTerm, $groupBy, $chartMetric);
 
         $labels = [];
@@ -363,7 +352,7 @@ class ReportController extends Controller
                 'label' => $productName,
                 'data' => $dataPoints,
                 'borderColor' => $color,
-                'backgroundColor' => $color . '1A', // Transparan
+                'backgroundColor' => $color . '1A',
                 'fill' => true,
                 'tension' => 0.3,
             ];
@@ -375,7 +364,6 @@ class ReportController extends Controller
             'datasets' => $datasets,
         ];
 
-        // 5. Send all data to the view
         $data = [
             'pageTitle' => 'Laporan Penjualan Produk',
             'startDate' => $startDate,
@@ -425,7 +413,6 @@ class ReportController extends Controller
             'total_sales' => $totalGlobalSales,
         ];
 
-        // Fetch chart data
         $flatChartData = $reportModel->getCategorySalesTrend($startDate, $endDate, $searchTerm, $groupBy, $chartMetric);
         
         $labels = [];
@@ -525,5 +512,79 @@ class ReportController extends Controller
         ];
 
         $this->view('admin.reports.cash_summary', $data, 'admin_layout');
+    }
+
+    public function profitAndLoss()
+    {
+        AuthHelper::requireAdmin();
+
+        $today = date('Y-m-d');
+        $defaultStartDate = date('Y-m-01');
+        
+        $startDate = SanitizeHelper::string($_GET['start_date'] ?? $defaultStartDate);
+        $endDate = SanitizeHelper::string($_GET['end_date'] ?? $today);
+
+        if (!$this->validateDate($startDate)) { $startDate = $defaultStartDate; }
+        if (!$this->validateDate($endDate)) { $endDate = $today; }
+        if (strtotime($endDate) < strtotime($startDate)) { $endDate = $startDate; }
+
+        $reportModel = $this->model('Report');
+        $reportData = $reportModel->getProfitAndLossData($startDate, $endDate);
+
+        $data = [
+            'pageTitle'  => 'Laporan Laba Rugi',
+            'startDate'  => $startDate,
+            'endDate'    => $endDate,
+            'reportData' => $reportData,
+        ];
+        
+        $this->view('admin.reports.profit_loss', $data, 'admin_layout');
+    }
+
+    public function closingReportList()
+    {
+        AuthHelper::requireAdmin();
+
+        $page = isset($_GET['page']) ? max(1, SanitizeHelper::integer($_GET['page'])) : 1;
+        $limit = 20;
+        $offset = ($page - 1) * $limit;
+
+        $reportModel = $this->model('Report');
+        
+        $drawers = $reportModel->getClosedDrawers($limit, $offset);
+        $totalDrawers = $reportModel->countClosedDrawers();
+        $totalPages = ceil($totalDrawers / $limit);
+
+        $data = [
+            'pageTitle'   => 'Daftar Laporan Tutup Kasir',
+            'drawers'     => $drawers,
+            'currentPage' => $page,
+            'totalPages'  => $totalPages,
+        ];
+
+        $this->view('admin.reports.closing_list', $data, 'admin_layout');
+    }
+
+    // **PERBAIKAN: Ganti nama parameter dari $drawerId menjadi $id**
+    public function closingReportDetail(int $id)
+    {
+        AuthHelper::requireAdmin();
+        
+        $reportModel = $this->model('Report');
+        // **PERBAIKAN: Gunakan $id di sini**
+        $reportData = $reportModel->getClosingReportData($id);
+
+        if (!$reportData) {
+            SessionHelper::setFlash('error', 'Laporan tidak ditemukan atau sesi kasir belum ditutup.');
+            UrlHelper::redirect('/admin/reports/closing');
+            return;
+        }
+
+        $data = [
+            'pageTitle'  => 'Detail Laporan Tutup Kasir',
+            'reportData' => $reportData,
+        ];
+        
+        $this->view('admin.reports.closing_detail', $data, 'admin_layout');
     }
 }

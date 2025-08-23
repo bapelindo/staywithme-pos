@@ -1,5 +1,5 @@
 <?php 
-// File: app/Views/admin/reports/financials.php (REBUILT & FINAL V6)
+// File: app/Views/admin/reports/financials.php
 
 use App\Helpers\NumberHelper;
 use App\Helpers\UrlHelper;
@@ -39,15 +39,13 @@ use App\Helpers\UrlHelper;
                     <div class="text-xl font-bold text-indigo-600 mt-1"><?= NumberHelper::format_rupiah($financials['total_revenue'] ?? 0) ?></div>
                 </div>
                 <div class="p-4 bg-red-50 rounded-lg">
-                    <div class="text-sm text-gray-600">Total Biaya</div>
+                    <div class="text-sm text-gray-600">Total Biaya & HPP</div>
                     <div class="text-xl font-bold text-red-600 mt-1"><?= NumberHelper::format_rupiah(
+                        ($financials['cogs'] ?? 0) + 
                         ($financials['total_promo_cost'] ?? 0) + 
                         ($financials['mdr_fee'] ?? 0) + 
-                        ($financials['cogs'] ?? 0) + 
-                        ($financials['commission'] ?? 0) + 
-                        ($financials['admin_fee'] ?? 0) +
-                        ($financials['service_charge'] ?? 0) + // Ditambahkan
-                        ($financials['tax'] ?? 0) // Ditambahkan
+                        ($financials['commission'] ?? 0) +
+                        ($financials['admin_fee'] ?? 0)
                     ) ?></div>
                 </div>
                 <div class="p-4 bg-green-50 rounded-lg col-span-2">
@@ -167,15 +165,15 @@ use App\Helpers\UrlHelper;
                     </tr>
                     <tr class="hover:bg-gray-50">
                         <td class="py-2 pl-2 text-gray-600">Biaya MDR</td>
-                        <td class="py-2 pr-2 text-right font-medium text-red-600"><?= NumberHelper::format_rupiah(-($financials['mdr_fee'] ?? 0)) ?></td>
+                        <td class="py-2 pr-2 text-right font-medium text-red-600">(-) <?= NumberHelper::format_rupiah($financials['mdr_fee'] ?? 0) ?></td>
                     </tr>
                     <tr class="hover:bg-gray-50">
                         <td class="py-2 pl-2 text-gray-600">HPP</td>
-                        <td class="py-2 pr-2 text-right font-medium text-red-600"><?= NumberHelper::format_rupiah(-($financials['cogs'] ?? 0)) ?></td>
+                        <td class="py-2 pr-2 text-right font-medium text-red-600">(-) <?= NumberHelper::format_rupiah($financials['cogs'] ?? 0) ?></td>
                     </tr>
                     <tr class="hover:bg-gray-50">
                         <td class="py-2 pl-2 text-gray-600">Komisi</td>
-                        <td class="py-2 pr-2 text-right font-medium text-red-600"><?= NumberHelper::format_rupiah(-($financials['commission'] ?? 0)) ?></td>
+                        <td class="py-2 pr-2 text-right font-medium text-red-600">(-) <?= NumberHelper::format_rupiah($financials['commission'] ?? 0) ?></td>
                     </tr>
                 </tbody>
                 <tfoot>
@@ -193,7 +191,6 @@ use App\Helpers\UrlHelper;
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Cost Distribution Chart
     const ctx = document.getElementById('costDistributionChart').getContext('2d');
     const financials = <?= json_encode($financials ?? []) ?>;
     const costData = [
@@ -201,21 +198,17 @@ document.addEventListener('DOMContentLoaded', function() {
         financials.total_promo_cost ?? 0,
         financials.admin_fee ?? 0,
         financials.commission ?? 0,
-        financials.mdr_fee ?? 0,
-        financials.service_charge ?? 0, // Ditambahkan
-        financials.tax ?? 0 // Ditambahkan
+        financials.mdr_fee ?? 0
     ];
 
     if (costData.some(v => v > 0)) {
         new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: ['HPP', 'Biaya Promosi', 'Biaya Admin', 'Komisi', 'Biaya MDR', 'Biaya Pelayanan', 'Pajak'], // Ditambahkan
+                labels: ['HPP', 'Biaya Promosi', 'Biaya Admin', 'Komisi', 'Biaya MDR'],
                 datasets: [{
                     data: costData,
-                    backgroundColor: [
-                        '#ef4444', '#f59e0b', '#10b981', '#6366f1', '#8b5cf6', '#3b82f6', '#f472b6' // Warna ditambahkan
-                    ]
+                    backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#6366f1', '#8b5cf6']
                 }]
             },
             options: {

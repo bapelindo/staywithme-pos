@@ -24,13 +24,10 @@ use App\Helpers\SessionHelper;
         .flash-message-overlap { position: fixed; top: 1.25rem; right: 1.25rem; z-index: 1000; max-width: 24rem; width: 90%; pointer-events: none; }
         .flash-message-overlap > div { pointer-events: auto; margin-bottom: 0.75rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
         .sidebar-link i.fa-fw { margin-right: 0.75rem; }
-
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        /* === Tambahkan Kelas Kustom Untuk Indentasi === */
-        .dropdown-indent-1 { padding-left: 0.75rem; /* Ganti nilai sesuai keinginan (contoh: 32px) */ }
-        .dropdown-indent-2 { padding-left: 0.5rem; /* Ganti nilai sesuai keinginan (contoh: 24px) */ }
+        .dropdown-indent-1 { padding-left: 0.75rem; }
+        .dropdown-indent-2 { padding-left: 0.5rem; }
     </style>
     <script> var APP_BASE_URL = "<?= rtrim(UrlHelper::baseUrl(), '/') ?>"; </script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
@@ -82,6 +79,7 @@ use App\Helpers\SessionHelper;
                             $isSalesReportsActive = str_starts_with($relativeAdminPath, '/reports/summary') ||
                                                         str_starts_with($relativeAdminPath, '/reports/sales-detail') ||
                                                         str_starts_with($relativeAdminPath, '/reports/sales') ||
+                                                        str_starts_with($relativeAdminPath, '/reports/profit-loss') || // Tambahkan ini
                                                         $relativeAdminPath === '/reports' ||
                                                         $relativeAdminPath === '/reports/';
                         }
@@ -102,6 +100,10 @@ use App\Helpers\SessionHelper;
                         <i class="fa-solid fa-receipt fa-fw"></i>
                         Pesanan
                         <span id="new-order-count-badge" class="ml-auto bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+                    </a></li>
+                    <li><a href="<?= UrlHelper::baseUrl('/admin/cashier') ?>" class="sidebar-link flex items-center px-3 py-2.5 rounded-md text-sm font-medium text-slate-700 transition duration-150 <?= isAdminLinkActive('/cashier', $relativeAdminPath) ? 'active' : '' ?>">
+                        <i class="fa-solid fa-cash-register fa-fw"></i>
+                        Kas Kasir
                     </a></li>
                     <li><a href="<?= UrlHelper::baseUrl('/admin/menu') ?>" class="sidebar-link flex items-center px-3 py-2.5 rounded-md text-sm font-medium text-slate-700 transition duration-150 <?= (isAdminLinkActive('/menu', $relativeAdminPath) || isAdminLinkActive('/categories', $relativeAdminPath)) ? 'active' : '' ?>">
                          <i class="fa-solid fa-utensils fa-fw"></i>
@@ -134,6 +136,7 @@ use App\Helpers\SessionHelper;
                                      <ul x-show="openSales" x-cloak x-transition class="dropdown-indent-2 space-y-1">
                                         <li><a href="<?= UrlHelper::baseUrl('admin/reports/summary') ?>" class="block px-3 py-1.5 rounded-md text-xs text-slate-500 hover:bg-indigo-50 hover:text-indigo-700 <?= isAdminLinkActive('/reports/summary', $relativeAdminPath) ? 'font-semibold text-indigo-700' : '' ?>">Ringkasan Penjualan</a></li>
                                         <li><a href="<?= UrlHelper::baseUrl('admin/reports/sales-detail') ?>" class="block px-3 py-1.5 rounded-md text-xs text-slate-500 hover:bg-indigo-50 hover:text-indigo-700 <?= isAdminLinkActive('/reports/sales-detail', $relativeAdminPath) ? 'font-semibold text-indigo-700' : '' ?>">Detail Penjualan</a></li>
+                                        <li><a href="<?= UrlHelper::baseUrl('admin/reports/profit-loss') ?>" class="block px-3 py-1.5 rounded-md text-xs text-slate-500 hover:bg-indigo-50 hover:text-indigo-700 <?= isAdminLinkActive('/reports/profit-loss', $relativeAdminPath) ? 'font-semibold text-indigo-700' : '' ?>">Laba Rugi</a></li>
                                         <li><a href="<?= UrlHelper::baseUrl('/admin/reports') ?>" class="block px-3 py-1.5 rounded-md text-xs text-slate-500 hover:bg-indigo-50 hover:text-indigo-700 <?= ($relativeAdminPath === '/reports' || $relativeAdminPath === '/reports/') ? 'font-semibold text-indigo-700' : '' ?>">Grafik Penjualan</a></li>
                                      </ul>
                                 </li>
@@ -155,9 +158,9 @@ use App\Helpers\SessionHelper;
                                          <svg class="w-3 h-3 transition-transform duration-200" :class="{ 'rotate-90': openCashier }" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
                                     </button>
     
-                                     <ul x-show="openCashier" x-cloak x-transition class="dropdown-indent-2 space-y-1">
-                                        <li><a href="<?= UrlHelper::baseUrl('/admin/reports/cash-summary') ?>" class="block px-3 py-1.5 rounded-md text-xs text-slate-500 hover:bg-indigo-50 hover:text-indigo-700 <?= isAdminLinkActive('/reports/cashier/cash-summary', $relativeAdminPath) ? 'font-semibold text-indigo-700' : '' ?>">Laporan Kas Kasir</a></li>
-                                        <li><a href="<?= UrlHelper::baseUrl('/admin/reports/closing') ?>" class="block px-3 py-1.5 rounded-md text-xs text-slate-500 hover:bg-indigo-50 hover:text-indigo-700 <?= isAdminLinkActive('/reports/cashier/closing', $relativeAdminPath) ? 'font-semibold text-indigo-700' : '' ?>">Laporan Tutup Kasir</a></li>
+                                    <ul x-show="openCashier" x-cloak x-transition class="dropdown-indent-2 space-y-1">
+                                        <li><a href="<?= UrlHelper::baseUrl('/admin/reports/cash-summary') ?>" class="block px-3 py-1.5 rounded-md text-xs text-slate-500 hover:bg-indigo-50 hover:text-indigo-700">Laporan Kas Kasir</a></li>
+                                        <li><a href="<?= UrlHelper::baseUrl('/admin/reports/closing') ?>" class="block px-3 py-1.5 rounded-md text-xs text-slate-500 hover:bg-indigo-50 hover:text-indigo-700 <?= isAdminLinkActive('/reports/closing', $relativeAdminPath) ? 'font-semibold text-indigo-700' : '' ?>">Laporan Tutup Kasir</a></li>
                                     </ul>
                                 </li>
                             </ul>

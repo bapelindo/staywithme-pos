@@ -3,97 +3,75 @@ use App\Helpers\UrlHelper;
 
 /**
  * File Definisi Rute Aplikasi Stay With Me POS
- *
- * @var App\Core\Router $router Instance router yang diinisialisasi di public/index.php
  */
 
-// Pastikan variabel $router sudah ada (di-include dari index.php)
 if (!isset($router) || !($router instanceof App\Core\Router)) {
     die('Error: Router instance not available in routes.php');
 }
 
-// =============================================
-// == Rute Publik (Customer Facing) ==
-// =============================================
-
-// Halaman Utama
+// ... Rute Publik ...
 $router->addRoute('GET', '/', 'Public\\HomeController@index');
-
-// Menu Digital (via QR Code)
 $router->addRoute('GET', '/menu/table/{qr_identifier}', 'Public\\MenuController@show');
+$router->addRoute('POST', '/order/place', 'Public\\OrderController@placeOrder');
+$router->addRoute('GET', '/order/status/{order_id}', 'Public\\OrderController@showStatus');
+$router->addRoute('GET', '/order/get_status/{order_id}', 'Public\\OrderController@getStatusUpdate');
+$router->addRoute('GET', '/cds', 'Public\\CdsController@index');
+$router->addRoute('GET', '/cds/get_orders', 'Public\\CdsController@getOrders');
 
-// Proses Pemesanan dan Status (Customer)
-$router->addRoute('POST', '/order/place', 'Public\\OrderController@placeOrder');         // Endpoint AJAX untuk submit pesanan
-$router->addRoute('GET', '/order/status/{order_id}', 'Public\\OrderController@showStatus');  // Halaman lihat status pesanan
-$router->addRoute('GET', '/order/get_status/{order_id}', 'Public\\OrderController@getStatusUpdate'); // Endpoint AJAX polling status
-
-// Customer Display System (CDS)
-$router->addRoute('GET', '/cds', 'Public\\CdsController@index');               // Halaman view CDS
-$router->addRoute('GET', '/cds/get_orders', 'Public\\CdsController@getOrders');       // Endpoint AJAX polling CDS
-
-// =============================================
-// == Rute Otentikasi Admin ==
-// =============================================
+// ... Rute Otentikasi Admin ...
 $router->addRoute('GET', '/admin', 'Admin\\AuthController@redirectToLogin');
-// Halaman utama admin (redirect ke login jika belum login)
-$router->addRoute('GET', '/admin/login', 'Admin\\AuthController@showLoginForm'); // Tampilkan form login
-$router->addRoute('POST', '/admin/login', 'Admin\\AuthController@login');       // Proses login
-$router->addRoute('GET', '/admin/logout', 'Admin\\AuthController@logout');      // Proses logout (Idealnya POST)
+$router->addRoute('GET', '/admin/login', 'Admin\\AuthController@showLoginForm');
+$router->addRoute('POST', '/admin/login', 'Admin\\AuthController@login');
+$router->addRoute('GET', '/admin/logout', 'Admin\\AuthController@logout');
 
-// =============================================
-// == Rute Panel Admin (Memerlukan Login) ==
-// =============================================
-
-// Dashboard
+// ... Rute Panel Admin ...
 $router->addRoute('GET', '/admin/dashboard', 'Admin\\DashboardController@index');
 
-// Manajemen Pesanan (Orders)
-$router->addRoute('GET', '/admin/orders', 'Admin\\OrderController@index');          // Daftar pesanan (bisa filter by status via query string ?status=...)
-$router->addRoute('GET', '/admin/orders/show/{order_id}', 'Admin\\OrderController@show');   // Lihat detail pesanan
-$router->addRoute('GET', '/admin/orders/new', 'Admin\\OrderController@getNewOrders');    // Endpoint AJAX polling notifikasi pesanan baru
-$router->addRoute('POST', '/admin/orders/update_status', 'Admin\\OrderController@updateStatus'); // Endpoint AJAX update status (umum/dari detail)
-$router->addRoute('POST', '/admin/orders/pay_cash/{order_id}', 'Admin\\OrderController@processCashPayment'); // Proses pembayaran cash
-$router->addRoute('GET', '/admin/orders/invoice/{order_id}', 'Admin\\OrderController@invoice'); // Lihat/cetak invoice HTML
+// ... Rute Manajemen Pesanan (Orders) ...
+$router->addRoute('GET', '/admin/orders', 'Admin\\OrderController@index');
+$router->addRoute('GET', '/admin/orders/show/{order_id}', 'Admin\\OrderController@show');
+$router->addRoute('GET', '/admin/orders/new', 'Admin\\OrderController@getNewOrders');
+$router->addRoute('POST', '/admin/orders/update_status', 'Admin\\OrderController@updateStatus');
+$router->addRoute('POST', '/admin/orders/pay_cash/{order_id}', 'Admin\\OrderController@processCashPayment');
+$router->addRoute('GET', '/admin/orders/invoice/{order_id}', 'Admin\\OrderController@invoice');
 
-// Kitchen Display System (KDS)
-$router->addRoute('GET', '/admin/kds', 'Admin\\KdsController@index');               // Halaman view KDS
-$router->addRoute('GET', '/admin/kds/get_orders', 'Admin\\KdsController@getOrders'); // Endpoint AJAX polling KDS
-$router->addRoute('POST', '/admin/kds/update_status', 'Admin\\KdsController@updateOrderStatus'); // Endpoint AJAX update status dari KDS
+// ... Rute KDS ...
+$router->addRoute('GET', '/admin/kds', 'Admin\\KdsController@index');
+$router->addRoute('GET', '/admin/kds/get_orders', 'Admin\\KdsController@getOrders');
+$router->addRoute('POST', '/admin/kds/update_status', 'Admin\\KdsController@updateOrderStatus');
 
-// Manajemen Menu & Kategori
-$router->addRoute('GET', '/admin/menu', 'Admin\\MenuController@index');             // Daftar item menu
-$router->addRoute('GET', '/admin/menu/create', 'Admin\\MenuController@create');       // Tampilkan form tambah item menu
-$router->addRoute('POST', '/admin/menu/store', 'Admin\\MenuController@store');        // Simpan item menu baru
-$router->addRoute('GET', '/admin/menu/edit/{id}', 'Admin\\MenuController@edit');         // Tampilkan form edit item menu
-$router->addRoute('POST', '/admin/menu/update/{id}', 'Admin\\MenuController@update');      // Proses update item menu
-$router->addRoute('POST', '/admin/menu/destroy/{id}', 'Admin\\MenuController@destroy');     // Hapus item menu
-$router->addRoute('POST', '/admin/menu/toggle_availability/{id}', 'Admin\\MenuController@toggleAvailability'); // Endpoint AJAX toggle ketersediaan
+// ... Rute Manajemen Menu & Kategori ...
+$router->addRoute('GET', '/admin/menu', 'Admin\\MenuController@index');
+$router->addRoute('GET', '/admin/menu/create', 'Admin\\MenuController@create');
+$router->addRoute('POST', '/admin/menu/store', 'Admin\\MenuController@store');
+$router->addRoute('GET', '/admin/menu/edit/{id}', 'Admin\\MenuController@edit');
+$router->addRoute('POST', '/admin/menu/update/{id}', 'Admin\\MenuController@update');
+$router->addRoute('POST', '/admin/menu/destroy/{id}', 'Admin\\MenuController@destroy');
+$router->addRoute('POST', '/admin/menu/toggle_availability/{id}', 'Admin\\MenuController@toggleAvailability');
+$router->addRoute('GET', '/admin/categories', 'Admin\\MenuController@categories');
+$router->addRoute('POST', '/admin/categories/store', 'Admin\\MenuController@storeCategory');
+$router->addRoute('POST', '/admin/categories/update/{id}', 'Admin\\MenuController@updateCategory');
+$router->addRoute('POST', '/admin/categories/destroy/{id}', 'Admin\\MenuController@destroyCategory');
 
-// Rute Kategori (ditangani oleh MenuController)
-$router->addRoute('GET', '/admin/categories', 'Admin\\MenuController@categories');       // Halaman Kelola Kategori (List & Form Tambah)
-$router->addRoute('POST', '/admin/categories/store', 'Admin\\MenuController@storeCategory');  // Simpan kategori baru
-$router->addRoute('POST', '/admin/categories/update/{id}', 'Admin\\MenuController@updateCategory'); // Proses update kategori (dari form inline)
-$router->addRoute('POST', '/admin/categories/destroy/{id}', 'Admin\\MenuController@destroyCategory'); // Hapus kategori
+// ... Rute Manajemen Meja (Tables) ...
+$router->addRoute('GET', '/admin/tables', 'Admin\\TableController@index');
+$router->addRoute('GET', '/admin/tables/create', 'Admin\\TableController@create');
+$router->addRoute('POST', '/admin/tables/store', 'Admin\\TableController@store');
+$router->addRoute('GET', '/admin/tables/edit/{id}', 'Admin\\TableController@edit');
+$router->addRoute('POST', '/admin/tables/update/{id}', 'Admin\\TableController@update');
+$router->addRoute('POST', '/admin/tables/destroy/{id}', 'Admin\\TableController@destroy');
+$router->addRoute('GET', '/admin/tables/qr/{id}', 'Admin\\TableController@generateQr');
 
-// Manajemen Meja (Tables)
-$router->addRoute('GET', '/admin/tables', 'Admin\\TableController@index');           // Daftar meja
-$router->addRoute('GET', '/admin/tables/create', 'Admin\\TableController@create');     // Tampilkan form tambah meja
-$router->addRoute('POST', '/admin/tables/store', 'Admin\\TableController@store');      // Simpan meja baru
-$router->addRoute('GET', '/admin/tables/edit/{id}', 'Admin\\TableController@edit');       // Tampilkan form edit meja
-$router->addRoute('POST', '/admin/tables/update/{id}', 'Admin\\TableController@update');    // Proses update meja
-$router->addRoute('POST', '/admin/tables/destroy/{id}', 'Admin\\TableController@destroy');   // Hapus meja
-$router->addRoute('GET', '/admin/tables/qr/{id}', 'Admin\\TableController@generateQr'); // Generate/tampilkan QR code untuk meja
-
-// Manajemen Pengguna (Users) - Akses Admin
-$router->addRoute('GET', '/admin/users', 'Admin\\UserController@index');           // Daftar pengguna
-$router->addRoute('GET', '/admin/users/create', 'Admin\\UserController@create');     // Tampilkan form tambah pengguna
-$router->addRoute('POST', '/admin/users/store', 'Admin\\UserController@store');      // Simpan pengguna baru
-$router->addRoute('GET', '/admin/users/edit/{id}', 'Admin\\UserController@edit');       // Tampilkan form edit pengguna
-$router->addRoute('POST', '/admin/users/update/{id}', 'Admin\\UserController@update');    // Proses update pengguna
-$router->addRoute('POST', '/admin/users/destroy/{id}', 'Admin\\UserController@destroy');   // Hapus pengguna
+// ... Rute Manajemen Pengguna (Users) ...
+$router->addRoute('GET', '/admin/users', 'Admin\\UserController@index');
+$router->addRoute('GET', '/admin/users/create', 'Admin\\UserController@create');
+$router->addRoute('POST', '/admin/users/store', 'Admin\\UserController@store');
+$router->addRoute('GET', '/admin/users/edit/{id}', 'Admin\\UserController@edit');
+$router->addRoute('POST', '/admin/users/update/{id}', 'Admin\\UserController@update');
+$router->addRoute('POST', '/admin/users/destroy/{id}', 'Admin\\UserController@destroy');
 
 // Laporan (Reports)
-$router->addRoute('GET', '/admin/reports', 'Admin\\ReportController@index');         // Halaman utama laporan (bisa filter via query string ?start_date=...&end_date=...)
+$router->addRoute('GET', '/admin/reports', 'Admin\\ReportController@index');
 $router->addRoute('GET', '/admin/reports/summary', 'Admin\\ReportController@summary');
 $router->addRoute('GET', '/admin/reports/financials', 'Admin\\ReportController@financials');
 $router->addRoute('GET', '/admin/reports/sales-detail', 'Admin\\ReportController@salesDetail');
@@ -101,14 +79,20 @@ $router->addRoute('GET', '/admin/reports/summary/export', 'Admin\\ReportControll
 $router->addRoute('GET', '/admin/reports/product-sales', 'Admin\\ReportController@productSales');
 $router->addRoute('GET', '/admin/reports/category-sales', 'Admin\\ReportController@productByCategory');
 $router->addRoute('GET', '/admin/reports/cash-summary', 'Admin\\ReportController@cashSummary');
+// **TAMBAHKAN RUTE BARU INI**
+$router->addRoute('GET', '/admin/reports/profit-loss', 'Admin\\ReportController@profitAndLoss');
 
-// Rute Pengaturan
+// ... Rute Pengaturan ...
 $router->addRoute('GET', '/admin/settings', 'Admin\\SettingsController@index');
 $router->addRoute('POST', '/admin/settings/update', 'Admin\\SettingsController@update');
 
+// ... Rute Cashier ...
+$router->addRoute('GET', '/admin/cashier', 'Admin\\CashierController@index');
+$router->addRoute('POST', '/admin/cashier/open', 'Admin\\CashierController@open');
+$router->addRoute('POST', '/admin/cashier/close', 'Admin\\CashierController@close');
+$router->addRoute('POST', '/admin/cashier/cash_in', 'Admin\\CashierController@cashIn');
+$router->addRoute('POST', '/admin/cashier/cash_out', 'Admin\\CashierController@cashOut');
 
-// =============================================
-// == Penanganan 404 Not Found ==
-// =============================================
-// Router di Core/Router.php akan secara otomatis menangani kasus jika tidak ada rute
-// yang cocok dengan menampilkan pesan 404 atau view error 404 jika ada.
+// Rute Laporan Tutup Kasir
+$router->addRoute('GET', '/admin/reports/closing', 'Admin\\ReportController@closingReportList');
+$router->addRoute('GET', '/admin/reports/closing/{id}', 'Admin\\ReportController@closingReportDetail');

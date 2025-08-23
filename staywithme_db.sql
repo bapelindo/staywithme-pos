@@ -19,6 +19,25 @@
 CREATE DATABASE IF NOT EXISTS `staywithme_db` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci */;
 USE `staywithme_db`;
 
+-- Dumping structure for table staywithme_db.users
+CREATE TABLE IF NOT EXISTS `users` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) NOT NULL COMMENT 'Username untuk login',
+  `password` varchar(255) NOT NULL COMMENT 'HARUS disimpan dalam bentuk hash!',
+  `name` varchar(100) NOT NULL COMMENT 'Nama lengkap pengguna',
+  `role` enum('admin','staff','kitchen') NOT NULL DEFAULT 'staff' COMMENT 'Peran pengguna (admin, staff kasir, staff dapur)',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Status aktif pengguna',
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username` (`username`),
+  KEY `idx_users_username` (`username`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Menyimpan data pengguna sistem (admin, staff)';
+
+-- Dumping data for table staywithme_db.users: ~1 rows (approximately)
+INSERT INTO `users` (`id`, `username`, `password`, `name`, `role`, `is_active`, `created_at`, `updated_at`) VALUES
+	(1, 'admin', '$2y$12$mg.bv19q4Gxp07mx0HMTmOoR8/oaqavyqEnRemFdAv/JG2n1UCSmy', 'Administrator Utama', 'admin', 1, '2025-08-22 13:30:41', '2025-08-22 13:30:41');
+
 -- Dumping structure for table staywithme_db.categories
 CREATE TABLE IF NOT EXISTS `categories` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
@@ -39,6 +58,41 @@ INSERT INTO `categories` (`id`, `name`, `description`, `sort_order`, `created_at
 	(3, 'Main Course', 'Menu Utama', 3, '2025-08-22 13:30:41', '2025-08-22 13:30:41'),
 	(4, 'Snack', 'Makanan Ringan', 4, '2025-08-22 13:30:41', '2025-08-22 13:30:41'),
 	(5, 'Dessert', 'Makanan Penutup', 5, '2025-08-22 13:30:41', '2025-08-22 13:30:41');
+
+-- Dumping structure for table staywithme_db.cash_drawers
+CREATE TABLE IF NOT EXISTS `cash_drawers` (
+	 `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+	 `user_id` int(10) unsigned NOT NULL COMMENT 'User (kasir) yang membuka laci',
+	 `opening_amount` decimal(15,2) NOT NULL COMMENT 'Jumlah uang saat buka laci',
+	 `closing_amount` decimal(15,2) DEFAULT NULL COMMENT 'Jumlah uang saat tutup laci',
+	 `opened_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'Waktu buka laci',
+	 `closed_at` timestamp NULL DEFAULT NULL COMMENT 'Waktu tutup laci',
+	 `status` enum('open','closed') NOT NULL DEFAULT 'open' COMMENT 'Status laci kas',
+   `notes` text DEFAULT NULL,
+	 `created_at` timestamp NULL DEFAULT current_timestamp(),
+	 `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+	 PRIMARY KEY (`id`),
+	 KEY `fk_cash_drawers_users` (`user_id`),
+	 CONSTRAINT `fk_cash_drawers_users` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Mencatat histori buka tutup laci kasir';
+
+-- Dumping structure for table staywithme_db.cash_transactions
+CREATE TABLE IF NOT EXISTS `cash_transactions` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned NOT NULL,
+  `drawer_id` int(10) unsigned NOT NULL,
+  `type` enum('in','out') NOT NULL,
+  `amount` decimal(15,2) NOT NULL,
+  `category` varchar(100) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `device_name` varchar(100) DEFAULT NULL,
+  `transaction_time` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `fk_cash_transactions_users` (`user_id`),
+  KEY `fk_cash_transactions_drawers` (`drawer_id`),
+  CONSTRAINT `fk_cash_transactions_drawers` FOREIGN KEY (`drawer_id`) REFERENCES `cash_drawers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_cash_transactions_users` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping structure for table staywithme_db.menu_items
 CREATE TABLE IF NOT EXISTS `menu_items` (
@@ -89,6 +143,30 @@ INSERT INTO `menu_items` (`id`, `category_id`, `name`, `description`, `price`, `
 	(27, 5, 'Panna Cotta', 'Puding krim Italia dengan saus stroberi.', 22000.00, 10000.00, NULL, 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29'),
 	(28, 5, 'Affogato', 'Satu skup es krim vanila disiram dengan shot espresso panas.', 23000.00, 11000.00, NULL, 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29'),
 	(29, 5, 'Waffle Ice Cream', 'Waffle renyah dengan satu skup es krim dan saus coklat.', 26000.00, 13000.00, NULL, 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29');
+
+-- Dumping structure for table staywithme_db.tables
+CREATE TABLE IF NOT EXISTS `tables` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `table_number` varchar(50) NOT NULL COMMENT 'Nomor atau Nama Meja (e.g., T01, T02, VIP 1)',
+  `qr_code_identifier` varchar(100) NOT NULL COMMENT 'Identifier unik untuk URL QR Code (bisa UUID atau random string)',
+  `description` varchar(255) DEFAULT NULL COMMENT 'Deskripsi tambahan meja',
+  `is_active` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Apakah meja ini aktif digunakan',
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `table_number` (`table_number`),
+  UNIQUE KEY `qr_code_identifier` (`qr_code_identifier`),
+  KEY `idx_tables_table_number` (`table_number`),
+  KEY `idx_tables_qr_code_identifier` (`qr_code_identifier`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Menyimpan data meja fisik di cafe';
+
+-- Dumping data for table staywithme_db.tables: ~5 rows (approximately)
+INSERT INTO `tables` (`id`, `table_number`, `qr_code_identifier`, `description`, `is_active`, `created_at`, `updated_at`) VALUES
+	(1, 'T01', 't01-a1b2c3d4', 'Dekat Jendela', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29'),
+	(2, 'T02', 't02-e5f6g7h8', 'Area Indoor', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29'),
+	(3, 'T03', 't03-i9j0k1l2', 'Area Indoor', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29'),
+	(4, 'L01', 'l01-m3n4o5p6', 'Lesehan Outdoor', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29'),
+	(5, 'V01', 'v01-q7r8s9t0', 'VIP Room', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29');
 
 -- Dumping structure for table staywithme_db.orders
 CREATE TABLE IF NOT EXISTS `orders` (
@@ -196,49 +274,6 @@ INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES
 	('default_promo_percentage', '0'),
 	('service_charge_percentage', '5'),
 	('tax_percentage', '11');
-
--- Dumping structure for table staywithme_db.tables
-CREATE TABLE IF NOT EXISTS `tables` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `table_number` varchar(50) NOT NULL COMMENT 'Nomor atau Nama Meja (e.g., T01, T02, VIP 1)',
-  `qr_code_identifier` varchar(100) NOT NULL COMMENT 'Identifier unik untuk URL QR Code (bisa UUID atau random string)',
-  `description` varchar(255) DEFAULT NULL COMMENT 'Deskripsi tambahan meja',
-  `is_active` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Apakah meja ini aktif digunakan',
-  `created_at` timestamp NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `table_number` (`table_number`),
-  UNIQUE KEY `qr_code_identifier` (`qr_code_identifier`),
-  KEY `idx_tables_table_number` (`table_number`),
-  KEY `idx_tables_qr_code_identifier` (`qr_code_identifier`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Menyimpan data meja fisik di cafe';
-
--- Dumping data for table staywithme_db.tables: ~5 rows (approximately)
-INSERT INTO `tables` (`id`, `table_number`, `qr_code_identifier`, `description`, `is_active`, `created_at`, `updated_at`) VALUES
-	(1, 'T01', 't01-a1b2c3d4', 'Dekat Jendela', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29'),
-	(2, 'T02', 't02-e5f6g7h8', 'Area Indoor', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29'),
-	(3, 'T03', 't03-i9j0k1l2', 'Area Indoor', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29'),
-	(4, 'L01', 'l01-m3n4o5p6', 'Lesehan Outdoor', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29'),
-	(5, 'V01', 'v01-q7r8s9t0', 'VIP Room', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29');
-
--- Dumping structure for table staywithme_db.users
-CREATE TABLE IF NOT EXISTS `users` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `username` varchar(50) NOT NULL COMMENT 'Username untuk login',
-  `password` varchar(255) NOT NULL COMMENT 'HARUS disimpan dalam bentuk hash!',
-  `name` varchar(100) NOT NULL COMMENT 'Nama lengkap pengguna',
-  `role` enum('admin','staff','kitchen') NOT NULL DEFAULT 'staff' COMMENT 'Peran pengguna (admin, staff kasir, staff dapur)',
-  `is_active` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Status aktif pengguna',
-  `created_at` timestamp NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `username` (`username`),
-  KEY `idx_users_username` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Menyimpan data pengguna sistem (admin, staff)';
-
--- Dumping data for table staywithme_db.users: ~1 rows (approximately)
-INSERT INTO `users` (`id`, `username`, `password`, `name`, `role`, `is_active`, `created_at`, `updated_at`) VALUES
-	(1, 'admin', '$2y$12$mg.bv19q4Gxp07mx0HMTmOoR8/oaqavyqEnRemFdAv/JG2n1UCSmy', 'Administrator Utama', 'admin', 1, '2025-08-22 13:30:41', '2025-08-22 13:30:41');
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;

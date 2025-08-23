@@ -170,35 +170,15 @@ function render_change_indicator($change) {
                     <div class="text-xl font-bold text-indigo-600 mt-1">
                         <?= NumberHelper::format_rupiah($financials['total_revenue'] ?? 0) ?>
                     </div>
-                    <div x-show="showPopover === 'revenue'" 
-                         @click.away="showPopover = null"
-                         x-transition
-                         class="absolute left-0 mt-2 w-full max-w-sm bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                    <div x-show="showPopover === 'revenue'" @click.away="showPopover = null" x-transition class="absolute left-0 mt-2 w-full max-w-sm bg-white rounded-lg shadow-lg border border-gray-200 z-10">
                         <div class="p-4">
                             <h3 class="font-semibold text-gray-900 mb-2">Komponen Total Pendapatan</h3>
                             <div class="space-y-2">
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">Penjualan Kotor</span>
-                                    <span class="font-medium"><?= NumberHelper::format_rupiah($financials['gross_sales'] ?? 0) ?></span>
-                                </div>
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">Biaya Layanan</span>
-                                    <span class="font-medium"><?= NumberHelper::format_rupiah($financials['service_charge'] ?? 0) ?></span>
-                                </div>
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">Pajak</span>
-                                    <span class="font-medium"><?= NumberHelper::format_rupiah($financials['tax'] ?? 0) ?></span>
-                                </div>
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">Lainnya</span>
-                                    <span class="font-medium"><?= NumberHelper::format_rupiah($financials['other_revenue'] ?? 0) ?></span>
-                                </div>
-                                <div class="pt-2 mt-2 border-t border-gray-200">
-                                    <div class="flex justify-between font-medium">
-                                        <span class="text-gray-900">Total</span>
-                                        <span class="text-indigo-600"><?= NumberHelper::format_rupiah($financials['total_revenue'] ?? 0) ?></span>
-                                    </div>
-                                </div>
+                                <div class="flex justify-between text-sm"><span class="text-gray-600">Penjualan Kotor</span><span class="font-medium"><?= NumberHelper::format_rupiah($financials['gross_sales'] ?? 0) ?></span></div>
+                                <div class="flex justify-between text-sm"><span class="text-gray-600">Biaya Layanan</span><span class="font-medium"><?= NumberHelper::format_rupiah($financials['service_charge'] ?? 0) ?></span></div>
+                                <div class="flex justify-between text-sm"><span class="text-gray-600">Pajak</span><span class="font-medium"><?= NumberHelper::format_rupiah($financials['tax'] ?? 0) ?></span></div>
+                                <div class="flex justify-between text-sm"><span class="text-gray-600">Lainnya</span><span class="font-medium"><?= NumberHelper::format_rupiah($financials['other_revenue'] ?? 0) ?></span></div>
+                                <div class="pt-2 mt-2 border-t border-gray-200"><div class="flex justify-between font-medium"><span class="text-gray-900">Total</span><span class="text-indigo-600"><?= NumberHelper::format_rupiah($financials['total_revenue'] ?? 0) ?></span></div></div>
                             </div>
                         </div>
                     </div>
@@ -206,44 +186,27 @@ function render_change_indicator($change) {
 
                 <div class="p-4 bg-red-50 rounded-lg relative">
                     <div class="flex items-center gap-2">
-                        <div class="text-sm text-gray-600">Total Biaya</div>
-                        <button @click="showPopover = showPopover === 'costs' ? null : 'costs'" 
-                                class="text-gray-400 hover:text-red-600 focus:outline-none">
-                            <i class="fas fa-info-circle"></i>
-                        </button>
+                        <div class="text-sm text-gray-600">Total Biaya & HPP</div>
+                        <button @click="showPopover = showPopover === 'costs' ? null : 'costs'" class="text-gray-400 hover:text-red-600 focus:outline-none"><i class="fas fa-info-circle"></i></button>
                     </div>
                     <div class="text-lg font-bold text-red-600 mt-1">
-                        <?= NumberHelper::format_rupiah(($financials['total_promo'] ?? 0) + ($financials['admin_fee'] ?? 0) + ($financials['mdr_fee'] ?? 0) + ($financials['cogs'] ?? 0) + ($financials['commission'] ?? 0)) ?>
+                        <?= NumberHelper::format_rupiah(
+                            ($financials['cogs'] ?? 0) + 
+                            ($financials['total_promo_cost'] ?? 0) + 
+                            ($financials['admin_fee'] ?? 0) + 
+                            ($financials['mdr_fee'] ?? 0) + 
+                            ($financials['commission'] ?? 0)
+                        ) ?>
                     </div>
-                    <div x-show="showPopover === 'costs'" 
-                         @click.away="showPopover = null"
-                         x-transition
-                         class="absolute left-0 mt-2 w-full max-w-sm bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                    <div x-show="showPopover === 'costs'" @click.away="showPopover = null" x-transition class="absolute left-0 mt-2 w-full max-w-sm bg-white rounded-lg shadow-lg border border-gray-200 z-10">
                         <div class="p-4">
-                            <h3 class="font-semibold text-gray-900 mb-2">Komponen Total Biaya</h3>
+                            <h3 class="font-semibold text-gray-900 mb-2">Komponen Biaya</h3>
                             <div class="space-y-2">
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">HPP</span>
-                                    <span class="font-medium"><?= NumberHelper::format_rupiah($financials['cogs'] ?? 0) ?></span>
-                                </div>
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">Biaya Promosi</span>
-                                    <span class="font-medium"><?= NumberHelper::format_rupiah($financials['total_promo'] ?? 0) ?></span>
-                                </div>
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">Biaya Admin</span>
-                                    <span class="font-medium"><?= NumberHelper::format_rupiah($financials['admin_fee'] ?? 0) ?></span>
-                                </div>
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">Komisi</span>
-                                    <span class="font-medium"><?= NumberHelper::format_rupiah($financials['commission'] ?? 0) ?></span>
-                                </div>
-                                <div class="pt-2 mt-2 border-t border-gray-200">
-                                    <div class="flex justify-between font-medium">
-                                        <span class="text-gray-900">Total</span>
-                                        <span class="text-red-600"><?= NumberHelper::format_rupiah(($financials['total_promo'] ?? 0) + ($financials['admin_fee'] ?? 0) + ($financials['mdr_fee'] ?? 0) + ($financials['cogs'] ?? 0) + ($financials['commission'] ?? 0)) ?></span>
-                                    </div>
-                                </div>
+                                <div class="flex justify-between text-sm"><span class="text-gray-600">HPP</span><span class="font-medium"><?= NumberHelper::format_rupiah($financials['cogs'] ?? 0) ?></span></div>
+                                <div class="flex justify-between text-sm"><span class="text-gray-600">Biaya Promosi</span><span class="font-medium"><?= NumberHelper::format_rupiah($financials['total_promo_cost'] ?? 0) ?></span></div>
+                                <div class="flex justify-between text-sm"><span class="text-gray-600">Biaya Admin</span><span class="font-medium"><?= NumberHelper::format_rupiah($financials['admin_fee'] ?? 0) ?></span></div>
+                                <div class="flex justify-between text-sm"><span class="text-gray-600">Komisi</span><span class="font-medium"><?= NumberHelper::format_rupiah($financials['commission'] ?? 0) ?></span></div>
+                                <div class="pt-2 mt-2 border-t border-gray-200"><div class="flex justify-between font-medium"><span class="text-gray-900">Total</span><span class="text-red-600"><?= NumberHelper::format_rupiah(($financials['cogs'] ?? 0) + ($financials['total_promo_cost'] ?? 0) + ($financials['admin_fee'] ?? 0) + ($financials['mdr_fee'] ?? 0) + ($financials['commission'] ?? 0)) ?></span></div></div>
                             </div>
                         </div>
                     </div>
@@ -252,35 +215,18 @@ function render_change_indicator($change) {
                 <div class="p-4 bg-emerald-50 rounded-lg relative">
                     <div class="flex items-center gap-2">
                         <div class="text-sm text-gray-600">Penjualan Bersih</div>
-                        <button @click="showPopover = showPopover === 'netSales' ? null : 'netSales'" 
-                                class="text-gray-400 hover:text-emerald-600 focus:outline-none">
-                            <i class="fas fa-info-circle"></i>
-                        </button>
+                        <button @click="showPopover = showPopover === 'netSales' ? null : 'netSales'" class="text-gray-400 hover:text-emerald-600 focus:outline-none"><i class="fas fa-info-circle"></i></button>
                     </div>
                     <div class="text-lg font-bold text-emerald-600 mt-1">
                         <?= NumberHelper::format_rupiah($financials['net_sales'] ?? 0) ?>
                     </div>
-                    <div x-show="showPopover === 'netSales'" 
-                         @click.away="showPopover = null"
-                         x-transition
-                         class="absolute left-0 mt-2 w-full max-w-sm bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                    <div x-show="showPopover === 'netSales'" @click.away="showPopover = null" x-transition class="absolute left-0 mt-2 w-full max-w-sm bg-white rounded-lg shadow-lg border border-gray-200 z-10">
                         <div class="p-4">
                             <h3 class="font-semibold text-gray-900 mb-2">Komponen Penjualan Bersih</h3>
                             <div class="space-y-2">
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">Total Penjualan</span>
-                                    <span class="font-medium"><?= NumberHelper::format_rupiah($financials['total_revenue'] ?? 0) ?></span>
-                                </div>
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">Pengembalian Dana</span>
-                                    <span class="font-medium text-red-600">- <?= NumberHelper::format_rupiah($financials['refunds'] ?? 0) ?></span>
-                                </div>
-                                <div class="pt-2 mt-2 border-t border-gray-200">
-                                    <div class="flex justify-between font-medium">
-                                        <span class="text-gray-900">Total</span>
-                                        <span class="text-emerald-600"><?= NumberHelper::format_rupiah($financials['net_sales'] ?? 0) ?></span>
-                                    </div>
-                                </div>
+                                <div class="flex justify-between text-sm"><span class="text-gray-600">Total Penjualan</span><span class="font-medium"><?= NumberHelper::format_rupiah($financials['total_revenue'] ?? 0) ?></span></div>
+                                <div class="flex justify-between text-sm"><span class="text-gray-600">Pengembalian Dana</span><span class="font-medium text-red-600">- <?= NumberHelper::format_rupiah($financials['refunds'] ?? 0) ?></span></div>
+                                <div class="pt-2 mt-2 border-t border-gray-200"><div class="flex justify-between font-medium"><span class="text-gray-900">Total</span><span class="text-emerald-600"><?= NumberHelper::format_rupiah($financials['net_sales'] ?? 0) ?></span></div></div>
                                 </div>
                         </div>
                     </div>
@@ -289,10 +235,7 @@ function render_change_indicator($change) {
                 <div class="col-span-2 p-4 bg-green-50 rounded-lg border border-green-100 relative">
                     <div class="flex items-center gap-2">
                         <div class="text-sm text-gray-600">Laba Kotor</div>
-                        <button @click="showPopover = showPopover === 'profit' ? null : 'profit'" 
-                                class="text-gray-400 hover:text-green-600 focus:outline-none">
-                            <i class="fas fa-info-circle"></i>
-                        </button>
+                        <button @click="showPopover = showPopover === 'profit' ? null : 'profit'" class="text-gray-400 hover:text-green-600 focus:outline-none"><i class="fas fa-info-circle"></i></button>
                     </div>
                     <div class="text-2xl font-bold text-green-600 mt-1">
                         <?= NumberHelper::format_rupiah($financials['gross_profit'] ?? 0) ?>
@@ -300,27 +243,13 @@ function render_change_indicator($change) {
                     <div class="text-sm text-gray-500 mt-1">
                         Margin: <?= number_format(((float)($financials['gross_profit'] ?? 0) / ((float)($financials['net_sales'] ?? 0) ?: 1)) * 100, 1) ?>%
                     </div>
-                    <div x-show="showPopover === 'profit'" 
-                         @click.away="showPopover = null"
-                         x-transition
-                         class="absolute left-0 mt-2 w-full max-w-sm bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                    <div x-show="showPopover === 'profit'" @click.away="showPopover = null" x-transition class="absolute left-0 mt-2 w-full max-w-sm bg-white rounded-lg shadow-lg border border-gray-200 z-10">
                         <div class="p-4">
                             <h3 class="font-semibold text-gray-900 mb-2">Komponen Laba Kotor</h3>
                             <div class="space-y-2">
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">Penjualan Bersih</span>
-                                    <span class="font-medium"><?= NumberHelper::format_rupiah($financials['net_sales'] ?? 0) ?></span>
-                                </div>
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">HPP (COGS)</span>
-                                    <span class="font-medium text-red-600">- <?= NumberHelper::format_rupiah($financials['cogs'] ?? 0) ?></span>
-                                </div>
-                                <div class="pt-2 mt-2 border-t border-gray-200">
-                                    <div class="flex justify-between font-medium">
-                                        <span class="text-gray-900">Total</span>
-                                        <span class="text-green-600"><?= NumberHelper::format_rupiah($financials['gross_profit'] ?? 0) ?></span>
-                                    </div>
-                                </div>
+                                <div class="flex justify-between text-sm"><span class="text-gray-600">Penjualan Bersih</span><span class="font-medium"><?= NumberHelper::format_rupiah($financials['net_sales'] ?? 0) ?></span></div>
+                                <div class="flex justify-between text-sm"><span class="text-gray-600">HPP (COGS)</span><span class="font-medium text-red-600">- <?= NumberHelper::format_rupiah($financials['cogs'] ?? 0) ?></span></div>
+                                <div class="pt-2 mt-2 border-t border-gray-200"><div class="flex justify-between font-medium"><span class="text-gray-900">Total</span><span class="text-green-600"><?= NumberHelper::format_rupiah($financials['gross_profit'] ?? 0) ?></span></div></div>
                             </div>
                         </div>
                     </div>
@@ -360,17 +289,8 @@ document.addEventListener('DOMContentLoaded', function() {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { callback: value => formatRupiah(value) }
-                    }
-                },
-                plugins: {
-                    tooltip: {
-                        callbacks: { label: c => formatRupiah(c.parsed.y) }
-                    }
-                }
+                scales: { y: { beginAtZero: true, ticks: { callback: value => formatRupiah(value) } } },
+                plugins: { tooltip: { callbacks: { label: c => formatRupiah(c.parsed.y) } } }
             }
         });
     }
