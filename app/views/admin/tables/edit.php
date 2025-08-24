@@ -1,72 +1,73 @@
 <?php
-// File: app/Controllers/Admin/UserController.php (Final Diperbaiki)
-namespace App\Controllers\Admin;
-
-use App\Core\Controller;
-use App\Models\User;
-use App\Helpers\AuthHelper;
+use App\Helpers\SanitizeHelper;
 use App\Helpers\UrlHelper;
 use App\Helpers\SessionHelper;
-use App\Helpers\SanitizeHelper;
+use App\Helpers\AuthHelper;
 
-class UserController extends Controller {
-    private $userModel;
-    public function __construct() { $this->userModel = $this->model('User'); AuthHelper::requireAdmin(); }
-    public function index() { $users = $this->userModel->all(); $this->view('admin.users.index', ['pageTitle' => 'Kelola Pengguna','users' => $users], 'admin_layout'); }
-    public function create() { $roles = ['admin', 'staff', 'kitchen']; $this->view('admin.users.create', ['pageTitle' => 'Tambah Pengguna Baru','roles' => $roles], 'admin_layout'); }
+// Data dari controller dijamin sudah ada jika view ini di-load
+$table = $table ?? []; 
+$oldInputFromSession = SessionHelper::getFlashData('old_input');
 
-    public function store() {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { UrlHelper::redirect('/admin/users/create'); return; }
-        $username = SanitizeHelper::string($_POST['username'] ?? ''); $name = SanitizeHelper::string($_POST['name'] ?? ''); $role = SanitizeHelper::string($_POST['role'] ?? ''); $password = $_POST['password'] ?? ''; $passwordConfirm = $_POST['password_confirm'] ?? ''; $isActive = isset($_POST['is_active']) ? true : false; $roles = ['admin', 'staff', 'kitchen'];
+// Prioritaskan old input, lalu data asli dari controller
+$formData = $oldInputFromSession ?? $table;
+$pageTitle = "Edit Meja: " . SanitizeHelper::html($table['table_number'] ?? 'Error');
+$formActionId = $table['id'] ?? ($formData['id'] ?? 0);
 
-        $errorMsg = null;
-        if (empty($username) || empty($name) || empty($role) || empty($password) || empty($passwordConfirm)) { $errorMsg = 'Semua field wajib diisi.'; }
-        elseif (!in_array($role, $roles)) { $errorMsg = 'Peran tidak valid.'; }
-        elseif (strlen($password) < 6) { $errorMsg = 'Password minimal 6 karakter.'; }
-        elseif ($password !== $passwordConfirm) { $errorMsg = 'Konfirmasi password tidak cocok.'; }
+AuthHelper::requireAdmin();
+?>
 
-        if ($errorMsg) {
-            SessionHelper::setFlashData('old_input', $_POST); // PERBAIKAN: Gunakan setFlashData
-            SessionHelper::setFlash('error', $errorMsg);
-            UrlHelper::redirect('/admin/users/create'); return;
-        }
-        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-        if (!$hashedPassword) { SessionHelper::setFlashData('old_input', $_POST); SessionHelper::setFlash('error', 'Gagal proses password.'); UrlHelper::redirect('/admin/users/create'); return; }
+<div class="max-w-lg mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-semibold text-slate-800"><?= SanitizeHelper::html($pageTitle) ?></h2>
+        <a href="<?= UrlHelper::baseUrl('/admin/tables') ?>" class="text-sm text-indigo-600 hover:text-indigo-800 inline-flex items-center">
+            <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+            Kembali ke Daftar Meja
+        </a>
+    </div>
 
-        $userId = $this->userModel->createUser($username, $hashedPassword, $name, $role, $isActive);
-        if ($userId) { SessionHelper::setFlash('success', 'Pengguna ditambahkan.'); UrlHelper::redirect('/admin/users'); }
-        else { SessionHelper::setFlashData('old_input', $_POST); SessionHelper::setFlash('error', 'Gagal tambah pengguna (username duplikat?).'); UrlHelper::redirect('/admin/users/create'); }
-    }
+    <?php SessionHelper::displayFlash('error'); ?>
 
-    public function edit(int $id) {
-        $safeId = SanitizeHelper::integer($id); if ($safeId <= 0) { UrlHelper::redirect('/admin/users'); return; } $user = $this->userModel->findById($safeId); if (!$user) { SessionHelper::setFlash('error', 'Pengguna tidak ditemukan.'); UrlHelper::redirect('/admin/users'); return; } $roles = ['admin', 'staff', 'kitchen'];
-        $this->view('admin.users.edit', ['pageTitle' => 'Edit Pengguna: ' . SanitizeHelper::html($user['name']), 'user' => $user, 'roles' => $roles ], 'admin_layout');
-    }
+    <div class="bg-white p-6 rounded-lg shadow-md border border-slate-200">
+        <?php if (empty($formActionId)): ?>
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded" role="alert">Error: ID Meja tidak ditemukan. Form tidak dapat diproses.</div>
+        <?php else: ?>
+            <form action="<?= UrlHelper::baseUrl('/admin/tables/update/' . $formActionId) ?>" method="POST" novalidate>
+                <div class="mb-4">
+                    <label for="table_number" class="block text-sm font-medium text-slate-700 mb-1">Nomor Meja <span class="text-red-500">*</span></label>
+                    <input type="text" id="table_number" name="table_number" required maxlength="50"
+                           value="<?= SanitizeHelper::html($formData['table_number'] ?? '') ?>"
+                           class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm">
+                </div>
 
-    public function update(int $id) {
-         $safeId = SanitizeHelper::integer($id); if ($safeId <= 0 || $_SERVER['REQUEST_METHOD'] !== 'POST') { UrlHelper::redirect('/admin/users'); return; }
-         $username = SanitizeHelper::string($_POST['username'] ?? ''); $name = SanitizeHelper::string($_POST['name'] ?? ''); $role = SanitizeHelper::string($_POST['role'] ?? ''); $isActive = isset($_POST['is_active']) ? true : false; $password = $_POST['password'] ?? ''; $passwordConfirm = $_POST['password_confirm'] ?? ''; $roles = ['admin', 'staff', 'kitchen'];
-         $isEditingSelf = ($safeId === AuthHelper::getUserId());
-         if ($isEditingSelf) { $currentUser = $this->userModel->findById($safeId); if($currentUser){ $role = $currentUser['role']; $isActive = (bool)$currentUser['is_active'];} }
+                <div class="mb-4">
+                    <label for="description" class="block text-sm font-medium text-slate-700 mb-1">Deskripsi (Opsional)</label>
+                    <textarea id="description" name="description" rows="3" maxlength="255"
+                              class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                    ><?= SanitizeHelper::html($formData['description'] ?? '') ?></textarea>
+                </div>
 
-         if (empty($username) || empty($name) || empty($role) || !in_array($role, $roles)) { SessionHelper::setFlashData('old_input', $_POST + ['id' => $safeId]); SessionHelper::setFlash('error', 'Username, Nama, dan Peran valid wajib diisi.'); UrlHelper::redirect('/admin/users/edit/' . $safeId); return; }
+                 <div class="mb-4 p-3 bg-slate-50 rounded-md border border-slate-200">
+                    <label class="block text-sm font-medium text-slate-700 mb-1">QR Code</label>
+                    <p class="text-xs text-slate-500 mb-2">Identifier unik untuk URL QR Code (tidak dapat diubah):</p>
+                    <code class="text-sm bg-slate-200 text-slate-700 px-2 py-1 rounded"><?= SanitizeHelper::html($table['qr_code_identifier'] ?? 'N/A') ?></code>
+                    <a href="<?= UrlHelper::baseUrl('/admin/tables/qr/' . $formActionId) ?>" target="_blank" class="ml-3 text-xs text-indigo-600 hover:underline">(Lihat QR Code)</a>
+                 </div>
 
-         if (!empty($password)) {
-             if (strlen($password) < 6 || $password !== $passwordConfirm) { SessionHelper::setFlashData('old_input', $_POST + ['id' => $safeId]); SessionHelper::setFlash('error', 'Password baru min 6 karakter & konfirmasi harus cocok.'); UrlHelper::redirect('/admin/users/edit/' . $safeId); return; }
-             $newHashedPassword = password_hash($password, PASSWORD_DEFAULT);
-             if (!$newHashedPassword) { SessionHelper::setFlashData('old_input', $_POST + ['id' => $safeId]); SessionHelper::setFlash('error', 'Gagal proses password baru.'); UrlHelper::redirect('/admin/users/edit/' . $safeId); return; }
-             if (!$this->userModel->updatePassword($safeId, $newHashedPassword)) { SessionHelper::setFlashData('old_input', $_POST + ['id' => $safeId]); SessionHelper::setFlash('error', 'Gagal update password.'); UrlHelper::redirect('/admin/users/edit/' . $safeId); return; }
-         }
+                <div class="mb-6">
+                     <label for="is_active" class="flex items-center">
+                         <input type="checkbox" id="is_active" name="is_active" value="1"
+                                class="h-4 w-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
+                                <?= (isset($formData['is_active']) && $formData['is_active'] == 1) ? 'checked' : '' ?>
+                         >
+                         <span class="ml-2 text-sm text-slate-700">Meja Aktif</span>
+                     </label>
+                </div>
 
-         if ($this->userModel->updateUser($safeId, $username, $name, $role, $isActive)) { SessionHelper::setFlash('success', 'Data pengguna diperbarui.'); UrlHelper::redirect('/admin/users'); }
-         else { SessionHelper::setFlashData('old_input', $_POST + ['id' => $safeId]); SessionHelper::setFlash('error', 'Gagal update data (username duplikat?).'); UrlHelper::redirect('/admin/users/edit/' . $safeId); }
-     }
-
-    public function destroy(int $id) {
-        $safeId = SanitizeHelper::integer($id); if ($safeId <= 0 || $safeId === AuthHelper::getUserId() || $_SERVER['REQUEST_METHOD'] !== 'POST') { UrlHelper::redirect('/admin/users'); return; }
-        $user = $this->userModel->findById($safeId); $userName = $user ? $user['username'] : 'ID ' . $safeId;
-        if ($this->userModel->deleteUser($safeId)) { SessionHelper::setFlash('success', 'Pengguna "' . SanitizeHelper::html($userName) . '" dihapus.'); }
-        else { SessionHelper::setFlash('error', 'Gagal hapus pengguna.'); }
-        UrlHelper::redirect('/admin/users');
-     }
-}
+                <div class="flex justify-end space-x-3 border-t border-slate-200 pt-5 mt-5">
+                    <a href="<?= UrlHelper::baseUrl('/admin/tables') ?>" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium py-2 px-4 rounded-lg transition border border-slate-300">Batal</a>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition shadow-md">Update Meja</button>
+                </div>
+            </form>
+        <?php endif; ?>
+    </div>
+</div>
