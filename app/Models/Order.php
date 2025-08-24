@@ -6,20 +6,12 @@ use App\Core\Model;
 use PDO;
 use PDOException;
 use DateTime;
-use DateTimeZone; // Impor DateTimeZone
+use DateTimeZone;
 use App\Helpers\SanitizeHelper;
 
-/**
- * Class Order
- * Model untuk tabel 'orders'.
- */
 class Order extends Model {
     protected $table = 'orders';
 
-    /**
-     * Membuat order baru beserta item-itemnya dalam satu transaksi.
-     */
-    
     public function createOrder(int $tableId, array $items, ?string $notes = null): int|false {
         if (empty($items) || $tableId <= 0) {
             return false;
@@ -29,24 +21,21 @@ class Order extends Model {
              return false;
         }
 
-        // 1. Ambil pengaturan pajak dan layanan
         $settingsModel = new \App\Models\Settings();
         $settings = $settingsModel->getAllSettings();
         $adminFee = (float)($settings['default_admin_fee'] ?? 0);
         $taxRate = (float)($settings['tax_percentage'] ?? 0) / 100;
         $serviceRate = (float)($settings['service_charge_percentage'] ?? 0) / 100;
 
-        // Faktor pembagi untuk menghitung harga dasar dari harga inklusif
         $inclusiveFactor = 1 + $taxRate + $serviceRate;
-        if ($inclusiveFactor == 0) $inclusiveFactor = 1; // Hindari pembagian dengan nol
+        if ($inclusiveFactor == 0) $inclusiveFactor = 1;
 
         $itemIds = array_column($items, 'menu_item_id');
         if (empty($itemIds)) {
              return false;
         }
         
-        // Inisialisasi total
-        $totalAmount = 0.00; // Ini akan menjadi jumlah dari harga menu
+        $totalAmount = 0.00;
         $totalTax = 0.00;
         $totalServiceCharge = 0.00;
 
@@ -75,18 +64,15 @@ class Order extends Model {
                     return false;
                 }
                 
-                $priceAtOrder = (float)$dbItems[$menuItemId]; // Harga inklusif dari DB
+                $priceAtOrder = (float)$dbItems[$menuItemId];
                 $subtotal = $priceAtOrder * $quantity;
                 
-                // Tambahkan subtotal ke total akhir
                 $totalAmount += $subtotal;
 
-                // Hitung mundur untuk menemukan harga dasar, pajak, dan layanan untuk subtotal ini
                 $baseSubtotal = $subtotal / $inclusiveFactor;
                 $taxForSubtotal = $baseSubtotal * $taxRate;
                 $serviceForSubtotal = $baseSubtotal * $serviceRate;
 
-                // Akumulasi total
                 $totalTax += $taxForSubtotal;
                 $totalServiceCharge += $serviceForSubtotal;
 
@@ -97,7 +83,6 @@ class Order extends Model {
                 ];
             }
             
-            // Tambahkan admin fee jika ada
             $finalTotalAmount = $totalAmount + $adminFee;
 
         } catch (PDOException $e) {
@@ -107,7 +92,7 @@ class Order extends Model {
         
         $this->db->beginTransaction();
         try {
-            // **FIXED**: Menghapus kolom 'gross_sales' dari query INSERT
+            // PERBAIKAN: Menghapus kolom 'gross_sales' dari query INSERT
             $sqlOrder = "INSERT INTO {$this->table} (table_id, order_number, service_charge, tax, admin_fee, total_amount, status, notes, order_time)
                          VALUES (:table_id, :order_number, :service_charge, :tax, :admin_fee, :total_amount, 'pending_payment', :notes, NOW())";
             $stmtOrder = $this->db->prepare($sqlOrder);
@@ -135,7 +120,6 @@ class Order extends Model {
         }
     }
 
-     // ... (metode-metode lain seperti findById, generateOrderNumber tetap sama) ...
      public function findById($id): array|false {
          if ($id <= 0) return false;
          try {
@@ -468,4 +452,3 @@ class Order extends Model {
     }
 
 }
-?>

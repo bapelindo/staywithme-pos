@@ -30,6 +30,7 @@ class OrderController extends Controller {
         $orders = [];
         $totalOrders = 0;
 
+        // PERBAIKAN: Hapus 'paid' dari daftar status yang diizinkan
         $allowedStatusesForFilter = ['pending_payment', 'received', 'preparing', 'ready', 'served', 'cancelled'];
 
         if ($statusFilter === 'all' || empty($statusFilter)) {
@@ -133,6 +134,7 @@ class OrderController extends Controller {
 
         $orderId = SanitizeHelper::integer($data['order_id']);
         $newStatus = SanitizeHelper::string($data['new_status']);
+        // PERBAIKAN: Hapus 'paid' dari daftar status yang diizinkan
         $allowedStatuses = ['received', 'preparing', 'ready', 'served', 'cancelled'];
 
         if ($orderId <= 0 || !in_array($newStatus, $allowedStatuses)) {

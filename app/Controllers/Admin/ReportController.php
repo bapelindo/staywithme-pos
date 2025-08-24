@@ -16,9 +16,6 @@ use DateTime;
 
 class ReportController extends Controller
 {
-    /**
-     * Helper function to validate date format.
-     */
     private function validateDate($date, $format = 'Y-m-d')
     {
         $d = DateTime::createFromFormat($format, $date);
@@ -87,7 +84,6 @@ class ReportController extends Controller
 
         $this->view('admin.reports.index', $data, 'admin_layout');
     }
-
 
     public function summary()
     {
@@ -565,13 +561,13 @@ class ReportController extends Controller
         $this->view('admin.reports.closing_list', $data, 'admin_layout');
     }
 
-    // **PERBAIKAN: Ganti nama parameter dari $drawerId menjadi $id**
+    // PERBAIKAN: Mengganti nama parameter dari $drawerId menjadi $id
     public function closingReportDetail(int $id)
     {
         AuthHelper::requireAdmin();
         
         $reportModel = $this->model('Report');
-        // **PERBAIKAN: Gunakan $id di sini**
+        // PERBAIKAN: Menggunakan $id yang diterima dari rute
         $reportData = $reportModel->getClosingReportData($id);
 
         if (!$reportData) {

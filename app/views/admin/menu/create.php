@@ -6,6 +6,7 @@ use App\Helpers\SessionHelper; // Untuk getFlashData & displayFlash
 
 // Data dari MenuController
 $categories = $categories ?? [];
+// PERBAIKAN: Ambil oldInput dari FlashData
 $oldInput = SessionHelper::getFlashData('old_input') ?? [];
 ?>
 

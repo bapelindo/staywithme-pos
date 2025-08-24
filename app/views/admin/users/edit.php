@@ -1,12 +1,12 @@
 <?php
 use App\Helpers\SanitizeHelper;
 use App\Helpers\UrlHelper;
-use App\Helpers\SessionHelper; // Untuk getFlashData & displayFlash
+use App\Helpers\SessionHelper;
 use App\Helpers\AuthHelper;
 
 $roles = $roles ?? ['admin', 'staff', 'kitchen'];
-$user = $user ?? null; // Data user asli dari DB
-// === PERBAIKAN: Ambil oldInput dari FlashData ===
+$user = $user ?? null;
+// PERBAIKAN: Ambil oldInput dari FlashData
 $oldInputFromSession = SessionHelper::getFlashData('old_input');
 // ============================================
 
@@ -18,7 +18,7 @@ if (!$user && !$oldInputFromSession) {
 // Prioritaskan old input, lalu data asli
 $formData = $oldInputFromSession ?? $user;
 $pageTitle = "Edit Pengguna: " . SanitizeHelper::html($user['name'] ?? 'Error');
-$formActionId = $user['id'] ?? ($formData['id'] ?? null); // ID untuk action form
+$formActionId = $user['id'] ?? ($formData['id'] ?? null);
 
 if (!$formActionId) {
      echo '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded" role="alert">Error: ID Pengguna tidak ditemukan.</div>';

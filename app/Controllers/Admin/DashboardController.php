@@ -66,10 +66,10 @@ class DashboardController extends Controller
             'prevDate' => $prevDate,
             'nextDate' => $nextDate,
             'metrics' => $dashboardModel->getSalesMetrics($period, $date),
-            // === PERBAIKAN DI SINI: Kirim parameter $date ===
+            // PERBAIKAN: Kirim parameter $date ke method model
             'mtd_sales' => $dashboardModel->getMonthToDateSales($date),
             'monthly_projection' => $dashboardModel->getMonthlyProjection($date),
-            // ===============================================
+            // AKHIR PERBAIKAN
             'chart_data' => $chartData,
             'sales_forecast' => $salesForecast,
         ];
