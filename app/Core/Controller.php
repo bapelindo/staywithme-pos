@@ -23,7 +23,7 @@ class Controller {
         extract($data);
 
         // 2. Bangun path ke file view spesifik.
-        $viewPath = '../app/Views/' . str_replace('.', '/', $viewName) . '.php';
+        $viewPath = ROOT_PATH . '/app/Views/' . str_replace('.', '/', $viewName) . '.php';
 
         // 3. Periksa apakah file view spesifik ada.
         if (!file_exists($viewPath)) {
@@ -31,7 +31,7 @@ class Controller {
             // Idealnya tampilkan view 404 yang proper
             http_response_code(404);
             // Coba muat view error 404 jika ada
-            $errorViewPath = '../app/Views/public/errors/404.php'; // atau path lain
+            $errorViewPath = ROOT_PATH . '/app/Views/public/errors/404.php'; // atau path lain
             if(file_exists($errorViewPath)) {
                  // Kirim pesan ke view error
                  $message = "View file '{$viewName}' tidak ditemukan.";
@@ -44,7 +44,7 @@ class Controller {
 
         // 4. Muat layout atau view langsung
         if ($layout !== null) {
-            $layoutPath = '../app/Views/layouts/' . $layout . '.php';
+            $layoutPath = ROOT_PATH . '/app/Views/layouts/' . $layout . '.php';
 
             if (!file_exists($layoutPath)) {
                 error_log("Layout file not found: " . $layoutPath . " requested by " . get_class($this));

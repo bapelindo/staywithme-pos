@@ -25,6 +25,8 @@ class Database {
     private $pass = DB_PASS;
     /** @var string Nama database (dari config) */
     private $name = DB_NAME;
+    /** @var string Port database (dari config) */
+    private $port = DB_PORT;
 
     /**
      * Constructor dibuat private untuk mencegah pembuatan instance langsung.
@@ -32,7 +34,7 @@ class Database {
      */
     private function __construct() {
         // Data Source Name (DSN) untuk koneksi PDO MySQL
-        $dsn = 'mysql:host=' . $this->host . ';dbname=' . $this->name . ';charset=utf8mb4';
+        $dsn = 'mysql:host=' . $this->host . ';port=' . $this->port . ';dbname=' . $this->name . ';charset=utf8mb4';
 
         // Opsi koneksi PDO
         $options = [
