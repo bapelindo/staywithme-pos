@@ -25,17 +25,6 @@ class Controller {
         // 2. Bangun path ke file view spesifik.
         $viewPath = ROOT_PATH . '/app/Views/' . str_replace('.', '/', $viewName) . '.php';
 
-        // --- START VIEW DEBUGGING ---
-        echo "<div style='background: #fcc; padding: 1em; border: 1px solid #c00; margin: 1em; font-family: monospace;'>";
-        echo "<strong>VIEW DEBUG:</strong><br>";
-        echo "ROOT_PATH: " . ROOT_PATH . "<br>";
-        echo "Checking for view file at: " . $viewPath . "<br>";
-        echo "file_exists() result: " . (file_exists($viewPath) ? 'true' : 'false') . "<br>";
-        echo "Directory listing of ROOT_PATH:<br><pre>";
-        print_r(scandir(ROOT_PATH));
-        echo "</pre></div>";
-        // --- END VIEW DEBUGGING ---
-
         // 3. Periksa apakah file view spesifik ada.
         if (!file_exists($viewPath)) {
             error_log("View file not found: " . $viewPath . " requested by " . get_class($this));

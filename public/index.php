@@ -27,23 +27,11 @@ ini_set('display_errors', '1'); // Set ke '0' di produksi
 // Berisi konstanta seperti kredensial DB, BASE_URL, dll.
 require_once __DIR__ . '/../config/config.php';
 
-// --- START COMPREHENSIVE DEBUG ---
-echo "<div style='background: #ffc; padding: 1em; border: 2px solid #f00; margin: 1em; font-family: sans-serif; z-index: 9999; position: relative;'>";
-echo "<h2>DEBUGGING ENVIRONMENT</h2>";
-echo "<p><strong>Vercel Environment (VERCEL_ENV):</strong> " . (getenv('VERCEL_ENV') ?: 'Not Set') . "</p>";
-echo "<strong><u>Database Variables:</u></strong><br>";
-echo "<strong>DB_HOST:</strong> " . (getenv('DB_HOST') ?: '<em>Not Set</em>') . "<br>";
-echo "<strong>DB_USER:</strong> " . (getenv('DB_USER') ?: '<em>Not Set</em>') . "<br>";
-echo "<strong>DB_PASS:</strong> " . (getenv('DB_PASS') ? '<em>Set (hidden)</em>' : '<em>Not Set</em>') . "<br>";
-echo "<strong>DB_NAME:</strong> " . (getenv('DB_NAME') ?: '<em>Not Set</em>') . "<br>";
-echo "<strong>DB_PORT:</strong> " . (getenv('DB_PORT') ?: '<em>Not Set</em>') . "<br><br>";
-echo "<strong><u>URL Variables:</u></strong><br>";
-echo "<strong>APP_URL:</strong> " . (getenv('APP_URL') ?: '<em>Not Set</em>') . "<br>";
-echo "<strong>VERCEL_URL (fallback):</strong> " . (getenv('VERCEL_URL') ?: '<em>Not Set</em>') . "<br><br>";
-echo "<strong><u>Final BASE_URL being used:</u></strong><br>";
-echo "<strong>BASE_URL:</strong> " . (defined('BASE_URL') ? BASE_URL : '<em>Not Defined</em>') . "<br>";
-echo "</div>";
-// --- END COMPREHENSIVE DEBUG ---
+// 3. Muat Konfigurasi Aplikasi
+// Berisi konstanta seperti kredensial DB, BASE_URL, dll.
+require_once __DIR__ . '/../config/config.php';
+
+// 4. Muat Autoloader Composer
 
 
 
