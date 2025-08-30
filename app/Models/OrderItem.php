@@ -6,10 +6,6 @@ use App\Core\Model;
 use PDO;
 use PDOException;
 
-/**
- * Class OrderItem
- * Model untuk tabel 'order_items'.
- */
 class OrderItem extends Model {
     protected $table = 'order_items';
 
@@ -22,15 +18,11 @@ class OrderItem extends Model {
             return (int)$stmt->fetchColumn();
         } catch (\PDOException $e) {
             error_log("Error counting order items for menu item ID {$menuItemId}: " . $e->getMessage());
-            return 0; // Anggap 0 jika error, atau lempar exception
+            return 0;
         }
     }
-    /**
-     * Mengambil semua item berdasarkan order ID.
-     */
     
     public function findByOrderId(int $orderId): array {
-        // ...(Kode findByOrderId lengkap seperti sebelumnya)...
          if ($orderId <= 0) return [];
          $sql = "SELECT oi.*, mi.name as menu_item_name, mi.image_path
                 FROM {$this->table} oi
@@ -48,11 +40,7 @@ class OrderItem extends Model {
         }
     }
 
-     /**
-     * Memasukkan beberapa item order sekaligus (dipanggil dalam transaksi).
-     */
     public function createOrderItems(int $orderId, array $itemsData): bool {
-        // ...(Kode createOrderItems lengkap seperti sebelumnya)...
          if (empty($itemsData) || $orderId <= 0) return false;
          $sql = "INSERT INTO {$this->table} (order_id, menu_item_id, quantity, price_at_order, subtotal, notes)
                  VALUES (:order_id, :menu_item_id, :quantity, :price_at_order, :subtotal, :notes)";
@@ -85,18 +73,14 @@ class OrderItem extends Model {
         }
     }
 
-    /**
-     * Mendapatkan daftar item menu terpopuler (paling banyak dipesan kuantitasnya)
-     * dalam periode tanggal tertentu, dari order yang statusnya relevan.
-     */
     public function getPopularItems(string $startDate, string $endDate, int $limit = 5): array {
-        // ...(Kode getPopularItems lengkap seperti sebelumnya)...
          if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $startDate) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $endDate) || $limit <= 0) {
               error_log("Invalid date format or limit for popular items report.");
               return [];
          }
         $endDateFull = $endDate . ' 23:59:59';
-        $revenueStatuses = ['paid', 'served'];
+        // PERBAIKAN: Hanya gunakan status 'served' untuk laporan
+        $revenueStatuses = ['served']; 
         $placeholders = implode(',', array_fill(0, count($revenueStatuses), '?'));
         $sql = "SELECT mi.name as menu_item_name, SUM(oi.quantity) as total_quantity
                 FROM {$this->table} oi
@@ -126,8 +110,8 @@ class OrderItem extends Model {
              return [];
         }
        $endDateFull = $endDate . ' 23:59:59';
-       // Tentukan status order yang dihitung (sesuaikan jika perlu, misal hanya 'served' jika 'paid' tidak dipakai)
-       $revenueStatuses = ['served']; // Atau ['served', 'paid'] jika masih relevan
+       // PERBAIKAN: Hanya gunakan status 'served' untuk laporan
+       $revenueStatuses = ['served'];
        $placeholders = implode(',', array_fill(0, count($revenueStatuses), '?'));
 
        $sql = "SELECT
@@ -141,7 +125,7 @@ class OrderItem extends Model {
                WHERE o.status IN ($placeholders)
                AND o.order_time BETWEEN ? AND ?
                GROUP BY c.id, c.name
-               ORDER BY total_revenue DESC"; // Urutkan berdasarkan pendapatan terbanyak
+               ORDER BY total_revenue DESC";
 
        try {
            $stmt = $this->db->prepare($sql);
@@ -160,5 +144,4 @@ class OrderItem extends Model {
        }
    }
 
-} // Akhir kelas OrderItem
-?>
+}

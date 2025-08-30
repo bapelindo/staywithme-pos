@@ -42,6 +42,13 @@ class NumberHelper {
         }
         return number_format((float)$cleanedNumber, $decimals, ',', '.');
     }
+    public static function format_rupiah($number): string
+    {
+        if ($number === null || !is_numeric($number)) {
+            return 'Rp 0';
+        }
+        return 'Rp ' . number_format((float)$number, 0, ',', '.');
+    }
 }
 
 ?>

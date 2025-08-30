@@ -3,37 +3,77 @@ namespace App\Controllers\Admin;
 
 use App\Core\Controller;
 use App\Helpers\AuthHelper;
-use App\Helpers\SanitizeHelper;
-use App\Models\Order; // Contoh jika ingin menampilkan statistik order
+use App\Models\Dashboard;
+use App\Models\Order;
 use App\Models\MenuItem;
 
-class DashboardController extends Controller {
+class DashboardController extends Controller
+{
+    public function index()
+    {
+        AuthHelper::requireRole(['admin', 'staff']);
 
-    public function index() {
-        // 1. Cek otentikasi & otorisasi (Admin, Staff, Kitchen boleh akses dashboard)
-        AuthHelper::requireRole(['admin', 'staff', 'kitchen']);
+        $orderModel = $this->model('Order');
+        $menuItemModel = $this->model('MenuItem');
+        
+        $userName = AuthHelper::getUserName() ?? 'User';
+        $newOrderCount = $orderModel->countByStatus('pending_payment');
+        $processingOrderCount = $orderModel->countByStatus(['received', 'preparing']);
+        $unavailableItemCount = $menuItemModel->countUnavailable();
 
-        // 2. Ambil data untuk ditampilkan di dashboard
-        $orderModel = new Order();
-        $menuItemModel = new MenuItem(); // Jika perlu info menu
+        $period = $_GET['period'] ?? 'daily';
+        if (!in_array($period, ['daily', 'weekly', 'monthly'])) {
+            $period = 'daily';
+        }
 
-        // Contoh data: Jumlah order baru, jumlah order diproses, item habis
-        $newOrderCount = $orderModel->countByStatus('received'); // Perlu method countByStatus di Order model
-        $processingOrderCount = $orderModel->countByStatus(['preparing', 'ready']);
-        $unavailableItemCount = $menuItemModel->countUnavailable(); // Perlu method countUnavailable di MenuItem model
+        $dateInput = $_GET['date'] ?? date('Y-m-d');
+        
+        $d = \DateTime::createFromFormat('Y-m-d', $dateInput);
+        if ($d && $d->format('Y-m-d') === $dateInput) {
+            $date = $dateInput;
+        } else {
+            $date = date('Y-m-d');
+        }
+        
+        $currentDate = new \DateTime($date);
+        $dashboardModel = $this->model('Dashboard');
 
-        $userName = SanitizeHelper::html(AuthHelper::getUserName());
+        switch ($period) {
+            case 'weekly':
+                $prevDate = (clone $currentDate)->modify('-1 week')->format('Y-m-d');
+                $nextDate = (clone $currentDate)->modify('+1 week')->format('Y-m-d');
+                break;
+            case 'monthly':
+                $prevDate = (clone $currentDate)->modify('first day of last month')->format('Y-m-d');
+                $nextDate = (clone $currentDate)->modify('first day of next month')->format('Y-m-d');
+                break;
+            default: 
+                $prevDate = (clone $currentDate)->modify('-1 day')->format('Y-m-d');
+                $nextDate = (clone $currentDate)->modify('+1 day')->format('Y-m-d');
+        }
 
-        // 3. Load View Dashboard
-        $this->view('admin.dashboard', [
-            'pageTitle' => 'Admin Dashboard',
+        $chartData = $dashboardModel->getSalesChartData($period, $date);
+        $salesForecast = $dashboardModel->getSalesForecastNext7Days();
+
+        $data = [
+            'pageTitle' => 'Dashboard',
             'userName' => $userName,
             'newOrderCount' => $newOrderCount,
             'processingOrderCount' => $processingOrderCount,
             'unavailableItemCount' => $unavailableItemCount,
-            
-            // Kirim data lain yang relevan
-        ], 'admin_layout');
+            'period' => $period,
+            'currentDate' => $currentDate->format('Y-m-d'),
+            'prevDate' => $prevDate,
+            'nextDate' => $nextDate,
+            'metrics' => $dashboardModel->getSalesMetrics($period, $date),
+            // PERBAIKAN: Kirim parameter $date ke method model
+            'mtd_sales' => $dashboardModel->getMonthToDateSales($date),
+            'monthly_projection' => $dashboardModel->getMonthlyProjection($date),
+            // AKHIR PERBAIKAN
+            'chart_data' => $chartData,
+            'sales_forecast' => $salesForecast,
+        ];
+
+        $this->view('admin.dashboard', $data, 'admin_layout');
     }
 }
-?>

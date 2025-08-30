@@ -11,6 +11,6 @@ define('BASE_URL', 'http://10.10.10.240/staywithme-pos'); // URL dasar aplikasi 
 define('APP_NAME', 'Stay With Me');
 define('CAFE_ADDRESS', 'Jl. Hayam Wuruk I No.12, Krajan, Putat Kidul, Kec. Gondanglegi, Kabupaten Malang, Jawa Timur 65174');
 define('CAFE_PHONE', '0822-2911-4960');
-
+define('ENVIRONMENT', 'development'); // Atau 'production' untuk live
 // Pengaturan lain (misal: kunci API, path, dll.)
 ?>

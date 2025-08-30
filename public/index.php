@@ -56,10 +56,10 @@ try {
     echo "<p>Maaf, terjadi kesalahan pada server. Silakan coba lagi nanti.</p>";
     // HANYA tampilkan detail error jika BUKAN di lingkungan produksi
     // Misalnya, cek konstanta lingkungan (e.g., define('ENVIRONMENT', 'development'); di config.php)
-    // if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
-    //     echo "<pre>Error: " . htmlspecialchars($e->getMessage(), ENT_QUOTES) . "</pre>";
-    //     echo "<pre>" . htmlspecialchars($e->getTraceAsString(), ENT_QUOTES) . "</pre>";
-    // }
+    if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+        echo "<pre>Error: " . htmlspecialchars($e->getMessage(), ENT_QUOTES) . "</pre>";
+        echo "<pre>" . htmlspecialchars($e->getTraceAsString(), ENT_QUOTES) . "</pre>";
+    }
     echo "</body></html>";
     exit;
 }

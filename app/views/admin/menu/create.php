@@ -6,10 +6,8 @@ use App\Helpers\SessionHelper; // Untuk getFlashData & displayFlash
 
 // Data dari MenuController
 $categories = $categories ?? [];
-// === PERBAIKAN: Ambil oldInput dari FlashData ===
+// PERBAIKAN: Ambil oldInput dari FlashData
 $oldInput = SessionHelper::getFlashData('old_input') ?? [];
-// ============================================
-// $pageTitle sudah diatur layout
 ?>
 
 <div class="max-w-2xl mx-auto">
@@ -21,7 +19,7 @@ $oldInput = SessionHelper::getFlashData('old_input') ?? [];
         </a>
     </div>
 
-    <?php SessionHelper::displayFlash('error'); // Helper akan cari kunci 'error' ?>
+    <?php SessionHelper::displayFlash('error'); ?>
 
     <div class="bg-white p-6 rounded-lg shadow-md border border-slate-200">
         <form action="<?= UrlHelper::baseUrl('/admin/menu/store') ?>" method="POST" enctype="multipart/form-data" novalidate>
@@ -55,13 +53,23 @@ $oldInput = SessionHelper::getFlashData('old_input') ?? [];
                 ><?= SanitizeHelper::html($oldInput['description'] ?? '') ?></textarea>
             </div>
 
-            <div class="mb-4">
-                <label for="price" class="block text-sm font-medium text-slate-700 mb-1">Harga (Rp) <span class="text-red-500">*</span></label>
-                <input type="text" id="price" name="price" required inputmode="numeric"
-                       value="<?= SanitizeHelper::html($oldInput['price'] ?? '') ?>"
-                       class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-                       placeholder="Contoh: 18000 atau 18.000">
-                <p class="text-xs text-slate-500 mt-1">Masukkan angka saja.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="price" class="block text-sm font-medium text-slate-700 mb-1">Harga Jual (Rp) <span class="text-red-500">*</span></label>
+                    <input type="text" id="price" name="price" required inputmode="numeric"
+                           value="<?= SanitizeHelper::html($oldInput['price'] ?? '') ?>"
+                           class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                           placeholder="Contoh: 18000">
+                    <p class="text-xs text-slate-500 mt-1">Harga yang ditampilkan ke pelanggan.</p>
+                </div>
+                <div>
+                    <label for="cost" class="block text-sm font-medium text-slate-700 mb-1">HPP / Modal (Rp)</label>
+                    <input type="text" id="cost" name="cost" inputmode="numeric"
+                           value="<?= SanitizeHelper::html($oldInput['cost'] ?? '0') ?>"
+                           class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
+                           placeholder="Contoh: 8000">
+                    <p class="text-xs text-slate-500 mt-1">Modal untuk perhitungan laba. Opsional.</p>
+                </div>
             </div>
 
             <div class="mb-4">
@@ -75,7 +83,7 @@ $oldInput = SessionHelper::getFlashData('old_input') ?? [];
                  <label for="is_available" class="flex items-center">
                      <input type="checkbox" id="is_available" name="is_available" value="1"
                             class="h-4 w-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500"
-                            <?= (isset($oldInput['is_available']) || !isset($oldInput) || empty($oldInput)) ? 'checked' : '' // Default checked jika baru atau old input dicentang ?>
+                            <?= (isset($oldInput['is_available']) || !isset($oldInput) || empty($oldInput)) ? 'checked' : '' ?>
                      >
                      <span class="ml-2 text-sm text-slate-700">Item Tersedia</span>
                  </label>
