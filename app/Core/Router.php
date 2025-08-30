@@ -47,10 +47,10 @@ class Router {
     protected function match(): array|false {
         // === Logika Kalkulasi URL yang Akan Dicocokkan (Sudah Diperbaiki) ===
         // 1. Dapatkan path lengkap dari URI, bersihkan / di awal/akhir
-        $fullPath = trim(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH), '/');
+        $fullPath = trim(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?? '', '/');
 
         // 2. Dapatkan base path dari BASE_URL, bersihkan / di awal/akhir
-        $basePath = defined('BASE_URL') ? trim(parse_url(BASE_URL, PHP_URL_PATH), '/') : '';
+        $basePath = defined('BASE_URL') ? trim(parse_url(BASE_URL, PHP_URL_PATH) ?? '', '/') : '';
 
         // 3. Hitung path relatif terhadap base path
         $relativePath = '';
