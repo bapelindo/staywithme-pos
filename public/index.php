@@ -10,26 +10,22 @@
 // dirname(__DIR__) akan menunjuk ke direktori parent dari direktori saat ini (yaitu, root proyek)
 define('ROOT_PATH', dirname(__DIR__));
 
+// 3. Muat Konfigurasi Aplikasi
+// Berisi konstanta seperti kredensial DB, BASE_URL, dll.
+require_once __DIR__ . '/../config/config.php';
+
 // 1. Mulai Session
 // Harus dipanggil sebelum output apapun ke browser.
-// Pastikan session handling dikonfigurasi dengan benar di php.ini (terutama save path).
+// Untuk Vercel, gunakan DatabaseSessionHandler untuk persistensi sesi.
+require_once __DIR__ . '/../app/Core/Database.php';
+require_once __DIR__ . '/../app/Core/DatabaseSessionHandler.php';
+use App\Core\DatabaseSessionHandler;
+
 if (session_status() === PHP_SESSION_NONE) {
+    $handler = new DatabaseSessionHandler();
+    session_set_save_handler($handler, true);
     session_start();
 }
-
-// 2. Pengaturan Error Reporting (Untuk Development)
-// Selama pengembangan, tampilkan semua error.
-// Untuk produksi, set ke 0 dan gunakan logging.
-error_reporting(E_ALL);
-ini_set('display_errors', '1'); // Set ke '0' di produksi
-
-// 3. Muat Konfigurasi Aplikasi
-// Berisi konstanta seperti kredensial DB, BASE_URL, dll.
-require_once __DIR__ . '/../config/config.php';
-
-// 3. Muat Konfigurasi Aplikasi
-// Berisi konstanta seperti kredensial DB, BASE_URL, dll.
-require_once __DIR__ . '/../config/config.php';
 
 // 4. Muat Autoloader Composer
 
@@ -40,8 +36,6 @@ require_once __DIR__ . '/../config/config.php';
 // dan library dari 'vendor/' saat dibutuhkan.
 require_once __DIR__ . '/../vendor/autoload.php';
 
-// 5. Inisialisasi Router
-// Gunakan namespace yang benar sesuai struktur folder.
 $router = new App\Core\Router();
 
 // 6. Muat Definisi Rute (Routes)

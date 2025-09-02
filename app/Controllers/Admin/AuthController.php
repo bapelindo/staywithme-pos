@@ -7,6 +7,7 @@ use App\Helpers\AuthHelper;
 use App\Helpers\UrlHelper;
 use App\Helpers\SanitizeHelper;
 use App\Helpers\SessionHelper;
+use App\Helpers\CookieHelper;
 
 class AuthController extends Controller {
     public function redirectToLogin(): void {
@@ -47,6 +48,7 @@ class AuthController extends Controller {
             $allowedRoles = ['admin', 'staff', 'kitchen']; // Sesuaikan jika perlu
             if (in_array($user['role'], $allowedRoles)) {
                 AuthHelper::loginUser($user);
+                CookieHelper::setCookie('last_login', time(), 60 * 60 * 24 * 30); // Set cookie for 30 days
                 // Redirect berdasarkan peran? Atau selalu ke dashboard?
                 UrlHelper::redirect('/admin/dashboard');
             } else {

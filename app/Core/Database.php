@@ -18,15 +18,15 @@ class Database {
     private static $instance = null;
 
     /** @var string Host database (dari config) */
-    private $host = DB_HOST;
+    private $host = \DB_HOST;
     /** @var string User database (dari config) */
-    private $user = DB_USER;
+    private $user = \DB_USER;
     /** @var string Password database (dari config) */
-    private $pass = DB_PASS;
+    private $pass = \DB_PASS;
     /** @var string Nama database (dari config) */
-    private $name = DB_NAME;
+    private $name = \DB_NAME;
     /** @var string Port database (dari config) */
-    private $port = DB_PORT;
+    private $port = \DB_PORT;
 
     /**
      * Constructor dibuat private untuk mencegah pembuatan instance langsung.
