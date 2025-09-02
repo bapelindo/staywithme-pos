@@ -58,6 +58,6 @@ class TableController extends Controller {
      }
 
     public function generateQr(int $id) {
-         $safeId = SanitizeHelper::integer($id); if ($safeId <= 0) { http_response_code(404); echo "Invalid ID"; return; } $table = $this->tableModel->findById($safeId); if (!$table || empty($table['qr_code_identifier'])) { http_response_code(404); echo "Table not found or QR Identifier missing."; return; } $qrData = UrlHelper::baseUrl('/menu/table/' . $table['qr_code_identifier']); QrCodeHelper::display($qrData, 250, 'png'); exit;
+         $safeId = SanitizeHelper::integer($id); if ($safeId <= 0) { http_response_code(404); echo "Invalid ID"; return; } $table = $this->tableModel->findById($safeId); if (!$table || empty($table['qr_code_identifier'])) { http_response_code(404); echo "Table not found or QR Identifier missing."; return; } $qrData = UrlHelper::baseUrl('/menu/table/' . $table['qr_code_identifier']); QrCodeHelper::display($qrData, 250, 'svg'); exit;
     }
 }
