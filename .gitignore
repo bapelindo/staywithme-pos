@@ -3,3 +3,4 @@
 *.log
 /public/assets/uploads/
 /node_modules/
+.vercel/
