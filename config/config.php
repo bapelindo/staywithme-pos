@@ -3,11 +3,11 @@
 //npm install -D tailwindcss@3 postcss autoprefixer
 //npm install -D @tailwindcss/forms @tailwindcss/typography
 // Gunakan Environment Variables untuk Vercel, dengan fallback untuk local development
-define('DB_HOST', getenv('DB_HOST') ?: 'e09yxd.h.filess.io'); // Atau host DB Anda
-define('DB_USER', getenv('DB_USER') ?: 'staywithme_scientist');      // User DB
-define('DB_PASS', getenv('DB_PASS') ?: 'd0e40616a226241f4852a1868b43e75d66ccc79b');          // Password DB
+define('DB_HOST', getenv('DB_HOST') ?: '28s-br.h.filess.io'); // Atau host DB Anda
+define('DB_USER', getenv('DB_USER') ?: 'staywithme_plannedam');      // User DB
+define('DB_PASS', getenv('DB_PASS') ?: 'b604590cb2c93d0c2c78a0e3ae56dbb65f4c1728');          // Password DB
 define('DB_NAME', getenv('DB_NAME') ?: 'staywithme_scientist'); // Nama Database
-define('DB_PORT', getenv('DB_PORT') ?: '61000');          // Port Database
+define('DB_PORT', getenv('DB_PORT') ?: '61030');          // Port Database
 
 // URL dasar aplikasi, dinamis untuk Vercel dan lokal
 if (getenv('APP_URL')) {
