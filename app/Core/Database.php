@@ -52,8 +52,12 @@ class Database
 
         // Tambahkan opsi SSL jika DB_SSL_CA didefinisikan
         if (defined('DB_SSL_CA') && file_exists(DB_SSL_CA)) {
-            $options[PDO::MYSQL_ATTR_SSL_CA] = DB_SSL_CA;
-            $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = true;
+            // Gunakan konstanta baru untuk PHP 8.5+ jika tersedia, jika tidak gunakan yang lama (suppressed)
+            $attrSslCa = defined('Pdo\Mysql::ATTR_SSL_CA') ? constant('Pdo\Mysql::ATTR_SSL_CA') : PDO::MYSQL_ATTR_SSL_CA;
+            $attrVerifyCert = defined('Pdo\Mysql::ATTR_SSL_VERIFY_SERVER_CERT') ? constant('Pdo\Mysql::ATTR_SSL_VERIFY_SERVER_CERT') : PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT;
+
+            $options[$attrSslCa] = DB_SSL_CA;
+            $options[$attrVerifyCert] = true;
         }
 
         try {

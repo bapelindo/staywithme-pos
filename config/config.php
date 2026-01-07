@@ -14,9 +14,12 @@ define('DB_SSL_CA', __DIR__ . '/isrgrootx1.pem');       // Path to SSL CA Certif
 // URL dasar aplikasi, dinamis untuk Vercel dan lokal
 if (getenv('APP_URL')) {
     define('BASE_URL', getenv('APP_URL'));
+} elseif (getenv('VERCEL_URL')) {
+    // Vercel Preview/Production URL (usually without protocol)
+    define('BASE_URL', 'https://' . getenv('VERCEL_URL'));
 } else {
     // Fallback untuk pengembangan lokal
-    define('BASE_URL', 'https://staywithme-pos.vercel.app');
+    define('BASE_URL', 'http://localhost/staywithme-pos');
 }
 define('APP_NAME', 'Stay With Me');
 define('CAFE_ADDRESS', 'Jl. Hayam Wuruk I No.12, Krajan, Putat Kidul, Kec. Gondanglegi, Kabupaten Malang, Jawa Timur 65174');
