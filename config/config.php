@@ -9,6 +9,7 @@ define('DB_PASS', getenv('DB_PASS') ?: 'b604590cb2c93d0c2c78a0e3ae56dbb65f4c1728
 define('DB_NAME', getenv('DB_NAME') ?: 'staywithme_plannedam'); // Nama Database
 define('DB_PORT', getenv('DB_PORT') ?: '61030');          // Port Database
 
+
 // URL dasar aplikasi, dinamis untuk Vercel dan lokal
 if (getenv('APP_URL')) {
     define('BASE_URL', getenv('APP_URL'));
