@@ -8,6 +8,7 @@ define('DB_USER', getenv('DB_USER') ?: '4TnpUUxik5ZLHTT.root');      // User DB
 define('DB_PASS', getenv('DB_PASS') ?: 'SPIPRgEqhKdsSGY2');          // Password DB
 define('DB_NAME', getenv('DB_NAME') ?: 'staywithme_db'); // Nama Database
 define('DB_PORT', getenv('DB_PORT') ?: '4000');          // Port Database
+define('DB_SSL_CA', __DIR__ . '/isrgrootx1.pem');       // Path to SSL CA Certificate
 
 
 // URL dasar aplikasi, dinamis untuk Vercel dan lokal
