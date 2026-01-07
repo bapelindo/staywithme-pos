@@ -8,7 +8,8 @@ namespace App\Core;
  * Base Controller untuk semua controller aplikasi.
  * Menyediakan metode helper untuk memuat view, model, redirect, dll.
  */
-class Controller {
+class Controller
+{
 
     /**
      * Memuat view beserta layoutnya (jika ditentukan).
@@ -18,23 +19,15 @@ class Controller {
      * @param string|null $layout Nama file layout di 'app/Views/layouts/' (e.g., 'public_layout', 'admin_layout'). Default 'public_layout'. Jika null, hanya view yang dimuat.
      * @return void
      */
-    protected function view(string $viewName, array $data = [], ?string $layout = 'public_layout'): void {
+    protected function view(string $viewName, array $data = [], ?string $layout = 'public_layout'): void
+    {
         // 1. Ekstrak data agar bisa diakses sebagai variabel ($pageTitle, $orders, dll.)
         extract($data);
 
         // 2. Bangun path ke file view spesifik.
-        $viewPath = ROOT_PATH . '/app/Views/' . str_replace('.', '/', $viewName) . '.php';
+        $viewPath = ROOT_PATH . '/app/views/' . str_replace('.', '/', $viewName) . '.php';
 
-        // --- START VIEW DEBUGGING ---
-        echo "<div style='background: #fcc; padding: 1em; border: 1px solid #c00; margin: 1em; font-family: monospace;'>";
-        echo "<strong>VIEW DEBUG:</strong><br>";
-        echo "ROOT_PATH: " . ROOT_PATH . "<br>";
-        echo "Checking for view file at: " . $viewPath . "<br>";
-        echo "file_exists() result: " . (file_exists($viewPath) ? 'true' : 'false') . "<br>";
-        echo "Directory listing of ROOT_PATH:<br><pre>";
-        print_r(scandir(ROOT_PATH));
-        echo "</pre></div>";
-        // --- END VIEW DEBUGGING ---
+
 
         // 3. Periksa apakah file view spesifik ada.
         if (!file_exists($viewPath)) {
@@ -42,11 +35,11 @@ class Controller {
             // Idealnya tampilkan view 404 yang proper
             http_response_code(404);
             // Coba muat view error 404 jika ada
-            $errorViewPath = ROOT_PATH . '/app/Views/public/errors/404.php'; // atau path lain
-            if(file_exists($errorViewPath)) {
-                 // Kirim pesan ke view error
-                 $message = "View file '{$viewName}' tidak ditemukan.";
-                 require_once $errorViewPath;
+            $errorViewPath = ROOT_PATH . '/app/views/public/errors/404.php'; // atau path lain
+            if (file_exists($errorViewPath)) {
+                // Kirim pesan ke view error
+                $message = "View file '{$viewName}' tidak ditemukan.";
+                require_once $errorViewPath;
             } else {
                 die("Error 404: View file not found."); // Fallback
             }
@@ -55,7 +48,7 @@ class Controller {
 
         // 4. Muat layout atau view langsung
         if ($layout !== null) {
-            $layoutPath = ROOT_PATH . '/app/Views/layouts/' . $layout . '.php';
+            $layoutPath = ROOT_PATH . '/app/views/layouts/' . $layout . '.php';
 
             if (!file_exists($layoutPath)) {
                 error_log("Layout file not found: " . $layoutPath . " requested by " . get_class($this));
@@ -77,7 +70,8 @@ class Controller {
      * @param string $modelName Nama kelas Model (e.g., 'User', 'Order').
      * @return object|null Instance dari Model atau null jika gagal.
      */
-    protected function model(string $modelName): ?object {
+    protected function model(string $modelName): ?object
+    {
         // Buat nama kelas lengkap dengan namespace
         $modelClass = 'App\\Models\\' . $modelName;
         try {
@@ -86,7 +80,7 @@ class Controller {
                 // Buat instance baru dari model
                 return new $modelClass();
             } else {
-                 throw new \Exception("Model class '{$modelClass}' not found.");
+                throw new \Exception("Model class '{$modelClass}' not found.");
             }
         } catch (\Throwable $e) {
             // Tangani error jika model tidak ditemukan atau ada masalah lain
@@ -104,7 +98,8 @@ class Controller {
      * @param string $url Path tujuan (e.g., '/admin/login', 'orders/show/1').
      * @return void
      */
-    protected function redirect(string $url): void {
+    protected function redirect(string $url): void
+    {
         // Pastikan BASE_URL didefinisikan
         if (!defined('BASE_URL')) {
             die('Error: BASE_URL constant is not defined.');
@@ -122,7 +117,8 @@ class Controller {
      * @param int $statusCode Kode status HTTP (default 200 OK).
      * @return void
      */
-    protected function jsonResponse(mixed $data, int $statusCode = 200): void {
+    protected function jsonResponse(mixed $data, int $statusCode = 200): void
+    {
         // Hentikan output buffering jika ada
         if (ob_get_level()) {
             ob_end_clean();
