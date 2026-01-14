@@ -17,8 +17,20 @@ if (getenv('APP_URL')) {
 } elseif (getenv('VERCEL_URL')) {
     // Vercel Preview/Production URL (usually without protocol)
     define('BASE_URL', 'https://' . getenv('VERCEL_URL'));
+} elseif (isset($_SERVER['HTTP_HOST']) && isset($_SERVER['REQUEST_SCHEME'])) {
+    // Auto-detect dari HTTP request (untuk production dan local)
+    $protocol = $_SERVER['REQUEST_SCHEME']; // 'http' atau 'https'
+    $host = $_SERVER['HTTP_HOST']; // 'staywithme.bapel.my.id' atau 'localhost'
+
+    // Jika menggunakan localhost, tambahkan path aplikasi
+    if (strpos($host, 'localhost') !== false) {
+        define('BASE_URL', $protocol . '://' . $host . '/staywithme-pos');
+    } else {
+        // Untuk domain production, gunakan root domain
+        define('BASE_URL', $protocol . '://' . $host);
+    }
 } else {
-    // Fallback untuk pengembangan lokal
+    // Fallback untuk pengembangan lokal (CLI atau environment tanpa HTTP)
     define('BASE_URL', 'http://localhost/staywithme-pos');
 }
 define('APP_NAME', 'Stay With Me');
