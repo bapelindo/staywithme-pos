@@ -5,15 +5,19 @@
     RewriteEngine On
 
     # Set Base Path (PENTING jika aplikasi tidak di root domain)
-    # Jika URL Anda adalah http://localhost/nama_folder_proyek/public/
-    # maka RewriteBase adalah /nama_folder_proyek/public/
-    # Jika URL Anda http://namadomain.com/ (langsung di root),
-    # maka RewriteBase adalah /
-    # Sesuaikan baris di bawah ini dengan struktur URL Anda:
-    # Contoh untuk http://localhost/staywithme-pos/public/
-    RewriteBase /staywithme-pos/public/
-    # Contoh jika di root domain (http://staywithmecafe.com/)
-    # RewriteBase /
+    # Gunakan conditional RewriteBase untuk localhost dan production
+    # Untuk localhost: /staywithme-pos/public/
+    # Untuk production domain: /
+    RewriteCond %{HTTP_HOST} ^localhost [OR]
+    RewriteCond %{HTTP_HOST} ^127\.0\.0\.1
+    RewriteRule .* - [E=REWRITEBASE:/staywithme-pos/public/]
+    
+    RewriteCond %{HTTP_HOST} !^localhost
+    RewriteCond %{HTTP_HOST} !^127\.0\.0\.1
+    RewriteRule .* - [E=REWRITEBASE:/]
+    
+    # Gunakan RewriteBase default untuk production (root domain)
+    RewriteBase /
 
     # Redirect Trailing Slashes (Opsional, untuk konsistensi URL)
     # Mengarahkan /menu/ ke /menu

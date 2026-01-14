@@ -17,13 +17,19 @@ if (getenv('APP_URL')) {
 } elseif (getenv('VERCEL_URL')) {
     // Vercel Preview/Production URL (usually without protocol)
     define('BASE_URL', 'https://' . getenv('VERCEL_URL'));
-} elseif (isset($_SERVER['HTTP_HOST']) && isset($_SERVER['REQUEST_SCHEME'])) {
+} elseif (isset($_SERVER['HTTP_HOST'])) {
     // Auto-detect dari HTTP request (untuk production dan local)
-    $protocol = $_SERVER['REQUEST_SCHEME']; // 'http' atau 'https'
+    // Deteksi protocol dengan cara yang lebih kompatibel
+    // Cek X-Forwarded-Proto untuk reverse proxy/load balancer (Cloudflare, nginx, dll)
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (!empty($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443)
+        || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
+        || (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on');
+    $protocol = $isHttps ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST']; // 'staywithme.bapel.my.id' atau 'localhost'
 
     // Jika menggunakan localhost, tambahkan path aplikasi
-    if (strpos($host, 'localhost') !== false) {
+    if (strpos($host, 'localhost') !== false || strpos($host, '127.0.0.1') !== false) {
         define('BASE_URL', $protocol . '://' . $host . '/staywithme-pos');
     } else {
         // Untuk domain production, gunakan root domain
