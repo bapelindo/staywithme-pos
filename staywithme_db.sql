@@ -1,8 +1,8 @@
 -- --------------------------------------------------------
--- Host:                         127.0.0.1
--- Server version:               11.7.2-MariaDB - mariadb.org binary distribution
--- Server OS:                    Win64
--- HeidiSQL Version:             12.11.0.7065
+-- Host:                         gateway01.ap-northeast-1.prod.aws.tidbcloud.com
+-- Server version:               8.0.11-TiDB-v7.5.6-serverless - TiDB Server (Apache License 2.0) Community Edition, MySQL 8.0 compatible
+-- Server OS:                    linux
+-- HeidiSQL Version:             12.14.0.7165
 -- --------------------------------------------------------
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
@@ -19,37 +19,57 @@
 CREATE DATABASE IF NOT EXISTS `staywithme_db` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci */;
 USE `staywithme_db`;
 
--- Dumping structure for table staywithme_db.users
-CREATE TABLE IF NOT EXISTS `users` (
+-- Dumping structure for table staywithme_db.cash_drawers
+CREATE TABLE IF NOT EXISTS `cash_drawers` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `username` varchar(50) NOT NULL COMMENT 'Username untuk login',
-  `password` varchar(255) NOT NULL COMMENT 'HARUS disimpan dalam bentuk hash!',
-  `name` varchar(100) NOT NULL COMMENT 'Nama lengkap pengguna',
-  `role` enum('admin','staff','kitchen') NOT NULL DEFAULT 'staff' COMMENT 'Peran pengguna (admin, staff kasir, staff dapur)',
-  `is_active` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Status aktif pengguna',
-  `created_at` timestamp NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `username` (`username`),
-  KEY `idx_users_username` (`username`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Menyimpan data pengguna sistem (admin, staff)';
+  `user_id` int(10) unsigned NOT NULL COMMENT 'User (kasir) yang membuka laci',
+  `opening_amount` decimal(15,2) NOT NULL COMMENT 'Jumlah uang saat buka laci',
+  `closing_amount` decimal(15,2) DEFAULT NULL COMMENT 'Jumlah uang saat tutup laci',
+  `opened_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Waktu buka laci',
+  `closed_at` timestamp NULL DEFAULT NULL COMMENT 'Waktu tutup laci',
+  `status` enum('open','closed') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'open' COMMENT 'Status laci kas',
+  `notes` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
+  KEY `fk_cash_drawers_users` (`user_id`),
+  CONSTRAINT `fk_cash_drawers_users` FOREIGN KEY (`user_id`) REFERENCES `staywithme_db`.`users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Mencatat histori buka tutup laci kasir';
 
--- Dumping data for table staywithme_db.users: ~1 rows (approximately)
-INSERT INTO `users` (`id`, `username`, `password`, `name`, `role`, `is_active`, `created_at`, `updated_at`) VALUES
-	(1, 'admin', '$2y$12$mg.bv19q4Gxp07mx0HMTmOoR8/oaqavyqEnRemFdAv/JG2n1UCSmy', 'Administrator Utama', 'admin', 1, '2025-08-22 13:30:41', '2025-08-22 13:30:41');
+-- Dumping data for table staywithme_db.cash_drawers: ~0 rows (approximately)
+
+-- Dumping structure for table staywithme_db.cash_transactions
+CREATE TABLE IF NOT EXISTS `cash_transactions` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` int(10) unsigned NOT NULL,
+  `drawer_id` int(10) unsigned NOT NULL,
+  `type` enum('in','out') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `amount` decimal(15,2) NOT NULL,
+  `category` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `notes` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `device_name` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `transaction_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
+  KEY `fk_cash_transactions_users` (`user_id`),
+  KEY `fk_cash_transactions_drawers` (`drawer_id`),
+  CONSTRAINT `fk_cash_transactions_drawers` FOREIGN KEY (`drawer_id`) REFERENCES `staywithme_db`.`cash_drawers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_cash_transactions_users` FOREIGN KEY (`user_id`) REFERENCES `staywithme_db`.`users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Dumping data for table staywithme_db.cash_transactions: ~0 rows (approximately)
 
 -- Dumping structure for table staywithme_db.categories
 CREATE TABLE IF NOT EXISTS `categories` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) NOT NULL COMMENT 'Nama kategori (e.g., Makanan, Minuman, Snack)',
-  `description` text DEFAULT NULL COMMENT 'Deskripsi kategori',
-  `sort_order` int(11) NOT NULL DEFAULT 0 COMMENT 'Urutan tampil kategori',
-  `created_at` timestamp NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`),
+  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nama kategori (e.g., Makanan, Minuman, Snack)',
+  `description` text COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Deskripsi kategori',
+  `sort_order` int(11) NOT NULL DEFAULT '0' COMMENT 'Urutan tampil kategori',
+  `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
   UNIQUE KEY `name` (`name`),
   KEY `idx_categories_name` (`name`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Kategori untuk item menu';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=30006 COMMENT='Kategori untuk item menu';
 
 -- Dumping data for table staywithme_db.categories: ~5 rows (approximately)
 INSERT INTO `categories` (`id`, `name`, `description`, `sort_order`, `created_at`, `updated_at`) VALUES
@@ -59,58 +79,23 @@ INSERT INTO `categories` (`id`, `name`, `description`, `sort_order`, `created_at
 	(4, 'Snack', 'Makanan Ringan', 4, '2025-08-22 13:30:41', '2025-08-22 13:30:41'),
 	(5, 'Dessert', 'Makanan Penutup', 5, '2025-08-22 13:30:41', '2025-08-22 13:30:41');
 
--- Dumping structure for table staywithme_db.cash_drawers
-CREATE TABLE IF NOT EXISTS `cash_drawers` (
-	 `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-	 `user_id` int(10) unsigned NOT NULL COMMENT 'User (kasir) yang membuka laci',
-	 `opening_amount` decimal(15,2) NOT NULL COMMENT 'Jumlah uang saat buka laci',
-	 `closing_amount` decimal(15,2) DEFAULT NULL COMMENT 'Jumlah uang saat tutup laci',
-	 `opened_at` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'Waktu buka laci',
-	 `closed_at` timestamp NULL DEFAULT NULL COMMENT 'Waktu tutup laci',
-	 `status` enum('open','closed') NOT NULL DEFAULT 'open' COMMENT 'Status laci kas',
-   `notes` text DEFAULT NULL,
-	 `created_at` timestamp NULL DEFAULT current_timestamp(),
-	 `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-	 PRIMARY KEY (`id`),
-	 KEY `fk_cash_drawers_users` (`user_id`),
-	 CONSTRAINT `fk_cash_drawers_users` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Mencatat histori buka tutup laci kasir';
-
--- Dumping structure for table staywithme_db.cash_transactions
-CREATE TABLE IF NOT EXISTS `cash_transactions` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` int(10) unsigned NOT NULL,
-  `drawer_id` int(10) unsigned NOT NULL,
-  `type` enum('in','out') NOT NULL,
-  `amount` decimal(15,2) NOT NULL,
-  `category` varchar(100) DEFAULT NULL,
-  `notes` text DEFAULT NULL,
-  `device_name` varchar(100) DEFAULT NULL,
-  `transaction_time` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `fk_cash_transactions_users` (`user_id`),
-  KEY `fk_cash_transactions_drawers` (`drawer_id`),
-  CONSTRAINT `fk_cash_transactions_drawers` FOREIGN KEY (`drawer_id`) REFERENCES `cash_drawers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_cash_transactions_users` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- Dumping structure for table staywithme_db.menu_items
 CREATE TABLE IF NOT EXISTS `menu_items` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `category_id` int(10) unsigned NOT NULL COMMENT 'Relasi ke tabel categories',
-  `name` varchar(150) NOT NULL COMMENT 'Nama item menu',
-  `description` text DEFAULT NULL COMMENT 'Deskripsi item menu',
+  `name` varchar(150) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nama item menu',
+  `description` text COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Deskripsi item menu',
   `price` decimal(12,2) NOT NULL COMMENT 'Harga item menu (gunakan DECIMAL untuk uang)',
-  `cost` decimal(12,2) DEFAULT 0.00 COMMENT 'Harga pokok penjualan (HPP) per item',
-  `image_path` varchar(255) DEFAULT NULL COMMENT 'Path ke file gambar item menu',
-  `is_available` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Status ketersediaan item (1=Tersedia, 0=Habis)',
-  `created_at` timestamp NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`),
+  `cost` decimal(12,2) DEFAULT '0.00' COMMENT 'Harga pokok penjualan (HPP) per item',
+  `image_path` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Path ke file gambar item menu',
+  `is_available` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Status ketersediaan item (1=Tersedia, 0=Habis)',
+  `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
   KEY `fk_menu_items_categories_idx` (`category_id`),
   KEY `idx_menu_items_name` (`name`),
-  CONSTRAINT `fk_menu_items_categories` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Detail item menu yang dijual';
+  CONSTRAINT `fk_menu_items_categories` FOREIGN KEY (`category_id`) REFERENCES `staywithme_db`.`categories` (`id`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=30030 COMMENT='Detail item menu yang dijual';
 
 -- Dumping data for table staywithme_db.menu_items: ~29 rows (approximately)
 INSERT INTO `menu_items` (`id`, `category_id`, `name`, `description`, `price`, `cost`, `image_path`, `is_available`, `created_at`, `updated_at`) VALUES
@@ -144,82 +129,21 @@ INSERT INTO `menu_items` (`id`, `category_id`, `name`, `description`, `price`, `
 	(28, 5, 'Affogato', 'Satu skup es krim vanila disiram dengan shot espresso panas.', 23000.00, 11000.00, NULL, 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29'),
 	(29, 5, 'Waffle Ice Cream', 'Waffle renyah dengan satu skup es krim dan saus coklat.', 26000.00, 13000.00, NULL, 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29');
 
--- Dumping structure for table staywithme_db.tables
-CREATE TABLE IF NOT EXISTS `tables` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `table_number` varchar(50) NOT NULL COMMENT 'Nomor atau Nama Meja (e.g., T01, T02, VIP 1)',
-  `qr_code_identifier` varchar(100) NOT NULL COMMENT 'Identifier unik untuk URL QR Code (bisa UUID atau random string)',
-  `description` varchar(255) DEFAULT NULL COMMENT 'Deskripsi tambahan meja',
-  `is_active` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Apakah meja ini aktif digunakan',
-  `created_at` timestamp NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `table_number` (`table_number`),
-  UNIQUE KEY `qr_code_identifier` (`qr_code_identifier`),
-  KEY `idx_tables_table_number` (`table_number`),
-  KEY `idx_tables_qr_code_identifier` (`qr_code_identifier`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Menyimpan data meja fisik di cafe';
-
--- Dumping data for table staywithme_db.tables: ~5 rows (approximately)
-INSERT INTO `tables` (`id`, `table_number`, `qr_code_identifier`, `description`, `is_active`, `created_at`, `updated_at`) VALUES
-	(1, 'T01', 't01-a1b2c3d4', 'Dekat Jendela', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29'),
-	(2, 'T02', 't02-e5f6g7h8', 'Area Indoor', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29'),
-	(3, 'T03', 't03-i9j0k1l2', 'Area Indoor', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29'),
-	(4, 'L01', 'l01-m3n4o5p6', 'Lesehan Outdoor', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29'),
-	(5, 'V01', 'v01-q7r8s9t0', 'VIP Room', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29');
-
--- Dumping structure for table staywithme_db.orders
-CREATE TABLE IF NOT EXISTS `orders` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `table_id` int(10) unsigned NOT NULL COMMENT 'Relasi ke meja tempat pesanan dibuat',
-  `order_number` varchar(100) NOT NULL COMMENT 'Nomor unik pesanan (e.g., STW-YYYYMMDD-NNN)',
-  `total_amount` decimal(15,2) NOT NULL DEFAULT 0.00 COMMENT 'Total harga pesanan (dihitung dari order_items)',
-  `status` varchar(25) NOT NULL DEFAULT 'pending_payment' COMMENT 'Status progres pesanan',
-  `notes` text DEFAULT NULL COMMENT 'Catatan tambahan dari pelanggan untuk keseluruhan pesanan',
-  `order_time` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'Waktu pesanan dibuat',
-  `created_at` timestamp NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `shipping_cost` decimal(15,2) NOT NULL DEFAULT 0.00,
-  `service_charge` decimal(15,2) NOT NULL DEFAULT 0.00,
-  `mdr_service_fee` decimal(15,2) NOT NULL DEFAULT 0.00,
-  `rounding` decimal(15,2) NOT NULL DEFAULT 0.00,
-  `tax` decimal(15,2) NOT NULL DEFAULT 0.00,
-  `other_revenue` decimal(15,2) NOT NULL DEFAULT 0.00,
-  `purchase_promo` decimal(15,2) NOT NULL DEFAULT 0.00,
-  `product_promo` decimal(15,2) NOT NULL DEFAULT 0.00,
-  `complimentary` decimal(15,2) NOT NULL DEFAULT 0.00,
-  `admin_fee` decimal(15,2) NOT NULL DEFAULT 0.00,
-  `refunds` decimal(15,2) NOT NULL DEFAULT 0.00,
-  `mdr_fee` decimal(15,2) NOT NULL DEFAULT 0.00,
-  `commission` decimal(15,2) NOT NULL DEFAULT 0.00,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `order_number` (`order_number`),
-  KEY `fk_orders_tables_idx` (`table_id`),
-  KEY `idx_orders_status` (`status`),
-  KEY `idx_orders_order_time` (`order_time`),
-  CONSTRAINT `fk_orders_tables` FOREIGN KEY (`table_id`) REFERENCES `tables` (`id`) ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Menyimpan data header pesanan pelanggan';
-
--- Dumping data for table staywithme_db.orders: ~2 rows (approximately)
-INSERT INTO `orders` (`id`, `table_id`, `order_number`, `total_amount`, `status`, `notes`, `order_time`, `created_at`, `updated_at`, `shipping_cost`, `service_charge`, `mdr_service_fee`, `rounding`, `tax`, `other_revenue`, `purchase_promo`, `product_promo`, `complimentary`, `admin_fee`, `refunds`, `mdr_fee`, `commission`) VALUES
-	(7, 1, 'SWM-20250822-0001', 50000.00, 'served', NULL, '2025-08-22 15:31:52', '2025-08-22 15:31:52', '2025-08-22 15:32:14', 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00),
-	(8, 1, 'SWM-20250822-0002', 15000.00, 'served', NULL, '2025-08-22 15:32:27', '2025-08-22 15:32:27', '2025-08-22 15:32:48', 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00);
-
 -- Dumping structure for table staywithme_db.order_items
 CREATE TABLE IF NOT EXISTS `order_items` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `order_id` bigint(20) unsigned NOT NULL COMMENT 'Relasi ke tabel orders',
   `menu_item_id` int(10) unsigned NOT NULL COMMENT 'Relasi ke tabel menu_items',
-  `quantity` int(10) unsigned NOT NULL DEFAULT 1 COMMENT 'Jumlah item yang dipesan',
+  `quantity` int(10) unsigned NOT NULL DEFAULT '1' COMMENT 'Jumlah item yang dipesan',
   `price_at_order` decimal(12,2) NOT NULL COMMENT 'Harga item pada saat dipesan',
   `subtotal` decimal(15,2) NOT NULL COMMENT 'Total harga (quantity * price_at_order)',
-  `notes` varchar(255) DEFAULT NULL COMMENT 'Catatan spesifik untuk item ini',
-  PRIMARY KEY (`id`),
+  `notes` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Catatan spesifik untuk item ini',
+  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
   KEY `fk_order_items_orders_idx` (`order_id`),
   KEY `fk_order_items_menu_items_idx` (`menu_item_id`),
-  CONSTRAINT `fk_order_items_menu_items` FOREIGN KEY (`menu_item_id`) REFERENCES `menu_items` (`id`) ON UPDATE CASCADE,
-  CONSTRAINT `fk_order_items_orders` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Menyimpan detail item per pesanan';
+  CONSTRAINT `fk_order_items_menu_items` FOREIGN KEY (`menu_item_id`) REFERENCES `staywithme_db`.`menu_items` (`id`) ON UPDATE CASCADE,
+  CONSTRAINT `fk_order_items_orders` FOREIGN KEY (`order_id`) REFERENCES `staywithme_db`.`orders` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=30015 COMMENT='Menyimpan detail item per pesanan';
 
 -- Dumping data for table staywithme_db.order_items: ~12 rows (approximately)
 INSERT INTO `order_items` (`id`, `order_id`, `menu_item_id`, `quantity`, `price_at_order`, `subtotal`, `notes`) VALUES
@@ -236,22 +160,59 @@ INSERT INTO `order_items` (`id`, `order_id`, `menu_item_id`, `quantity`, `price_
 	(13, 7, 10, 2, 25000.00, 50000.00, ''),
 	(14, 8, 11, 1, 15000.00, 15000.00, '');
 
+-- Dumping structure for table staywithme_db.orders
+CREATE TABLE IF NOT EXISTS `orders` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `table_id` int(10) unsigned NOT NULL COMMENT 'Relasi ke meja tempat pesanan dibuat',
+  `order_number` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nomor unik pesanan (e.g., STW-YYYYMMDD-NNN)',
+  `total_amount` decimal(15,2) NOT NULL DEFAULT '0.00' COMMENT 'Total harga pesanan (dihitung dari order_items)',
+  `status` varchar(25) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pending_payment' COMMENT 'Status progres pesanan',
+  `notes` text COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Catatan tambahan dari pelanggan untuk keseluruhan pesanan',
+  `order_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Waktu pesanan dibuat',
+  `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `shipping_cost` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `service_charge` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `mdr_service_fee` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `rounding` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `tax` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `other_revenue` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `purchase_promo` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `product_promo` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `complimentary` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `admin_fee` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `refunds` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `mdr_fee` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `commission` decimal(15,2) NOT NULL DEFAULT '0.00',
+  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
+  UNIQUE KEY `order_number` (`order_number`),
+  KEY `fk_orders_tables_idx` (`table_id`),
+  KEY `idx_orders_status` (`status`),
+  KEY `idx_orders_order_time` (`order_time`),
+  CONSTRAINT `fk_orders_tables` FOREIGN KEY (`table_id`) REFERENCES `staywithme_db`.`tables` (`id`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=30009 COMMENT='Menyimpan data header pesanan pelanggan';
+
+-- Dumping data for table staywithme_db.orders: ~2 rows (approximately)
+INSERT INTO `orders` (`id`, `table_id`, `order_number`, `total_amount`, `status`, `notes`, `order_time`, `created_at`, `updated_at`, `shipping_cost`, `service_charge`, `mdr_service_fee`, `rounding`, `tax`, `other_revenue`, `purchase_promo`, `product_promo`, `complimentary`, `admin_fee`, `refunds`, `mdr_fee`, `commission`) VALUES
+	(7, 1, 'SWM-20250822-0001', 50000.00, 'served', NULL, '2025-08-22 15:31:52', '2025-08-22 15:31:52', '2025-08-22 15:32:14', 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00),
+	(8, 1, 'SWM-20250822-0002', 15000.00, 'served', NULL, '2025-08-22 15:32:27', '2025-08-22 15:32:27', '2025-08-22 15:32:48', 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00);
+
 -- Dumping structure for table staywithme_db.payments
 CREATE TABLE IF NOT EXISTS `payments` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `order_id` bigint(20) unsigned NOT NULL COMMENT 'Relasi ke order yang dibayar',
-  `payment_method` enum('cash','qris','card','transfer') NOT NULL DEFAULT 'cash' COMMENT 'Metode pembayaran',
+  `payment_method` enum('cash','qris','card','transfer') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'cash' COMMENT 'Metode pembayaran',
   `amount_paid` decimal(15,2) NOT NULL COMMENT 'Jumlah yang dibayar',
-  `payment_time` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'Waktu pembayaran',
+  `payment_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'Waktu pembayaran',
   `processed_by_user_id` int(10) unsigned DEFAULT NULL COMMENT 'Staff (user) yang memproses pembayaran',
-  `created_at` timestamp NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`),
+  `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
   UNIQUE KEY `order_id` (`order_id`),
   KEY `fk_payments_users` (`processed_by_user_id`),
-  CONSTRAINT `fk_payments_orders` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON UPDATE CASCADE,
-  CONSTRAINT `fk_payments_users` FOREIGN KEY (`processed_by_user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Mencatat detail pembayaran';
+  CONSTRAINT `fk_payments_orders` FOREIGN KEY (`order_id`) REFERENCES `staywithme_db`.`orders` (`id`) ON UPDATE CASCADE,
+  CONSTRAINT `fk_payments_users` FOREIGN KEY (`processed_by_user_id`) REFERENCES `staywithme_db`.`users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=30006 COMMENT='Mencatat detail pembayaran';
 
 -- Dumping data for table staywithme_db.payments: ~2 rows (approximately)
 INSERT INTO `payments` (`id`, `order_id`, `payment_method`, `amount_paid`, `payment_time`, `processed_by_user_id`, `created_at`, `updated_at`) VALUES
@@ -260,9 +221,9 @@ INSERT INTO `payments` (`id`, `order_id`, `payment_method`, `amount_paid`, `paym
 
 -- Dumping structure for table staywithme_db.settings
 CREATE TABLE IF NOT EXISTS `settings` (
-  `setting_key` varchar(50) NOT NULL,
-  `setting_value` text DEFAULT NULL,
-  PRIMARY KEY (`setting_key`)
+  `setting_key` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `setting_value` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`setting_key`) /*T![clustered_index] CLUSTERED */
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table staywithme_db.settings: ~7 rows (approximately)
@@ -274,6 +235,49 @@ INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES
 	('default_promo_percentage', '0'),
 	('service_charge_percentage', '5'),
 	('tax_percentage', '11');
+
+-- Dumping structure for table staywithme_db.tables
+CREATE TABLE IF NOT EXISTS `tables` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `table_number` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nomor atau Nama Meja (e.g., T01, T02, VIP 1)',
+  `qr_code_identifier` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Identifier unik untuk URL QR Code (bisa UUID atau random string)',
+  `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Deskripsi tambahan meja',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Apakah meja ini aktif digunakan',
+  `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
+  UNIQUE KEY `table_number` (`table_number`),
+  UNIQUE KEY `qr_code_identifier` (`qr_code_identifier`),
+  KEY `idx_tables_table_number` (`table_number`),
+  KEY `idx_tables_qr_code_identifier` (`qr_code_identifier`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=30006 COMMENT='Menyimpan data meja fisik di cafe';
+
+-- Dumping data for table staywithme_db.tables: ~5 rows (approximately)
+INSERT INTO `tables` (`id`, `table_number`, `qr_code_identifier`, `description`, `is_active`, `created_at`, `updated_at`) VALUES
+	(1, 'T01', 't01-a1b2c3d4', 'Dekat Jendela', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29'),
+	(2, 'T02', 't02-e5f6g7h8', 'Area Indoor', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29'),
+	(3, 'T03', 't03-i9j0k1l2', 'Area Indoor', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29'),
+	(4, 'L01', 'l01-m3n4o5p6', 'Lesehan Outdoor', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29'),
+	(5, 'V01', 'v01-q7r8s9t0', 'VIP Room', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29');
+
+-- Dumping structure for table staywithme_db.users
+CREATE TABLE IF NOT EXISTS `users` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Username untuk login',
+  `password` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'HARUS disimpan dalam bentuk hash!',
+  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nama lengkap pengguna',
+  `role` enum('admin','staff','kitchen') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'staff' COMMENT 'Peran pengguna (admin, staff kasir, staff dapur)',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'Status aktif pengguna',
+  `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
+  UNIQUE KEY `username` (`username`),
+  KEY `idx_users_username` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=30002 COMMENT='Menyimpan data pengguna sistem (admin, staff)';
+
+-- Dumping data for table staywithme_db.users: ~1 rows (approximately)
+INSERT INTO `users` (`id`, `username`, `password`, `name`, `role`, `is_active`, `created_at`, `updated_at`) VALUES
+	(1, 'admin', '$2y$12$mg.bv19q4Gxp07mx0HMTmOoR8/oaqavyqEnRemFdAv/JG2n1UCSmy', 'Administrator Utama', 'admin', 1, '2025-08-22 13:30:41', '2025-08-22 13:30:41');
 
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
