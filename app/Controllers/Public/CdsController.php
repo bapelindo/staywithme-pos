@@ -20,7 +20,7 @@ class CdsController extends Controller {
         $this->view('public.cds', [
             'preparingOrders' => $preparingOrders,
             'readyOrders' => $readyOrders,
-            'pageTitle' => 'Status Pesanan - Stay With Me Cafe'
+            'pageTitle' => 'Status Pesanan - Bacelor Cafe'
             // Jangan pakai layout utama jika ini untuk layar penuh
         ], null);
     }

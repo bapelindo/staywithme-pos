@@ -2,7 +2,7 @@
 use App\Helpers\SanitizeHelper;
 use App\Helpers\UrlHelper;
 
-$appName = SanitizeHelper::html(APP_NAME ?? 'Stay With Me');
+$appName = SanitizeHelper::html(APP_NAME ?? 'Bacelor Cafe');
 $cafeAddress = SanitizeHelper::html(CAFE_ADDRESS ?? 'Jl. Raya Kopi No. 1, Malang');
 $cafePhone = SanitizeHelper::html(CAFE_PHONE ?? '+62 822-2911-4960');
 $baseUrl = rtrim(UrlHelper::baseUrl(), '/');
@@ -170,7 +170,7 @@ $baseUrl = rtrim(UrlHelper::baseUrl(), '/');
         id="main-nav">
         <div class="flex justify-between items-center h-20 px-8 md:px-12 max-w-[1600px] mx-auto">
             <a class="font-display text-2xl tracking-widest text-on-surface uppercase group" href="<?= $baseUrl ?>/">
-                <span class="text-primary group-hover:text-white transition-colors duration-500">Stay</span> With Me
+                <span class="text-primary group-hover:text-white transition-colors duration-500">Bacelor</span> Cafes
             </a>
             <div class="hidden md:flex space-x-12">
                 <?php $currentUri = $_SERVER['REQUEST_URI'] ?? ''; ?>
@@ -232,7 +232,8 @@ $baseUrl = rtrim(UrlHelper::baseUrl(), '/');
                     Kami merancang ruang, waktu, dan rasa untuk memberikan jeda yang sempurna di tengah rutinitas Anda.
                 </p>
                 <div class="flex gap-4 mt-2">
-                    <a href="https://wa.me/<?= SanitizeHelper::html(str_replace([' ', '-', '+'], '', $cafePhone)) ?>" target="_blank"
+                    <a href="https://wa.me/<?= SanitizeHelper::html(str_replace([' ', '-', '+'], '', $cafePhone)) ?>"
+                        target="_blank"
                         class="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-white hover:border-primary hover:text-primary hover:shadow-gold-glow transition-all duration-300"><i
                             class="fab fa-whatsapp text-lg"></i></a>
                     <a href="#" target="_blank"

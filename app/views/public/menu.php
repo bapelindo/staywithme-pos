@@ -36,6 +36,7 @@ $placeholderImage = UrlHelper::baseUrl('images/menu-placeholder.jpg');
                 <p class="text-[#a3a3a3] font-light max-w-lg text-center reveal-up reveal-delay-2">Pilih sajian favorit Anda
                     dan nikmati pengalaman bersantai yang tak terlupakan.</p>
                 <input type="hidden" id="table-id" value="<?= SanitizeHelper::html($table['id']) ?>">
+                <input type="hidden" id="existing-order-id" value="<?= SanitizeHelper::html($existingOrderId ?? '') ?>">
             <?php else: ?>
                 <h1
                     class="text-4xl md:text-6xl font-display text-white text-center mb-6 tracking-wide reveal-up reveal-delay-1">

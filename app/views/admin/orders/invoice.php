@@ -7,7 +7,7 @@ use App\Helpers\DateHelper;
 $order = $order ?? null;
 $payment = $payment ?? null;
 // Ambil detail cafe dari Config atau Model Settings jika ada
-$cafeName = SanitizeHelper::html(APP_NAME ?? 'Stay With Me Cafe');
+$cafeName = SanitizeHelper::html(APP_NAME ?? 'Bacelor Cafe');
 $cafeAddress = SanitizeHelper::html(CAFE_ADDRESS ?? 'Jl. Contoh No. 123, Kota Anda');
 $cafePhone = SanitizeHelper::html(CAFE_PHONE ?? '0812-3456-7890');
 $pageTitle = "Invoice #" . ($order ? SanitizeHelper::html($order['order_number']) : 'Error');

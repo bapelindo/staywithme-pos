@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const pollingIndicator = document.getElementById('polling-indicator');
     const orderStatusTextElement = document.getElementById('order-status-text');
     const orderNumberFullInput = document.getElementById('order-number-full');
+    const totalAmountLabel = document.getElementById('total-amount-label');
 
     // --- Check if essential elements exist ---
     if (!orderIdInput || !initialStatusKeyInput || !stepperContainer || !orderStatusTextElement || !orderNumberFullInput) {
@@ -42,10 +43,10 @@ document.addEventListener('DOMContentLoaded', () => {
         'cancelled': { index: -1, text: 'Dibatalkan', icon: 'fas fa-times-circle' }
     };
     const stepClasses = {
-        icon: { active: 'text-accent-primary animate-pulse', completed: 'text-green-400', upcoming: 'text-gray-500' },
-        text: { active: 'text-accent-primary', completed: 'text-green-400', upcoming: 'text-gray-500' },
-        bg: { active: 'bg-accent-primary/10', completed: 'bg-green-800/30', upcoming: 'bg-gray-800/30' },
-        line: { completed: 'bg-green-500', pending: 'bg-gray-700' }
+        icon: { active: 'text-primary animate-pulse', completed: 'text-white', upcoming: 'text-white/30' },
+        text: { active: 'text-primary drop-shadow-gold-glow', completed: 'text-white', upcoming: 'text-white/30' },
+        bg: { active: 'bg-primary/20 border border-primary/50 shadow-gold-glow', completed: 'bg-white/20 border border-white/30', upcoming: 'bg-white/5 border border-white/10' },
+        line: { completed: 'bg-primary/70', pending: 'bg-white/10' }
     };
 
     // --- UI Update Function ---
@@ -57,13 +58,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const newStatusIndex = newStatusInfo.index;
         const finalStepIndex = stepItems.length > 0 ? stepItems.length - 1 : 4;
 
-        // 1. Update Teks Status Utama (#order-status-text)
+        // 1. Update Teks Status Utama (#order-status-text) dan Label Total
         if (orderStatusTextElement) {
              if (newStatusKey === 'pending_payment') { orderStatusTextElement.textContent = `Silakan lakukan pembayaran tunai di kasir dengan menunjukkan nomor pesanan ${orderNumberDisplay}.`; }
              else if (newStatusKey === 'served') { orderStatusTextElement.textContent = 'Pesanan Anda telah disajikan. Terima kasih!'; }
              else if (newStatusKey === 'ready') { orderStatusTextElement.textContent = 'Pesanan Anda sudah siap. Silakan konfirmasi ke kasir.'; }
              else if (newStatusKey === 'cancelled') { orderStatusTextElement.textContent = 'Pesanan ini telah dibatalkan.'; }
              else { orderStatusTextElement.textContent = 'Status akan diperbarui secara otomatis.'; }
+        }
+
+        if (totalAmountLabel) {
+             totalAmountLabel.textContent = (newStatusKey === 'pending_payment') ? 'Total Penagihan' : 'Total Dibayar';
         }
 
         // 2. Update Tampilan Stepper (<ol>) atau Pesan Batal (.cancelled-message)

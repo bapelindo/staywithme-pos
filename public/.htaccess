@@ -6,11 +6,11 @@
 
     # Set Base Path (PENTING jika aplikasi tidak di root domain)
     # Gunakan conditional RewriteBase untuk localhost dan production
-    # Untuk localhost: /staywithme-pos/public/
+    # Untuk localhost: /bacelor-pos/public/
     # Untuk production domain: /
     RewriteCond %{HTTP_HOST} ^localhost [OR]
     RewriteCond %{HTTP_HOST} ^127\.0\.0\.1
-    RewriteRule .* - [E=REWRITEBASE:/staywithme-pos/public/]
+    RewriteRule .* - [E=REWRITEBASE:/bacelor-pos/public/]
     
     RewriteCond %{HTTP_HOST} !^localhost
     RewriteCond %{HTTP_HOST} !^127\.0\.0\.1

@@ -11,7 +11,7 @@ $pageTitle = $pageTitle ?? 'Admin Login';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= SanitizeHelper::html($pageTitle) ?> - Stay With Me Cafe</title>
+    <title><?= SanitizeHelper::html($pageTitle) ?> - Bacelor Cafe</title>
     <link rel="stylesheet" href="<?= \App\Helpers\UrlHelper::baseUrl('css/admin_output.css') ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,7 +24,7 @@ $pageTitle = $pageTitle ?? 'Admin Login';
         <h1 class="text-3xl font-bold text-center text-indigo-600 mb-2" style="font-family: 'Poppins', sans-serif;">
             Admin Login
         </h1>
-        <p class="text-center text-sm text-slate-500 mb-8">Stay With Me Cafe POS</p>
+        <p class="text-center text-sm text-slate-500 mb-8">Bacelor Cafe POS</p>
 
         <?php if ($error): ?>
             <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg text-sm" role="alert">

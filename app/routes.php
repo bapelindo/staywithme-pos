@@ -2,7 +2,7 @@
 use App\Helpers\UrlHelper;
 
 /**
- * File Definisi Rute Aplikasi Stay With Me POS
+ * File Definisi Rute Aplikasi Bacelor Cafe POS
  */
 
 if (!isset($router) || !($router instanceof App\Core\Router)) {

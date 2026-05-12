@@ -1,6 +1,6 @@
 {
-    "name": "bapel/staywithme-pos",
-    "description": "POS QR Code Ordering System for Stay With Me Cafe",
+    "name": "bapel/bacelor-pos",
+    "description": "POS QR Code Ordering System for Bacelor Cafe",
     "type": "project",
     "require": {
         "php": ">=8.4",

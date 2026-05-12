@@ -120,6 +120,105 @@ class Order extends Model {
         }
     }
 
+    public function addItemsToExistingOrder(int $orderId, array $items): bool {
+        if ($orderId <= 0 || empty($items)) {
+            return false;
+        }
+
+        $settingsModel = new \App\Models\Settings();
+        $settings = $settingsModel->getAllSettings();
+        $taxRate = (float)($settings['tax_percentage'] ?? 0) / 100;
+        $serviceRate = (float)($settings['service_charge_percentage'] ?? 0) / 100;
+
+        $inclusiveFactor = 1 + $taxRate + $serviceRate;
+        if ($inclusiveFactor == 0) $inclusiveFactor = 1;
+
+        $itemIds = array_column($items, 'menu_item_id');
+        if (empty($itemIds)) {
+             return false;
+        }
+        
+        $newTotalAmount = 0.00;
+        $newTotalTax = 0.00;
+        $newTotalServiceCharge = 0.00;
+
+        $placeholders = implode(',', array_fill(0, count($itemIds), '?'));
+        $sqlGetPrices = "SELECT id, price FROM menu_items WHERE id IN ($placeholders) AND is_available = 1";
+        
+        try {
+            $stmtPrices = $this->db->prepare($sqlGetPrices);
+            $paramIndex = 1;
+            foreach ($itemIds as $itemId) {
+                 $stmtPrices->bindValue($paramIndex++, $itemId, PDO::PARAM_INT);
+            }
+            $stmtPrices->execute();
+            $dbItems = $stmtPrices->fetchAll(PDO::FETCH_KEY_PAIR);
+            
+            if (count($dbItems) !== count($itemIds)) {
+                 error_log("addItemsToExistingOrder failed: one or more menu items not found or unavailable.");
+                 return false;
+            }
+
+            $orderItemsData = [];
+            foreach ($items as $item) {
+                $menuItemId = (int)$item['menu_item_id'];
+                $quantity = (int)$item['quantity'];
+                if ($quantity <= 0 || !isset($dbItems[$menuItemId])) {
+                    return false;
+                }
+                
+                $priceAtOrder = (float)$dbItems[$menuItemId];
+                $subtotal = $priceAtOrder * $quantity;
+                
+                $newTotalAmount += $subtotal;
+
+                $baseSubtotal = $subtotal / $inclusiveFactor;
+                $taxForSubtotal = $baseSubtotal * $taxRate;
+                $serviceForSubtotal = $baseSubtotal * $serviceRate;
+
+                $newTotalTax += $taxForSubtotal;
+                $newTotalServiceCharge += $serviceForSubtotal;
+
+                $orderItemsData[] = [
+                    'menu_item_id' => $menuItemId, 'quantity' => $quantity,
+                    'price_at_order' => $priceAtOrder, 'subtotal' => $subtotal,
+                    'notes' => isset($item['notes']) ? SanitizeHelper::string($item['notes']) : null
+                ];
+            }
+        } catch (PDOException $e) {
+            error_log("addItemsToExistingOrder failed during price check/calculation: " . $e->getMessage());
+            return false;
+        }
+        
+        $this->db->beginTransaction();
+        try {
+            $orderItemModel = new OrderItem();
+            if (!$orderItemModel->createOrderItems($orderId, $orderItemsData)) throw new PDOException("Failed to insert new order items.");
+            
+            $sqlUpdate = "UPDATE {$this->table} 
+                          SET total_amount = total_amount + :add_amount, 
+                              tax = tax + :add_tax, 
+                              service_charge = service_charge + :add_service_charge,
+                              updated_at = NOW()
+                          WHERE id = :id";
+            $stmtUpdate = $this->db->prepare($sqlUpdate);
+            
+            $stmtUpdate->bindValue(':add_amount', (string)round($newTotalAmount, 2), PDO::PARAM_STR);
+            $stmtUpdate->bindValue(':add_tax', (string)round($newTotalTax, 2), PDO::PARAM_STR);
+            $stmtUpdate->bindValue(':add_service_charge', (string)round($newTotalServiceCharge, 2), PDO::PARAM_STR);
+            $stmtUpdate->bindValue(':id', $orderId, PDO::PARAM_INT);
+
+            if (!$stmtUpdate->execute()) throw new PDOException("Failed to update order header.");
+            
+            $this->db->commit();
+            return true;
+        } catch (PDOException $e) {
+            $this->db->rollBack();
+            error_log("addItemsToExistingOrder failed during transaction: " . $e->getMessage());
+            return false;
+        }
+    }
+
      public function findById($id): array|false {
          if ($id <= 0) return false;
          try {

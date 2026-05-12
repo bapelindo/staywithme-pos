@@ -1,20 +1,20 @@
 {
-  "name": "staywithme-pos",
+  "name": "bacelor-pos",
   "version": "1.0.0",
   "main": "index.js",
 "scripts": {
 },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bapelindo/staywithme-pos.git"
+    "url": "git+https://github.com/bapelindo/bacelor-pos.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/bapelindo/staywithme-pos/issues"
+    "url": "https://github.com/bapelindo/bacelor-pos/issues"
   },
-  "homepage": "https://github.com/bapelindo/staywithme-pos#readme",
+  "homepage": "https://github.com/bapelindo/bacelor-pos#readme",
   "description": "",
   "devDependencies": {
     "@tailwindcss/aspect-ratio": "^0.4.2",

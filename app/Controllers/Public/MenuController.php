@@ -30,7 +30,7 @@ class MenuController extends Controller {
             'table' => null, // Tidak ada meja
             'categories' => $categories,
             'menuItemsByCategory' => $menuItemsByCategory,
-            'pageTitle' => 'Koleksi Menu - Stay With Me'
+            'pageTitle' => 'Koleksi Menu - Bacelor Cafe'
         ]);
     }
 
@@ -72,10 +72,13 @@ class MenuController extends Controller {
         }
 
         // 6. Load View dan kirim data
+        $existingOrderId = isset($_GET['order_id']) ? SanitizeHelper::integer($_GET['order_id']) : null;
+        
         $this->view('public.menu', [
             'table' => $table, // Kirim data meja (ID dan nomor meja) ke view
             'categories' => $categories,
             'menuItemsByCategory' => $menuItemsByCategory,
+            'existingOrderId' => $existingOrderId,
             'pageTitle' => 'Pesan Menu - Meja ' . SanitizeHelper::html($table['table_number']) // Sanitasi output
         ]);
     }

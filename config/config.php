@@ -26,7 +26,7 @@ if (getenv('APP_URL')) {
         || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
         || (!empty($_SERVER['HTTP_X_FORWARDED_SSL']) && $_SERVER['HTTP_X_FORWARDED_SSL'] === 'on');
     $protocol = $isHttps ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST']; // 'staywithme.bapel.my.id' atau 'localhost'
+    $host = $_SERVER['HTTP_HOST']; // 'bacelor.bapel.my.id' atau 'localhost'
 
     // Jika menggunakan localhost, tambahkan path aplikasi
     if (strpos($host, 'localhost') !== false || strpos($host, '127.0.0.1') !== false) {
@@ -39,7 +39,7 @@ if (getenv('APP_URL')) {
     // Fallback untuk pengembangan lokal (CLI atau environment tanpa HTTP)
     define('BASE_URL', 'http://localhost/staywithme-pos');
 }
-define('APP_NAME', 'Stay With Me');
+define('APP_NAME', 'Bacelor Cafe');
 define('CAFE_ADDRESS', 'Jl. Hayam Wuruk I No.12, Krajan, Putat Kidul, Kec. Gondanglegi, Kabupaten Malang, Jawa Timur 65174');
 define('CAFE_PHONE', '0822-2911-4960');
 define('ENVIRONMENT', 'development'); // Atau 'production' untuk live

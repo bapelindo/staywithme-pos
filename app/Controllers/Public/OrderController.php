@@ -1,5 +1,5 @@
 <?php
-// File: staywithme-pos/app/Controllers/Public/OrderController.php
+// File: bacelor-pos/app/Controllers/Public/OrderController.php
 namespace App\Controllers\Public;
 
 use App\Core\Controller;
@@ -32,6 +32,7 @@ class OrderController extends Controller {
 
         // Sanitasi data
         $tableId = SanitizeHelper::integer($data['table_id']);
+        $existingOrderId = isset($data['existing_order_id']) ? SanitizeHelper::integer($data['existing_order_id']) : null;
         $notes = isset($data['notes']) ? SanitizeHelper::string($data['notes']) : null;
         $items = [];
         foreach ($data['items'] as $item) {
@@ -57,10 +58,29 @@ class OrderController extends Controller {
             return $this->jsonResponse(['success' => false, 'message' => 'Meja tidak ditemukan.'], 404);
         }
 
-        // Proses pembuatan order menggunakan Model
+        // Proses pembuatan atau penambahan order menggunakan Model
         $orderModel = new Order();
-        // NOTE: Pastikan method `createOrder` di Model Order mengembalikan ID order yang baru dibuat
-        $orderId = $orderModel->createOrder($tableId, $items, $notes);
+        
+        $orderId = null;
+        
+        if ($existingOrderId && $existingOrderId > 0) {
+            // Cek apakah pesanan yang ada valid untuk ditambah
+            $existingOrder = $orderModel->findById($existingOrderId);
+            $nonModifiableStatuses = ['paid', 'served', 'cancelled'];
+            
+            if ($existingOrder && $existingOrder['table_id'] == $tableId && !in_array($existingOrder['status'], $nonModifiableStatuses)) {
+                // Tambahkan item ke pesanan yang ada
+                $success = $orderModel->addItemsToExistingOrder($existingOrderId, $items);
+                if ($success) {
+                    $orderId = $existingOrderId;
+                }
+            }
+        }
+        
+        // Jika tidak ada pesanan lama yang valid, buat pesanan baru
+        if (!$orderId) {
+            $orderId = $orderModel->createOrder($tableId, $items, $notes);
+        }
 
         if ($orderId) {
             // Sukses membuat order

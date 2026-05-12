@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Fungsi Keranjang (Memuat & Menyimpan) ---
     function loadCart() {
-        const storedCart = localStorage.getItem('staywithme_cart');
+        const storedCart = localStorage.getItem('bacelor_cart');
         if (storedCart) {
             try {
                 const parsedCart = JSON.parse(storedCart);
@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else { throw new Error("Data keranjang tersimpan bukan objek valid."); }
             } catch (e) {
                 console.error("Gagal parse keranjang dari localStorage atau data tidak valid:", e);
-                localStorage.removeItem('staywithme_cart'); // Hapus data korup
+                localStorage.removeItem('bacelor_cart'); // Hapus data korup
                 return {};
             }
         }
@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function saveCart() {
         try {
-            localStorage.setItem('staywithme_cart', JSON.stringify(cart));
+            localStorage.setItem('bacelor_cart', JSON.stringify(cart));
         } catch (e) {
             console.error("Gagal menyimpan keranjang ke localStorage:", e);
         }
@@ -360,8 +360,11 @@ document.addEventListener('DOMContentLoaded', () => {
         currentPlaceOrderBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Memproses...';
         showOrderMessage('Mengirim pesanan Anda...', 'info');
 
+        const existingOrderIdInput = document.getElementById('existing-order-id');
+
         const orderData = {
             table_id: parseInt(currentTableIdInput.value),
+            existing_order_id: existingOrderIdInput && existingOrderIdInput.value ? parseInt(existingOrderIdInput.value) : null,
             items: Object.values(currentCart).map(item => ({
                 menu_item_id: parseInt(item.id), quantity: item.quantity, notes: item.notes ?? ''
             })),
@@ -387,7 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.success) {
                 showOrderMessage('Pesanan berhasil dibuat! Mengalihkan ke halaman status...', 'success');
                 cart = {};
-                localStorage.removeItem('staywithme_cart');
+                localStorage.removeItem('bacelor_cart');
                 updateCartUI();
                 toggleCart(false);
                 setTimeout(() => {

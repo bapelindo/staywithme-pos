@@ -15,11 +15,11 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 
--- Dumping database structure for staywithme_db
-CREATE DATABASE IF NOT EXISTS `staywithme_db` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci */;
-USE `staywithme_db`;
+-- Dumping database structure for bacelor_db
+CREATE DATABASE IF NOT EXISTS `bacelor_db` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci */;
+USE `bacelor_db`;
 
--- Dumping structure for table staywithme_db.cash_drawers
+-- Dumping structure for table bacelor_db.cash_drawers
 CREATE TABLE IF NOT EXISTS `cash_drawers` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(10) unsigned NOT NULL COMMENT 'User (kasir) yang membuka laci',
@@ -33,12 +33,12 @@ CREATE TABLE IF NOT EXISTS `cash_drawers` (
   `updated_at` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
   KEY `fk_cash_drawers_users` (`user_id`),
-  CONSTRAINT `fk_cash_drawers_users` FOREIGN KEY (`user_id`) REFERENCES `staywithme_db`.`users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `fk_cash_drawers_users` FOREIGN KEY (`user_id`) REFERENCES `bacelor_db`.`users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Mencatat histori buka tutup laci kasir';
 
--- Dumping data for table staywithme_db.cash_drawers: ~0 rows (approximately)
+-- Dumping data for table bacelor_db.cash_drawers: ~0 rows (approximately)
 
--- Dumping structure for table staywithme_db.cash_transactions
+-- Dumping structure for table bacelor_db.cash_transactions
 CREATE TABLE IF NOT EXISTS `cash_transactions` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `user_id` int(10) unsigned NOT NULL,
@@ -52,13 +52,13 @@ CREATE TABLE IF NOT EXISTS `cash_transactions` (
   PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
   KEY `fk_cash_transactions_users` (`user_id`),
   KEY `fk_cash_transactions_drawers` (`drawer_id`),
-  CONSTRAINT `fk_cash_transactions_drawers` FOREIGN KEY (`drawer_id`) REFERENCES `staywithme_db`.`cash_drawers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_cash_transactions_users` FOREIGN KEY (`user_id`) REFERENCES `staywithme_db`.`users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `fk_cash_transactions_drawers` FOREIGN KEY (`drawer_id`) REFERENCES `bacelor_db`.`cash_drawers` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_cash_transactions_users` FOREIGN KEY (`user_id`) REFERENCES `bacelor_db`.`users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table staywithme_db.cash_transactions: ~0 rows (approximately)
+-- Dumping data for table bacelor_db.cash_transactions: ~0 rows (approximately)
 
--- Dumping structure for table staywithme_db.categories
+-- Dumping structure for table bacelor_db.categories
 CREATE TABLE IF NOT EXISTS `categories` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nama kategori (e.g., Makanan, Minuman, Snack)',
@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS `categories` (
   KEY `idx_categories_name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=30006 COMMENT='Kategori untuk item menu';
 
--- Dumping data for table staywithme_db.categories: ~5 rows (approximately)
+-- Dumping data for table bacelor_db.categories: ~5 rows (approximately)
 INSERT INTO `categories` (`id`, `name`, `description`, `sort_order`, `created_at`, `updated_at`) VALUES
 	(1, 'Ice Drink', 'Minuman Dingin', 1, '2025-08-22 13:30:41', '2025-08-22 13:30:41'),
 	(2, 'Hot Drink', 'Minuman Panas', 2, '2025-08-22 13:30:41', '2025-08-22 13:30:41'),
@@ -79,7 +79,7 @@ INSERT INTO `categories` (`id`, `name`, `description`, `sort_order`, `created_at
 	(4, 'Snack', 'Makanan Ringan', 4, '2025-08-22 13:30:41', '2025-08-22 13:30:41'),
 	(5, 'Dessert', 'Makanan Penutup', 5, '2025-08-22 13:30:41', '2025-08-22 13:30:41');
 
--- Dumping structure for table staywithme_db.menu_items
+-- Dumping structure for table bacelor_db.menu_items
 CREATE TABLE IF NOT EXISTS `menu_items` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `category_id` int(10) unsigned NOT NULL COMMENT 'Relasi ke tabel categories',
@@ -94,10 +94,10 @@ CREATE TABLE IF NOT EXISTS `menu_items` (
   PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
   KEY `fk_menu_items_categories_idx` (`category_id`),
   KEY `idx_menu_items_name` (`name`),
-  CONSTRAINT `fk_menu_items_categories` FOREIGN KEY (`category_id`) REFERENCES `staywithme_db`.`categories` (`id`) ON UPDATE CASCADE
+  CONSTRAINT `fk_menu_items_categories` FOREIGN KEY (`category_id`) REFERENCES `bacelor_db`.`categories` (`id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=30030 COMMENT='Detail item menu yang dijual';
 
--- Dumping data for table staywithme_db.menu_items: ~29 rows (approximately)
+-- Dumping data for table bacelor_db.menu_items: ~29 rows (approximately)
 INSERT INTO `menu_items` (`id`, `category_id`, `name`, `description`, `price`, `cost`, `image_path`, `is_available`, `created_at`, `updated_at`) VALUES
 	(1, 1, 'Es Kopi Susu Gula Aren', 'Kopi susu dengan manisnya gula aren asli.', 18000.00, 8000.00, NULL, 0, '2025-08-22 13:32:29', '2025-08-22 14:12:58'),
 	(2, 1, 'Ice Americano', 'Espresso shot disajikan dingin dengan air mineral.', 15000.00, 5000.00, NULL, 1, '2025-08-22 13:32:29', '2025-08-22 13:48:14'),
@@ -129,7 +129,7 @@ INSERT INTO `menu_items` (`id`, `category_id`, `name`, `description`, `price`, `
 	(28, 5, 'Affogato', 'Satu skup es krim vanila disiram dengan shot espresso panas.', 23000.00, 11000.00, NULL, 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29'),
 	(29, 5, 'Waffle Ice Cream', 'Waffle renyah dengan satu skup es krim dan saus coklat.', 26000.00, 13000.00, NULL, 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29');
 
--- Dumping structure for table staywithme_db.order_items
+-- Dumping structure for table bacelor_db.order_items
 CREATE TABLE IF NOT EXISTS `order_items` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `order_id` bigint(20) unsigned NOT NULL COMMENT 'Relasi ke tabel orders',
@@ -141,11 +141,11 @@ CREATE TABLE IF NOT EXISTS `order_items` (
   PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
   KEY `fk_order_items_orders_idx` (`order_id`),
   KEY `fk_order_items_menu_items_idx` (`menu_item_id`),
-  CONSTRAINT `fk_order_items_menu_items` FOREIGN KEY (`menu_item_id`) REFERENCES `staywithme_db`.`menu_items` (`id`) ON UPDATE CASCADE,
-  CONSTRAINT `fk_order_items_orders` FOREIGN KEY (`order_id`) REFERENCES `staywithme_db`.`orders` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  CONSTRAINT `fk_order_items_menu_items` FOREIGN KEY (`menu_item_id`) REFERENCES `bacelor_db`.`menu_items` (`id`) ON UPDATE CASCADE,
+  CONSTRAINT `fk_order_items_orders` FOREIGN KEY (`order_id`) REFERENCES `bacelor_db`.`orders` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=30015 COMMENT='Menyimpan detail item per pesanan';
 
--- Dumping data for table staywithme_db.order_items: ~12 rows (approximately)
+-- Dumping data for table bacelor_db.order_items: ~12 rows (approximately)
 INSERT INTO `order_items` (`id`, `order_id`, `menu_item_id`, `quantity`, `price_at_order`, `subtotal`, `notes`) VALUES
 	(1, 1, 1, 1, 18000.00, 18000.00, ''),
 	(2, 1, 2, 1, 15000.00, 15000.00, ''),
@@ -160,7 +160,7 @@ INSERT INTO `order_items` (`id`, `order_id`, `menu_item_id`, `quantity`, `price_
 	(13, 7, 10, 2, 25000.00, 50000.00, ''),
 	(14, 8, 11, 1, 15000.00, 15000.00, '');
 
--- Dumping structure for table staywithme_db.orders
+-- Dumping structure for table bacelor_db.orders
 CREATE TABLE IF NOT EXISTS `orders` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `table_id` int(10) unsigned NOT NULL COMMENT 'Relasi ke meja tempat pesanan dibuat',
@@ -189,15 +189,15 @@ CREATE TABLE IF NOT EXISTS `orders` (
   KEY `fk_orders_tables_idx` (`table_id`),
   KEY `idx_orders_status` (`status`),
   KEY `idx_orders_order_time` (`order_time`),
-  CONSTRAINT `fk_orders_tables` FOREIGN KEY (`table_id`) REFERENCES `staywithme_db`.`tables` (`id`) ON UPDATE CASCADE
+  CONSTRAINT `fk_orders_tables` FOREIGN KEY (`table_id`) REFERENCES `bacelor_db`.`tables` (`id`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=30009 COMMENT='Menyimpan data header pesanan pelanggan';
 
--- Dumping data for table staywithme_db.orders: ~2 rows (approximately)
+-- Dumping data for table bacelor_db.orders: ~2 rows (approximately)
 INSERT INTO `orders` (`id`, `table_id`, `order_number`, `total_amount`, `status`, `notes`, `order_time`, `created_at`, `updated_at`, `shipping_cost`, `service_charge`, `mdr_service_fee`, `rounding`, `tax`, `other_revenue`, `purchase_promo`, `product_promo`, `complimentary`, `admin_fee`, `refunds`, `mdr_fee`, `commission`) VALUES
 	(7, 1, 'SWM-20250822-0001', 50000.00, 'served', NULL, '2025-08-22 15:31:52', '2025-08-22 15:31:52', '2025-08-22 15:32:14', 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00),
 	(8, 1, 'SWM-20250822-0002', 15000.00, 'served', NULL, '2025-08-22 15:32:27', '2025-08-22 15:32:27', '2025-08-22 15:32:48', 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00);
 
--- Dumping structure for table staywithme_db.payments
+-- Dumping structure for table bacelor_db.payments
 CREATE TABLE IF NOT EXISTS `payments` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `order_id` bigint(20) unsigned NOT NULL COMMENT 'Relasi ke order yang dibayar',
@@ -210,23 +210,23 @@ CREATE TABLE IF NOT EXISTS `payments` (
   PRIMARY KEY (`id`) /*T![clustered_index] CLUSTERED */,
   UNIQUE KEY `order_id` (`order_id`),
   KEY `fk_payments_users` (`processed_by_user_id`),
-  CONSTRAINT `fk_payments_orders` FOREIGN KEY (`order_id`) REFERENCES `staywithme_db`.`orders` (`id`) ON UPDATE CASCADE,
-  CONSTRAINT `fk_payments_users` FOREIGN KEY (`processed_by_user_id`) REFERENCES `staywithme_db`.`users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
+  CONSTRAINT `fk_payments_orders` FOREIGN KEY (`order_id`) REFERENCES `bacelor_db`.`orders` (`id`) ON UPDATE CASCADE,
+  CONSTRAINT `fk_payments_users` FOREIGN KEY (`processed_by_user_id`) REFERENCES `bacelor_db`.`users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=30006 COMMENT='Mencatat detail pembayaran';
 
--- Dumping data for table staywithme_db.payments: ~2 rows (approximately)
+-- Dumping data for table bacelor_db.payments: ~2 rows (approximately)
 INSERT INTO `payments` (`id`, `order_id`, `payment_method`, `amount_paid`, `payment_time`, `processed_by_user_id`, `created_at`, `updated_at`) VALUES
 	(4, 7, 'cash', 50000.00, '2025-08-22 15:32:07', 1, '2025-08-22 15:32:07', '2025-08-22 15:32:07'),
 	(5, 8, 'cash', 15000.00, '2025-08-22 15:32:45', 1, '2025-08-22 15:32:45', '2025-08-22 15:32:45');
 
--- Dumping structure for table staywithme_db.settings
+-- Dumping structure for table bacelor_db.settings
 CREATE TABLE IF NOT EXISTS `settings` (
   `setting_key` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
   `setting_value` text COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`setting_key`) /*T![clustered_index] CLUSTERED */
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Dumping data for table staywithme_db.settings: ~7 rows (approximately)
+-- Dumping data for table bacelor_db.settings: ~7 rows (approximately)
 INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES
 	('cogs_percentage', '40'),
 	('default_admin_fee', '1000'),
@@ -236,7 +236,7 @@ INSERT INTO `settings` (`setting_key`, `setting_value`) VALUES
 	('service_charge_percentage', '5'),
 	('tax_percentage', '11');
 
--- Dumping structure for table staywithme_db.tables
+-- Dumping structure for table bacelor_db.tables
 CREATE TABLE IF NOT EXISTS `tables` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `table_number` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Nomor atau Nama Meja (e.g., T01, T02, VIP 1)',
@@ -252,7 +252,7 @@ CREATE TABLE IF NOT EXISTS `tables` (
   KEY `idx_tables_qr_code_identifier` (`qr_code_identifier`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=30006 COMMENT='Menyimpan data meja fisik di cafe';
 
--- Dumping data for table staywithme_db.tables: ~5 rows (approximately)
+-- Dumping data for table bacelor_db.tables: ~5 rows (approximately)
 INSERT INTO `tables` (`id`, `table_number`, `qr_code_identifier`, `description`, `is_active`, `created_at`, `updated_at`) VALUES
 	(1, 'T01', 't01-a1b2c3d4', 'Dekat Jendela', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29'),
 	(2, 'T02', 't02-e5f6g7h8', 'Area Indoor', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29'),
@@ -260,7 +260,7 @@ INSERT INTO `tables` (`id`, `table_number`, `qr_code_identifier`, `description`,
 	(4, 'L01', 'l01-m3n4o5p6', 'Lesehan Outdoor', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29'),
 	(5, 'V01', 'v01-q7r8s9t0', 'VIP Room', 1, '2025-08-22 13:32:29', '2025-08-22 13:32:29');
 
--- Dumping structure for table staywithme_db.users
+-- Dumping structure for table bacelor_db.users
 CREATE TABLE IF NOT EXISTS `users` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `username` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Username untuk login',
@@ -275,7 +275,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   KEY `idx_users_username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=30002 COMMENT='Menyimpan data pengguna sistem (admin, staff)';
 
--- Dumping data for table staywithme_db.users: ~1 rows (approximately)
+-- Dumping data for table bacelor_db.users: ~1 rows (approximately)
 INSERT INTO `users` (`id`, `username`, `password`, `name`, `role`, `is_active`, `created_at`, `updated_at`) VALUES
 	(1, 'admin', '$2y$12$mg.bv19q4Gxp07mx0HMTmOoR8/oaqavyqEnRemFdAv/JG2n1UCSmy', 'Administrator Utama', 'admin', 1, '2025-08-22 13:30:41', '2025-08-22 13:30:41');
 
