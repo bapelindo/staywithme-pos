@@ -3,10 +3,10 @@
 // Helper Sanitasi Sederhana
 const SanitizeHelper = {
     html: (text) => {
-         if (text === null || typeof text === 'undefined') return '';
-         const temp = document.createElement('div');
-         temp.textContent = String(text);
-         return temp.innerHTML;
+        if (text === null || typeof text === 'undefined') return '';
+        const temp = document.createElement('div');
+        temp.textContent = String(text);
+        return temp.innerHTML;
     }
 };
 
@@ -55,8 +55,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         // Pastikan properti notes ada
                         if (item && typeof item.notes === 'undefined') {
-                             item.notes = '';
-                         }
+                            item.notes = '';
+                        }
                     });
                     return parsedCart;
                 } else { throw new Error("Data keranjang tersimpan bukan objek valid."); }
@@ -85,14 +85,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const price = parseFloat(item.price ?? 0);
             const quantity = parseInt(item.quantity ?? 0);
             if (!isNaN(price) && !isNaN(quantity) && quantity > 0) {
-                 total += price * quantity;
+                total += price * quantity;
             }
         }
         return total;
     }
 
     function formatCurrency(amount) {
-         if (isNaN(parseFloat(amount))) { amount = 0; }
+        if (isNaN(parseFloat(amount))) { amount = 0; }
         return new Intl.NumberFormat('id-ID', {
             style: 'currency', currency: 'IDR',
             minimumFractionDigits: 0, maximumFractionDigits: 0
@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 price: parseFloat(item.price ?? 0),
                 quantity: 1,
                 notes: ''
-             };
+            };
         }
         saveCart();
         updateCartUI();
@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateQuantity(itemId, change) {
-         const strItemId = String(itemId);
+        const strItemId = String(itemId);
         if (!strItemId || !cart[strItemId]) return;
         cart[strItemId].quantity += change;
         if (cart[strItemId].quantity <= 0) {
@@ -132,12 +132,12 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCartUI();
     }
 
-     function updateItemNotes(itemId, notes) {
+    function updateItemNotes(itemId, notes) {
         const strItemId = String(itemId);
         if (!strItemId || !cart[strItemId]) return;
         cart[strItemId].notes = notes.trim();
         saveCart();
-     }
+    }
 
     // --- Update Tampilan Keranjang ---
     function updateCartUI() {
@@ -159,19 +159,19 @@ document.addEventListener('DOMContentLoaded', () => {
         currentCartItemCountElement.textContent = itemCount;
 
         if (itemCount === 0) {
-            if(currentCartEmptyMessage) currentCartEmptyMessage.style.display = 'block';
+            if (currentCartEmptyMessage) currentCartEmptyMessage.style.display = 'block';
             currentPlaceOrderBtn.disabled = true;
         } else {
-            if(currentCartEmptyMessage) currentCartEmptyMessage.style.display = 'none';
+            if (currentCartEmptyMessage) currentCartEmptyMessage.style.display = 'none';
             currentPlaceOrderBtn.disabled = false;
 
             Object.values(cart).forEach(item => {
-                 if (!item || !item.id || !item.name || isNaN(parseFloat(item.price)) || isNaN(parseInt(item.quantity))) {
+                if (!item || !item.id || !item.name || isNaN(parseFloat(item.price)) || isNaN(parseInt(item.quantity))) {
                     return; // Lewati item tidak valid
-                 }
+                }
 
                 const itemElement = document.createElement('div');
-                itemElement.className = 'cart-item py-3 border-b border-border-dark/50 flex items-center gap-3';
+                itemElement.className = 'cart-item py-4 border-b border-white/5 flex flex-col gap-3';
                 itemElement.setAttribute('data-id', item.id);
 
                 const safeName = SanitizeHelper.html(item.name);
@@ -179,17 +179,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 const formattedPrice = formatCurrency(item.price);
 
                 itemElement.innerHTML = `
-                    <div class="flex-grow min-w-0">
-                        <p class="text-sm font-medium text-white truncate" title="${safeName}">${safeName}</p>
-                        <p class="text-xs text-accent-secondary">${formattedPrice}</p>
-                        <input type="text" placeholder="Catatan..." value="${safeNotes}" data-item-id="${item.id}" class="item-notes-input mt-1 text-xs p-1 border border-border-dark bg-bg-dark-tertiary text-text-dark-secondary rounded w-full focus:ring-1 focus:ring-accent-primary focus:border-accent-primary" maxlength="100">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-grow min-w-0 pr-4">
+                            <h4 class="text-lg font-display text-white truncate" title="${safeName}">${safeName}</h4>
+                            <p class="text-sm font-sans text-primary">${formattedPrice}</p>
+                        </div>
+                        <div class="flex items-center space-x-3 flex-shrink-0">
+                            <button class="quantity-change flex items-center justify-center w-8 h-8 rounded-full border border-primary/50 text-primary hover:bg-primary hover:text-black transition-colors" data-item-id="${item.id}" data-change="-1" aria-label="Kurangi jumlah ${safeName}">
+                                <span class="material-symbols-outlined text-sm pointer-events-none">remove</span>
+                            </button>
+                            <span class="text-lg font-display text-white w-6 text-center" aria-label="Jumlah ${safeName}">${item.quantity}</span>
+                            <button class="quantity-change flex items-center justify-center w-8 h-8 rounded-full border border-primary/50 text-primary hover:bg-primary hover:text-black transition-colors" data-item-id="${item.id}" data-change="1" aria-label="Tambah jumlah ${safeName}">
+                                <span class="material-symbols-outlined text-sm pointer-events-none">add</span>
+                            </button>
+                            <button class="cart-item-remove flex items-center justify-center w-8 h-8 rounded-full border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white transition-colors ml-2" data-item-id="${item.id}" title="Hapus ${safeName}" aria-label="Hapus ${safeName}">
+                                <span class="material-symbols-outlined text-sm pointer-events-none">close</span>
+                            </button>
+                        </div>
                     </div>
-                    <div class="flex items-center space-x-2 flex-shrink-0">
-                        <button class="quantity-change bg-bg-dark-tertiary text-accent-primary hover:bg-bg-dark-secondary rounded-md w-6 h-6 text-lg leading-none flex items-center justify-center transition-colors" data-item-id="${item.id}" data-change="-1" aria-label="Kurangi jumlah ${safeName}">-</button>
-                        <span class="text-md font-semibold text-white w-6 text-center" aria-label="Jumlah ${safeName}">${item.quantity}</span>
-                        <button class="quantity-change bg-bg-dark-tertiary text-accent-primary hover:bg-bg-dark-secondary rounded-md w-6 h-6 text-lg leading-none flex items-center justify-center transition-colors" data-item-id="${item.id}" data-change="1" aria-label="Tambah jumlah ${safeName}">+</button>
+                    <div class="w-full mt-2">
+                        <input type="text" placeholder="Tambahkan catatan khusus (less ice, no sugar)..." value="${safeNotes}" data-item-id="${item.id}" class="item-notes-input w-full border border-gray-800 text-xs px-3 py-2.5 rounded-sm focus:outline-none focus:border-[#e9c176] transition-colors" style="background-color: #1a1a1a; color: #ffffff;" maxlength="100">
                     </div>
-                     <button class="cart-item-remove text-red-500 hover:text-red-400 ml-2 flex-shrink-0 text-xl font-bold" data-item-id="${item.id}" title="Hapus ${safeName}" aria-label="Hapus ${safeName}">&times;</button>
                 `;
                 currentCartItemsContainer.appendChild(itemElement);
             });
@@ -224,29 +234,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else if (button.classList.contains('cart-item-remove')) {
                 const itemInCart = cart[String(itemId)];
-                 if (itemInCart && confirm(`Hapus "${SanitizeHelper.html(itemInCart.name)}" dari keranjang?`)) {
+                if (itemInCart && confirm(`Hapus "${SanitizeHelper.html(itemInCart.name)}" dari keranjang?`)) {
                     delete cart[String(itemId)];
                     saveCart();
                     updateCartUI();
-                 }
+                }
             }
         });
 
         newContainer.addEventListener('focusout', (e) => {
             if (e.target.classList.contains('item-notes-input')) {
-                 const inputEl = e.target;
-                 const itemId = inputEl.dataset.itemId;
-                  if (itemId && cart[String(itemId)] && cart[String(itemId)].notes !== inputEl.value.trim()) {
+                const inputEl = e.target;
+                const itemId = inputEl.dataset.itemId;
+                if (itemId && cart[String(itemId)] && cart[String(itemId)].notes !== inputEl.value.trim()) {
                     updateItemNotes(itemId, inputEl.value);
-                 }
+                }
             }
         });
 
         newContainer.addEventListener('keydown', (e) => {
-             if (e.key === 'Enter' && e.target.classList.contains('item-notes-input')) {
-                  e.preventDefault();
-                  e.target.blur();
-             }
+            if (e.key === 'Enter' && e.target.classList.contains('item-notes-input')) {
+                e.preventDefault();
+                e.target.blur();
+            }
         });
     }
 
@@ -275,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentCartHeader.style.backgroundColor = 'rgba(56, 189, 248, 0.3)';
             setTimeout(() => { currentCartHeader.style.backgroundColor = ''; }, 200);
         }
-     }
+    }
 
     // --- Fungsi Animasi Tambah ke Keranjang ---
     function animateAddToCart(buttonElement) {
@@ -287,16 +297,16 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         if (itemImage.offsetParent === null) {
-             // console.log('Source image is not visible, skipping animation.');
-             return; // Jangan animasi jika gambar tidak terlihat
-         }
+            // console.log('Source image is not visible, skipping animation.');
+            return; // Jangan animasi jika gambar tidak terlihat
+        }
 
         const imgRect = itemImage.getBoundingClientRect();
         const cartRect = cartTargetElement.getBoundingClientRect();
 
         if (imgRect.width === 0 || imgRect.height === 0 || cartRect.width === 0 || cartRect.height === 0) {
-             // console.warn('Source or target element has zero dimensions, skipping animation.');
-             return;
+            // console.warn('Source or target element has zero dimensions, skipping animation.');
+            return;
         }
 
         const flyingElement = itemImage.cloneNode(true);
@@ -317,11 +327,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Minta browser untuk memulai animasi di frame berikutnya
         requestAnimationFrame(() => {
-             requestAnimationFrame(() => { // Double requestAnimationFrame
+            requestAnimationFrame(() => { // Double requestAnimationFrame
                 // Pindah ke target, kecilkan, dan hilangkan
-                flyingElement.style.transform = `translate(${targetX - imgRect.left - (imgRect.width/2)}px, ${targetY - imgRect.top - (imgRect.height/2)}px) scale(0.1)`;
+                flyingElement.style.transform = `translate(${targetX - imgRect.left - (imgRect.width / 2)}px, ${targetY - imgRect.top - (imgRect.height / 2)}px) scale(0.1)`;
                 flyingElement.style.opacity = '0';
-             });
+            });
         });
 
         // Hapus elemen setelah animasi selesai
@@ -336,13 +346,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentPlaceOrderBtn = document.getElementById('place-order-btn');
 
         if (!currentTableIdInput || !currentTableIdInput.value || currentTableIdInput.value === '0') {
-             showOrderMessage('Error: ID Meja tidak valid atau tidak ditemukan.', 'error');
-             return;
+            showOrderMessage('Error: ID Meja tidak valid atau tidak ditemukan.', 'error');
+            return;
         }
         const currentCart = loadCart();
         if (Object.keys(currentCart).length === 0) {
-             showOrderMessage('Keranjang Anda kosong. Silakan pilih item menu.', 'info');
-             return;
+            showOrderMessage('Keranjang Anda kosong. Silakan pilih item menu.', 'info');
+            return;
         }
         if (!currentPlaceOrderBtn) return;
 
@@ -370,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let result;
             const responseText = await response.text();
             try { result = JSON.parse(responseText); }
-            catch(jsonError) { throw new Error(`Server response error (${response.status}): ${responseText.substring(0, 150)}...`); }
+            catch (jsonError) { throw new Error(`Server response error (${response.status}): ${responseText.substring(0, 150)}...`); }
 
             if (!response.ok) { throw new Error(result?.message || `Gagal mengirim pesanan (Error ${response.status})`); }
 
@@ -402,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const colorClasses = { success: 'text-green-500', error: 'text-red-500', warning: 'text-yellow-500', info: 'text-blue-400' };
             currentOrderMessageElement.classList.add(colorClasses[type] || colorClasses['info']);
         }
-     }
+    }
 
     // --- Pasang Event Listener Awal ---
     document.querySelectorAll('.add-to-cart-btn').forEach(button => {
@@ -411,13 +421,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const item = {
                 id: btn.dataset.id, name: btn.dataset.name, price: parseFloat(btn.dataset.price)
             };
-             if (item.id && item.name && !isNaN(item.price)) {
+            if (item.id && item.name && !isNaN(item.price)) {
                 animateAddToCart(btn);
                 addToCart(item);
-             } else {
-                 console.error('Data item tidak valid pada tombol:', btn.dataset);
-                 alert('Maaf, terjadi kesalahan saat menambahkan item ini.');
-             }
+            } else {
+                console.error('Data item tidak valid pada tombol:', btn.dataset);
+                alert('Maaf, terjadi kesalahan saat menambahkan item ini.');
+            }
         });
     });
 
@@ -439,10 +449,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (initialCartSection && initialCartHeaderForHeight) {
         // Gunakan timeout kecil untuk memastikan layout sudah stabil sebelum menghitung tinggi header
         setTimeout(() => {
-             if (!isCartOpen) {
+            if (!isCartOpen) {
                 const headerHeight = initialCartHeaderForHeight.offsetHeight || 52; // Gunakan fallback height
                 initialCartSection.style.transform = `translateY(calc(100% - ${headerHeight}px))`;
-             }
+            }
         }, 150);
     }
 

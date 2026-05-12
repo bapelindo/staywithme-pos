@@ -10,6 +10,31 @@ use App\Helpers\SanitizeHelper;
 class MenuController extends Controller {
 
     /**
+     * Menampilkan menu digital umum tanpa meja (hanya lihat).
+     */
+    public function index() {
+        $categoryModel = new Category();
+        $menuItemModel = new MenuItem();
+
+        $categories = $categoryModel->getAllSorted();
+
+        $menuItemsByCategory = [];
+        $availableItems = $menuItemModel->getAllAvailableGroupedByCategory();
+        foreach ($availableItems as $item) {
+            if (isset($item['category_id'])) {
+                 $menuItemsByCategory[$item['category_id']][] = $item;
+            }
+        }
+
+        $this->view('public.menu', [
+            'table' => null, // Tidak ada meja
+            'categories' => $categories,
+            'menuItemsByCategory' => $menuItemsByCategory,
+            'pageTitle' => 'Koleksi Menu - Stay With Me'
+        ]);
+    }
+
+    /**
      * Menampilkan menu digital untuk meja tertentu berdasarkan QR Identifier.
      *
      * @param string $qr_identifier Identifier unik dari QR Code meja.
@@ -27,10 +52,9 @@ class MenuController extends Controller {
         $table = $tableModel->findByQrIdentifier($safe_qr_identifier);
 
         if (!$table) {
-            // Meja tidak ditemukan atau tidak aktif
-            http_response_code(404);
-            // Load view error 404
-            $this->view('public.errors.404', ['message' => 'Meja tidak valid atau tidak ditemukan. Silakan pindai ulang QR Code.']);
+            // Jika meja tidak valid, langsung tampilkan menu umum (tanpa fungsi order)
+            // Redirect ke halaman menu umum untuk mencegah error atau tampilan 404
+            UrlHelper::redirect('/menu');
             return;
         }
 

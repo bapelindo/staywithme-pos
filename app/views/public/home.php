@@ -1,396 +1,325 @@
 <?php
-// File: app/Views/public/home.php (Dengan AOS di elemen internal - Solusi 2)
 use App\Helpers\SanitizeHelper;
 use App\Helpers\UrlHelper;
 use App\Helpers\NumberHelper;
 
-// Data dari Controller
-$topItems = $topItems ?? [];
-$menuItems = $menuItems ?? [];
 $categories = $categories ?? [];
-$appName = SanitizeHelper::html(APP_NAME ?? 'Nama Kafe Default');
-$cafeAddress = SanitizeHelper::html(CAFE_ADDRESS ?? 'Alamat Kafe Default');
-$cafePhone = SanitizeHelper::html(CAFE_PHONE ?? 'Nomor Telepon Default');
-$baseUrl = rtrim(UrlHelper::baseUrl(), '/');
+$menuItems = $menuItems ?? [];
+
+// Inject mock data if DB is empty
+if (empty($categories)) {
+    $categories = [
+        ['id' => 1, 'name' => 'Signature Blend'],
+        ['id' => 2, 'name' => 'Manual Brew'],
+        ['id' => 3, 'name' => 'Artisan Pastry'],
+    ];
+}
+if (empty($menuItems)) {
+    $menuItems = [
+        ['category_id' => 1, 'name' => 'Stay With Me Latte', 'description' => 'Espresso house blend, secret syrup, steamed oat milk, bubuk emas eksklusif.', 'price' => 55000, 'image_path' => 'images/menu.jpg'],
+        ['category_id' => 2, 'name' => 'Ethiopia Yirgacheffe V60', 'description' => 'Kopi seduh manual dengan profil rasa floral, jasmine, bergamot, dan sentuhan black tea yang menyegarkan.', 'price' => 40000, 'image_path' => 'images/experience-illustration-1.jpg'],
+        ['category_id' => 3, 'name' => 'Almond Butter Croissant', 'description' => 'Croissant panggang dua kali yang renyah di luar, diisi penuh dengan frangipane dan taburan almond panggang.', 'price' => 35000, 'image_path' => 'images/menu.jpg'],
+    ];
+}
+
+$categoryMap = [];
+foreach ($categories as $cat) {
+    $categoryMap[$cat['id']] = $cat['name'];
+}
+
+// Get top 3 items for the display
+$item1 = $menuItems[0] ?? null;
+$item2 = $menuItems[1] ?? null;
+$item3 = $menuItems[2] ?? null;
+
 $placeholderImage = UrlHelper::baseUrl('images/menu-placeholder.jpg');
+
+function getImageUrl($item, $placeholder)
+{
+    if (!$item)
+        return $placeholder;
+    return !empty($item['image_path']) ? UrlHelper::baseUrl($item['image_path']) : $placeholder;
+}
+function getCatName($item, $map)
+{
+    if (!$item)
+        return 'Menu';
+    return $map[$item['category_id']] ?? 'Menu';
+}
 ?>
 
-<section class="relative py-24 md:py-36 overflow-hidden min-h-[calc(100vh-70px)] flex items-center -mt-6 md:-mt-8" id="hero">
-    <div aria-hidden="true" class="absolute inset-0 z-0 opacity-40">
-         <img src="<?= UrlHelper::baseUrl('images/background.svg') ?>" alt="Ilustrasi Latar Belakang Kafe Gelap Abstrak" class="absolute inset-0 w-full h-full object-cover">
-        <div class="absolute inset-0 bg-gradient-to-br from-bg-dark-primary via-bg-dark-primary/70 to-bg-dark-secondary"></div>
+<!-- Hero Section -->
+<section class="relative min-h-[100svh] flex items-center justify-center pt-20 overflow-hidden"
+    data-stitch-vh="min-h-[100svh]===min-h-screen">
+    <!-- Background Image with Parallax feel -->
+    <div class="absolute inset-0 z-0">
+        <div class="absolute inset-0 bg-gradient-to-b from-[#050505]/80 via-[#050505]/40 to-[#050505] z-10"></div>
+        <img alt="Interior Cafe" class="w-full h-full object-cover opacity-60 scale-105 animate-pulse-slow"
+            src="<?= UrlHelper::baseUrl('images/experience-illustration-1.jpg') ?>">
     </div>
-    <div aria-hidden="true" class="absolute top-1/4 left-10 w-16 h-16 rounded-full bg-accent-primary/10 blur-2xl animate-pulse"></div>
-    <div aria-hidden="true" class="absolute bottom-1/4 right-10 w-20 h-20 rounded-full bg-accent-secondary/10 blur-2xl animate-pulse delay-500"></div>
 
-     <div class="container mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-16 items-center relative z-10">
-        <?php // Kolom Kiri Hero dengan AOS fade-right ?>
-        <div class="text-center lg:text-left" data-aos="fade-right" data-aos-duration="800">
-        <h1 class="hero-heading text-5xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight text-white">
-                <?php // Hapus 'block' jika ada ?>
-                <span>Secangkir Inspirasi,</span>
-                <?php // Hapus 'block' jika ada ?>
-                <span id="dynamic-tagline" class="text-4xl md:text-6xl lg:text-7xl inline-block w-[23rem] sm:w-auto text-center mx-auto lg:mx-0 text-accent-primary whitespace-nowrap overflow-hidden">Sejuta Cerita.</span>
-             </h1>
-             <p class="text-lg md:text-xl text-text-dark-secondary mb-10 max-w-xl mx-auto lg:mx-0">
-               Dapatkan kopi artisan terbaik, hidangan lezat, dan suasana yang memicu kreativitas serta koneksi di <?= $appName ?>.
-            </p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <a href="#menu" class="btn btn-accent px-8 py-3 rounded-full font-semibold transition shadow-lg text-center text-base transform hover:scale-105 hover:shadow-xl inline-flex items-center justify-center">
-                    <i class="fas fa-book-open mr-2"></i> Menu Kami
-                </a>
-                <a href="#location" class="btn btn-secondary px-8 py-3 rounded-full font-semibold transition shadow-sm text-center text-base inline-flex items-center justify-center">
-                    <i class="fas fa-map-marker-alt mr-2"></i> Kunjungi Kami
-                </a>
-            </div>
+    <!-- Huge Background Typography -->
+    <div class="absolute inset-0 z-0 flex items-center justify-center pointer-events-none overflow-hidden select-none">
+        <h1
+            class="text-[5rem] sm:text-[8rem] md:text-[14rem] font-display font-black text-outline whitespace-nowrap opacity-30 transform -translate-y-12 mix-blend-overlay">
+            ROASTERY
+        </h1>
+    </div>
+
+    <div class="relative z-20 text-center px-6 max-w-5xl mx-auto flex flex-col items-center mt-12">
+        <div class="reveal-up">
+            <span
+                class="font-sans text-xs text-primary uppercase tracking-[0.4em] mb-8 block flex items-center justify-center gap-4">
+                <span class="w-12 h-[1px] bg-primary/50"></span>
+                Artisan Roastery
+                <span class="w-12 h-[1px] bg-primary/50"></span>
+            </span>
         </div>
-        <?php // Kolom Kanan Hero dengan AOS zoom-in ?>
-        <div class="hidden lg:flex justify-center items-center relative" data-aos="zoom-in" data-aos-duration="800" data-aos-delay="200">
-             <img loading="lazy" src="<?= UrlHelper::baseUrl('images/coffee.svg') ?>" alt="Ilustrasi Cangkir Kopi Premium" class="relative z-10 w-2/3 max-w-sm drop-shadow-2xl">
-             <img loading="lazy" src="<?= UrlHelper::baseUrl('images/coffee-cup.svg') ?>" alt="Ilustrasi Biji Kopi" class="absolute -bottom-10 -left-10 w-1/2 opacity-60 z-0">
-             <img loading="lazy" src="<?= UrlHelper::baseUrl('images/coffee-bean.svg') ?>" alt="Ilustrasi Asap Kopi" class="absolute -top-10 -right-10 w-1/2 opacity-60 z-0">
+        <h1
+            class="reveal-up reveal-delay-1 font-display text-5xl md:text-8xl lg:text-9xl font-bold text-white leading-[0.9] mb-8 tracking-tighter mix-blend-screen drop-shadow-2xl">
+            <span class="text-primary italic font-light drop-shadow-[0_0_30px_rgba(233,193,118,0.4)]">
+                <font color="#ffffff"><span style="font-style: normal;"><b>Karya&nbsp;</b></span></font>StayWithMe.
+            </span>
+            <br>Cita Rasa <i class="text-primary font-light">Berkelas.</i>
+        </h1>
+        <p
+            class="reveal-up reveal-delay-2 font-sans text-lg md:text-xl text-on-surface-variant max-w-2xl mx-auto mb-16 font-light leading-relaxed">
+            Ruang tenang untuk menepi dari keramaian, ditemani secangkir kopi artisan yang dikurasi dengan presisi. Jeda
+            yang sempurna di tengah rutinitas Anda.
+        </p>
+        <div class="reveal-up reveal-delay-3">
+            <a class="relative inline-flex items-center justify-center px-10 py-5 glass-panel text-white font-sans text-sm uppercase tracking-[0.2em] hover:bg-white hover:text-black transition-all duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] group overflow-hidden rounded-full"
+                href="/menu">
+                <span class="relative z-10 flex items-center gap-4">
+                    Jelajahi Menu
+                    <span
+                        class="material-symbols-outlined text-xl group-hover:translate-x-2 transition-transform duration-500">trending_flat</span>
+                </span>
+                <div
+                    class="absolute inset-0 bg-gold-gradient opacity-0 group-hover:opacity-100 transition-opacity duration-700 z-0">
+                </div>
+            </a>
         </div>
     </div>
 </section>
 
-<section id="story" class="section-padding bg-bg-dark-secondary relative overflow-hidden">
-     <div aria-hidden="true" class="absolute top-0 left-0 w-1/3 h-full bg-gradient-to-r from-bg-dark-tertiary/30 to-transparent opacity-30 pointer-events-none"></div>
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div class="text-center mb-16 max-w-3xl mx-auto" data-aos="fade-up">
-             <span class="text-sm font-semibold text-accent-primary uppercase tracking-wider">Gairah Kami</span>
-            <h2 class="text-4xl md:text-5xl font-bold my-4 text-white">Seni & Jiwa dalam Kopi</h2>
-            <p class="text-lg text-text-dark-secondary leading-relaxed">
-               Dari kebun hingga cangkir, setiap langkah adalah dedikasi pada kualitas. Kami bekerja sama dengan petani lokal, menyangrai biji kami sendiri, dan memberdayakan barista kami untuk menciptakan minuman sempurna Anda.
-            </p>
-        </div>
-        <div class="grid md:grid-cols-3 gap-10">
-            <div class="text-center p-6 bg-bg-dark rounded-lg shadow-lg border border-border-dark" data-aos="fade-up" data-aos-delay="100">
-                <div class="mb-5 text-5xl text-accent-secondary"><i class="fas fa-leaf"></i></div>
-                <h3 class="text-2xl font-semibold mb-3 text-white">Sumber Etis</h3>
-                <p class="text-sm text-text-dark-secondary leading-relaxed">
-                    Memilih hanya biji kopi *single-origin* terbaik, memastikan perdagangan yang adil dan pertanian berkelanjutan.
-                </p>
-            </div>
-            <div class="text-center p-6 bg-bg-dark rounded-lg shadow-lg border border-border-dark" data-aos="fade-up" data-aos-delay="200">
-                 <div class="mb-5 text-5xl text-accent-secondary"><i class="fas fa-fire-alt"></i></div>
-                <h3 class="text-2xl font-semibold mb-3 text-white">Sangrai Internal</h3>
-                <p class="text-sm text-text-dark-secondary leading-relaxed">
-                   Penyangraian *small-batch* setiap hari untuk membuka profil rasa unik setiap biji. Presisi dan hati-hati.
-                </p>
-            </div>
-            <div class="text-center p-6 bg-bg-dark rounded-lg shadow-lg border border-border-dark" data-aos="fade-up" data-aos-delay="300">
-                 <div class="mb-5 text-5xl text-accent-secondary"><i class="fas fa-mug-hot"></i></div>
-                <h3 class="text-2xl font-semibold mb-3 text-white">Penyeduhan Ahli</h3>
-                <p class="text-sm text-text-dark-secondary leading-relaxed">
-                    Barista terampil menggunakan peralatan dan teknik mutakhir, dari espresso hingga *manual brew*.
-                </p>
-            </div>
-        </div>
+<!-- Signature Collections (Staggered Layout) -->
+<section class="py-24 px-6 md:px-12 max-w-[1600px] mx-auto relative z-10" id="menu">
+    <div class="mb-20 flex flex-col items-center text-center reveal-up">
+        <span class="font-sans text-xs text-primary uppercase tracking-[0.3em] mb-4 block">Penawaran Terkurasi</span>
+        <h2 class="font-display text-5xl md:text-7xl text-white mb-8 tracking-tight"><i
+                class="text-primary font-light">Koleksi</i> Utama</h2>
+        <div class="h-[1px] w-24 bg-gradient-to-r from-transparent via-primary to-transparent"></div>
     </div>
-</section>
 
-<section id="experience" class="section-padding bg-bg-dark-primary">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-12 md:gap-16 items-center">
-        
-        <?php // Kolom Kiri Experience - Hapus AOS dari div ini ?>
-        <div>
-            <span class="text-sm font-semibold text-accent-primary uppercase tracking-wider" data-aos="fade-right" data-aos-duration="600">Ruang Anda</span>
-            <h2 class="text-4xl md:text-5xl font-bold my-4 text-white" data-aos="fade-right" data-aos-duration="600" data-aos-delay="100">Lebih dari Kopi, Ini Pengalaman.</h2>
-            <p class="text-lg text-text-dark-secondary mb-8 leading-relaxed" data-aos="fade-right" data-aos-duration="600" data-aos-delay="200">
-               <?= SanitizeHelper::html(APP_NAME ?? 'Kafe Kami') ?> dirancang untuk menjadi tempat perlindungan Anda. Baik mencari fokus, koneksi, atau sekadar ketenangan, temukan sudut sempurna Anda.
-            </p>
-            <div class="space-y-6">
-                <div class="flex items-start space-x-4 p-4 bg-bg-dark-secondary rounded-lg border border-border-dark" data-aos="fade-right" data-aos-duration="600" data-aos-delay="300">
-                    <i class="fas fa-couch text-2xl text-accent-secondary mt-1 flex-shrink-0 w-6 text-center"></i>
-                    <div>
-                        <h4 class="font-semibold text-lg text-white">Suasana Nyaman</h4>
-                        <p class="text-sm text-text-dark-secondary">Kursi empuk, pencahayaan hangat, dan daftar putar pilihan menciptakan atmosfer santai.</p>
+    <div class="flex flex-col gap-20">
+        <?php if ($item1): ?>
+            <!-- Item 1: Left Aligned -->
+            <div class="flex flex-col md:flex-row items-center gap-12 md:gap-16 group reveal-up">
+                <div class="w-full md:w-3/5 relative">
+                    <div
+                        class="absolute inset-0 bg-primary/20 blur-[100px] rounded-full opacity-0 group-hover:opacity-50 transition-opacity duration-1000">
+                    </div>
+                    <div class="relative h-[400px] md:h-[500px] w-full glass-panel overflow-hidden rounded-sm">
+                        <img alt="<?= SanitizeHelper::html($item1['name']) ?>"
+                            class="absolute inset-0 w-full h-full object-cover opacity-70 saturate-50 group-hover:saturate-100 group-hover:scale-105 transition-all duration-[1.5s] ease-[cubic-bezier(0.4,0,0.2,1)]"
+                            src="<?= getImageUrl($item1, $placeholderImage) ?>">
                     </div>
                 </div>
-                <div class="flex items-start space-x-4 p-4 bg-bg-dark-secondary rounded-lg border border-border-dark" data-aos="fade-right" data-aos-duration="600" data-aos-delay="400">
-                    <i class="fas fa-laptop-code text-2xl text-accent-secondary mt-1 flex-shrink-0 w-6 text-center"></i>
-                    <div>
-                        <h4 class="font-semibold text-lg text-white">Ruang Kerja Produktif</h4>
-                        <p class="text-sm text-text-dark-secondary">Banyak stopkontak, Wi-Fi andal, dan zona tenang khusus untuk kerja fokus.</p>
-                    </div>
-                </div>
-                <div class="flex items-start space-x-4 p-4 bg-bg-dark-secondary rounded-lg border border-border-dark" data-aos="fade-right" data-aos-duration="600" data-aos-delay="500">
-                    <i class="fas fa-users text-2xl text-accent-secondary mt-1 flex-shrink-0 w-6 text-center"></i>
-                    <div>
-                        <h4 class="font-semibold text-lg text-white">Pusat Komunitas</h4>
-                        <p class="text-sm text-text-dark-secondary">Acara rutin, lokakarya, dan ruang yang dirancang untuk kolaborasi dan koneksi.</p>
-                    </div>
+                <div class="w-full md:w-2/5 flex flex-col justify-center">
+                    <span class="font-sans text-xs text-primary uppercase tracking-[0.2em] mb-4 block">01 /
+                        <?= SanitizeHelper::html(getCatName($item1, $categoryMap)) ?></span>
+                    <h3 class="font-display text-3xl md:text-4xl text-white mb-6"><?php
+                    $words = explode(' ', $item1['name']);
+                    $firstWord = array_shift($words);
+                    echo "<i class='text-primary'>" . SanitizeHelper::html($firstWord) . "</i> " . SanitizeHelper::html(implode(' ', $words));
+                    ?></h3>
+                    <p class="font-sans text-on-surface-variant text-lg font-light leading-relaxed mb-8">
+                        <?= SanitizeHelper::html($item1['description']) ?>
+                    </p>
+                    <div class="font-display text-xl text-white mb-8">
+                        <?= NumberHelper::formatCurrencyIDR($item1['price']) ?></div>
+                    <a class="inline-flex items-center text-xs font-sans uppercase tracking-[0.2em] text-white hover:text-primary transition-colors duration-300"
+                        href="<?= UrlHelper::baseUrl('/menu') ?>">
+                        Temukan Lebih Lanjut <span class="material-symbols-outlined ml-2 text-sm">arrow_forward</span>
+                    </a>
                 </div>
             </div>
-        </div>
+        <?php endif; ?>
 
-        <?php // Kolom Kanan Experience - Hapus AOS dari div ini ?>
-        <div div data-aos="zoom-in-down" data-aos-duration="800" data-aos-delay="200" class="overflow-x-auto hide-scrollbar">
-            <div class="grid grid-cols-2 gap-4 lg:gap-6">
-                <?php
-                    $img1 = UrlHelper::baseUrl('images/experience-illustration-1.jpg');
-                    $img2 = UrlHelper::baseUrl('images/experience-illustration-1.jpg');
-                    $img3 = UrlHelper::baseUrl('images/experience-illustration-1.jpg');
-                    $img4 = UrlHelper::baseUrl('images/experience-illustration-1.jpg');
-                ?>
-                <?php // Terapkan AOS ke masing-masing gambar ?>
-                <img loading="lazy" src="<?= $img1 ?>" alt="Ilustrasi Sudut Nyaman Kafe" class="w-full rounded-lg shadow-lg aspect-square object-cover transform hover:scale-105 transition-transform duration-300 border-2 border-border-dark" data-aos="zoom-in-left" data-aos-duration="600" data-aos-delay="100" onerror="this.onerror=null; this.src='<?= $placeholderImage ?>';">
-                <img loading="lazy" src="<?= $img2 ?>" alt="Ilustrasi Barista Meracik Kopi" class="w-full rounded-lg shadow-lg aspect-square object-cover mt-8 lg:mt-10 transform hover:scale-105 transition-transform duration-300 border-2 border-border-dark" data-aos="zoom-in-left" data-aos-duration="600" data-aos-delay="200" onerror="this.onerror=null; this.src='<?= $placeholderImage ?>';">
-                <img loading="lazy" src="<?= $img3 ?>" alt="Ilustrasi Acara Komunitas di Kafe" class="w-full rounded-lg shadow-lg aspect-square object-cover transform hover:scale-105 transition-transform duration-300 border-2 border-border-dark" data-aos="zoom-in-left" data-aos-duration="600" data-aos-delay="300" onerror="this.onerror=null; this.src='<?= $placeholderImage ?>';">
-                <img loading="lazy" src="<?= $img4 ?>" alt="Ilustrasi Orang Bekerja di Kafe" class="w-full rounded-lg shadow-lg aspect-square object-cover mt-8 lg:mt-10 transform hover:scale-105 transition-transform duration-300 border-2 border-border-dark" data-aos="zoom-in-left" data-aos-duration="600" data-aos-delay="400" onerror="this.onerror=null; this.src='<?= $placeholderImage ?>';">
+        <?php if ($item2): ?>
+            <!-- Item 2: Right Aligned -->
+            <div class="flex flex-col md:flex-row-reverse items-center gap-12 md:gap-16 group reveal-up">
+                <div class="w-full md:w-1/2 relative">
+                    <div
+                        class="absolute inset-0 bg-primary/20 blur-[100px] rounded-full opacity-0 group-hover:opacity-50 transition-opacity duration-1000">
+                    </div>
+                    <div class="relative h-[350px] md:h-[450px] w-full glass-panel overflow-hidden rounded-sm md:mt-16">
+                        <img alt="<?= SanitizeHelper::html($item2['name']) ?>"
+                            class="absolute inset-0 w-full h-full object-cover opacity-70 saturate-50 group-hover:saturate-100 group-hover:scale-105 transition-all duration-[1.5s] ease-[cubic-bezier(0.4,0,0.2,1)]"
+                            src="<?= getImageUrl($item2, $placeholderImage) ?>">
+                    </div>
+                </div>
+                <div class="w-full md:w-1/2 flex flex-col justify-center text-left md:text-right md:items-end">
+                    <span class="font-sans text-xs text-primary uppercase tracking-[0.2em] mb-4 block">02 /
+                        <?= SanitizeHelper::html(getCatName($item2, $categoryMap)) ?></span>
+                    <h3 class="font-display text-3xl md:text-4xl text-white mb-6"><?php
+                    $words = explode(' ', $item2['name']);
+                    $firstWord = array_shift($words);
+                    echo "<i class='text-primary'>" . SanitizeHelper::html($firstWord) . "</i> " . SanitizeHelper::html(implode(' ', $words));
+                    ?></h3>
+                    <p
+                        class="font-sans text-on-surface-variant text-lg font-light leading-relaxed mb-8 md:text-right max-w-md">
+                        <?= SanitizeHelper::html($item2['description']) ?>
+                    </p>
+                    <div class="font-display text-xl text-white mb-8">
+                        <?= NumberHelper::formatCurrencyIDR($item2['price']) ?></div>
+                    <a class="inline-flex items-center text-xs font-sans uppercase tracking-[0.2em] text-white hover:text-primary transition-colors duration-300 flex-row-reverse"
+                        href="<?= UrlHelper::baseUrl('/menu') ?>">
+                        <span class="material-symbols-outlined mr-2 text-sm transform rotate-180">arrow_forward</span>
+                        Temukan Lebih Lanjut
+                    </a>
+                </div>
             </div>
-        </div>
+        <?php endif; ?>
 
-    </div>
-</section>
-
-<?php // Pastikan section lain yang sebelumnya dikomentari, sekarang aktif kembali ?>
-<section id="menu" class="section-padding bg-bg-dark-secondary overflow-hidden">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 class="text-4xl md:text-5xl font-bold text-center mb-10 text-white" data-aos="fade-up">Kreasi Khas Kami</h2>
-
-        <?php if (!empty($topItems)): ?>
-        <div class="mb-12" data-aos="fade-up">
-             <h3 class="text-2xl font-semibold text-center mb-8 text-accent-primary">Top 5 Item Terpopuler</h3>
-             <div class="relative">
-                <div class="swiper-container-wrapper relative"> <?php // Wrapper penting untuk overflow:hidden ?>
-                    <div class="swiper-container featured-menu-slider">
-                        <div class="swiper-wrapper pb-8">
-                            <?php foreach ($topItems as $topItem): ?>
-                                <?php
-                                    $topItemImagePath = !empty($topItem['image_path'])
-                                                        ? UrlHelper::baseUrl($topItem['image_path']) // Gunakan baseUrl
-                                                        : $placeholderImage;
-                                ?>
-                                <div class="swiper-slide h-auto px-1.5 sm:px-2">
-                                    <div class="menu-item menu-card relative bg-bg-dark rounded-lg shadow-lg overflow-hidden group border border-border-dark flex flex-col h-full">
-                                        <div class="relative h-52 w-full">
-                                            <img loading="lazy" src="<?= $topItemImagePath ?>" alt="<?= SanitizeHelper::html($topItem['name']) ?>"
-                                                class="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                                onerror="this.onerror=null; this.src='<?= $placeholderImage ?>';">
-                                        </div>
-                                        <div class="p-4 sm:p-5 flex flex-col flex-grow">
-                                            <h4 class="font-semibold text-lg mb-1 text-white truncate"><?= SanitizeHelper::html($topItem['name']) ?></h4>
-                                            <p class="text-xs text-text-dark-secondary mb-3 flex-grow min-h-[3em] line-clamp-2">
-                                                <?= SanitizeHelper::html($topItem['description'] ?? '...') ?>
-                                            </p>
-                                            <div class="flex justify-between items-center mt-auto pt-2">
-                                                <span class="font-bold text-lg text-accent-primary">
-                                                    <?= NumberHelper::formatCurrencyIDR($topItem['price']) ?>
-                                                </span>
-                                                <span class="text-xs text-text-dark-muted" title="Total Terjual (30 Hari Terakhir)">
-                                                    <i class="fas fa-star text-yellow-400"></i> <?= $topItem['total_quantity'] ?? 0 ?>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
+        <?php if ($item3): ?>
+            <!-- Item 3: Center Highlight -->
+            <div class="flex flex-col items-center gap-12 group reveal-up pt-16">
+                <div class="w-full max-w-4xl relative">
+                    <div
+                        class="absolute -inset-10 bg-primary/10 blur-[100px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-1000">
+                    </div>
+                    <div class="relative h-[450px] md:h-[600px] w-full glass-panel overflow-hidden rounded-sm">
+                        <img alt="<?= SanitizeHelper::html($item3['name']) ?>"
+                            class="absolute inset-0 w-full h-full object-cover opacity-70 saturate-50 group-hover:saturate-100 group-hover:scale-105 transition-all duration-[1.5s] ease-[cubic-bezier(0.4,0,0.2,1)]"
+                            src="<?= getImageUrl($item3, $placeholderImage) ?>">
+                        <div class="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent"></div>
+                        <div class="absolute bottom-0 left-0 w-full p-8 md:p-12 text-center">
+                            <span class="font-sans text-xs text-primary uppercase tracking-[0.2em] mb-4 block">03 /
+                                <?= SanitizeHelper::html(getCatName($item3, $categoryMap)) ?></span>
+                            <h3 class="font-display text-4xl md:text-5xl text-white mb-6"><?php
+                            $words = explode(' ', $item3['name']);
+                            $firstWord = array_shift($words);
+                            echo "<i class='text-primary'>" . SanitizeHelper::html($firstWord) . "</i> " . SanitizeHelper::html(implode(' ', $words));
+                            ?></h3>
+                            <p class="font-sans text-on-surface-variant text-lg font-light max-w-2xl mx-auto mb-6">
+                                <?= SanitizeHelper::html($item3['description']) ?>
+                            </p>
+                            <div class="font-display text-2xl text-white mb-8">
+                                <?= NumberHelper::formatCurrencyIDR($item3['price']) ?></div>
                         </div>
                     </div>
-                </div> <?php // Akhir swiper-container-wrapper relative ?>
-                <div class="swiper-button-prev swiper-button-prev-top !absolute !top-1/2 !-translate-y-1/2 !-left-0 text-accent-primary opacity-70 hover:opacity-100 transition-opacity z-10 cursor-pointer p-2"><i class="fas fa-chevron-left text-xl"></i></div>
-                 <div class="swiper-button-next swiper-button-next-top !absolute !top-1/2 !-translate-y-1/2 !-right-0 text-accent-primary opacity-70 hover:opacity-100 transition-opacity z-10 cursor-pointer p-2"><i class="fas fa-chevron-right text-xl"></i></div>
-             </div>
-        </div>
-        <?php endif; ?>
-
-        <?php if (!empty($categories)): ?>
-        <div class="flex flex-wrap justify-center gap-3 md:gap-4 my-10" id="menu-filter-buttons" data-aos="fade-up">
-             <button class="menu-filter-btn active" data-filter="all">Semua</button>
-             <?php foreach ($categories as $category): ?>
-             <?php
-                $categorySlug = SanitizeHelper::html(strtolower(str_replace(' ', '-', $category['name'])));
-             ?>
-             <button class="menu-filter-btn" data-filter="<?= $categorySlug ?>">
-                 <?= SanitizeHelper::html($category['name']) ?>
-             </button>
-             <?php endforeach; ?>
-        </div>
-        <?php endif; ?>
-
-        <?php if (!empty($menuItems)): ?>
-        <div class="mt-0 sm:mt-8" data-aos="fade-up" data-aos-delay="100">
-             <div class="relative">
-                 <div class="swiper-container-wrapper relative"> <?php // Wrapper penting untuk overflow:hidden ?>
-                     <div class="swiper-container full-menu-slider">
-                         <div class="swiper-wrapper pb-8">
-                             <?php foreach ($menuItems as $item): ?>
-                                 <?php
-                                     $imagePath = !empty($item['image_path'])
-                                                ? UrlHelper::baseUrl($item['image_path']) // Gunakan baseUrl
-                                                : $placeholderImage;
-                                     $categorySlug = SanitizeHelper::html(strtolower(str_replace(' ', '-', $item['category_name'] ?? 'uncategorized')));
-                                 ?>
-                                 <div class="swiper-slide h-auto px-1.5 sm:px-2" data-category="<?= $categorySlug ?>">
-                                     <div class="menu-item menu-card relative bg-bg-dark rounded-lg shadow-lg overflow-hidden group border border-border-dark flex flex-col h-full">
-                                        <div class="relative h-48 w-full">
-                                             <img loading="lazy" src="<?= $imagePath ?>" alt="<?= SanitizeHelper::html($item['name']) ?>"
-                                                class="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                                onerror="this.onerror=null; this.src='<?= $placeholderImage ?>';">
-                                        </div>
-                                        <div class="p-4 sm:p-5 flex flex-col flex-grow">
-                                            <h3 class="font-semibold text-lg mb-1 text-white truncate"><?= SanitizeHelper::html($item['name']) ?></h3>
-                                            <p class="text-xs text-text-dark-secondary mb-3 flex-grow min-h-[3em] line-clamp-2">
-                                                <?= SanitizeHelper::html($item['description'] ?? '...') ?>
-                                            </p>
-                                            <div class="flex justify-between items-center mt-auto pt-2">
-                                                <span class="font-bold text-base text-accent-primary">
-                                                    <?= NumberHelper::formatCurrencyIDR($item['price']) ?>
-                                                </span>
-                                                <?php /* Tombol quick view/add to cart bisa di sini jika perlu */ ?>
-                                            </div>
-                                        </div>
-                                     </div>
-                                 </div>
-                             <?php endforeach; ?>
-                         </div>
-                     </div>
-                 </div> <?php // Akhir swiper-container-wrapper relative ?>
-                 <div class="swiper-button-prev swiper-button-prev-full !absolute !top-1/2 !-translate-y-1/2 !-left-0 text-accent-primary opacity-70 hover:opacity-100 transition-opacity z-10 cursor-pointer p-2"><i class="fas fa-chevron-left text-xl"></i></div>
-                 <div class="swiper-button-next swiper-button-next-full !absolute !top-1/2 !-translate-y-1/2 !-right-0 text-accent-primary opacity-70 hover:opacity-100 transition-opacity z-10 cursor-pointer p-2"><i class="fas fa-chevron-right text-xl"></i></div>
-             </div>
-        </div>
-        <?php endif; ?>
-
-        <div class="text-center mt-16" data-aos="fade-up">
-             <p class="text-text-dark-secondary text-sm">Temukan QR Code di meja Anda untuk memulai pemesanan digital.</p>
-        </div>
-
-         <?php // Modal Quick View (Struktur saja, konten diisi JS jika ada) ?>
-        <div id="quick-view-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[150] flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
-            <div class="bg-bg-dark-secondary rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto relative transform scale-95 transition-all duration-300 ease-out" id="modal-content">
-                <button id="close-modal-btn" class="absolute top-4 right-4 text-text-dark-secondary hover:text-white text-2xl transition-colors z-10"> <i class="fas fa-times"></i> </button>
-                 <?php // Konten modal akan dimuat di sini oleh JS ?>
-            </div>
-         </div>
-
-    </div>
-</section>
-
-<section id="gallery" class="section-padding overflow-hidden bg-bg-dark-primary">
-     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-         <h2 class="text-4xl md:text-5xl font-bold text-center mb-16 text-white" data-aos="fade-up">Abadikan Momen</h2>
-        <div class="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4" id="image-gallery">
-             <?php // Contoh item galeri dengan AOS ?>
-             <div class="gallery-item break-inside-avoid relative overflow-hidden rounded-lg shadow-lg cursor-pointer group" data-aos="fade-up" data-aos-delay="50" data-src="<?= UrlHelper::baseUrl('images/experience-illustration-1.jpg') ?>">
-                <img loading="lazy" src="<?= UrlHelper::baseUrl('images/experience-illustration-1.jpg') ?>" alt="Suasana Interior Kafe" class="w-full h-auto object-cover transform group-hover:scale-110 transition-transform duration-500 ease-in-out" onerror="this.onerror=null; this.src='<?= $placeholderImage ?>';">
-                <div class="gallery-overlay"> <i class="fas fa-search-plus"></i> </div>
-            </div>
-             <div class="gallery-item break-inside-avoid relative overflow-hidden rounded-lg shadow-lg cursor-pointer group" data-aos="fade-up" data-aos-delay="100" data-src="<?= UrlHelper::baseUrl('images/experience-illustration-1.jpg') ?>">
-                <img loading="lazy" src="<?= UrlHelper::baseUrl('images/experience-illustration-1.jpg') ?>" alt="Seni Latte Art Detail" class="w-full h-auto object-cover transform group-hover:scale-110 transition-transform duration-500 ease-in-out" onerror="this.onerror=null; this.src='<?= $placeholderImage ?>';">
-                 <div class="gallery-overlay"> <i class="fas fa-search-plus"></i> </div>
-            </div>
-            <div class="gallery-item break-inside-avoid relative overflow-hidden rounded-lg shadow-lg cursor-pointer group" data-aos="fade-up" data-aos-delay="150" data-src="<?= UrlHelper::baseUrl('images/experience-illustration-1.jpg') ?>">
-                <img loading="lazy" src="<?= UrlHelper::baseUrl('images/experience-illustration-1.jpg') ?>" alt="Area Duduk Outdoor Malam Hari" class="w-full h-auto object-cover transform group-hover:scale-110 transition-transform duration-500 ease-in-out">
-                 <div class="gallery-overlay"> <i class="fas fa-search-plus"></i> </div>
-            </div>
-             <div class="gallery-item break-inside-avoid relative overflow-hidden rounded-lg shadow-lg cursor-pointer group" data-aos="fade-up" data-aos-delay="200" data-src="<?= UrlHelper::baseUrl('images/experience-illustration-1.jpg') ?>">
-                <img loading="lazy" src="<?= UrlHelper::baseUrl('images/experience-illustration-1.jpg') ?>" alt="Aneka Pastry di Etalase" class="w-full h-auto object-cover transform group-hover:scale-110 transition-transform duration-500 ease-in-out">
-                 <div class="gallery-overlay"> <i class="fas fa-search-plus"></i> </div>
-            </div>
-             <?php // Tambahkan item galeri lainnya dengan data-aos berbeda ?>
-             </div>
-    </div>
-</section>
-
-<section id="testimonials" class="section-padding bg-bg-dark-secondary">
-     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-         <h2 class="text-4xl md:text-5xl font-bold text-center mb-16 text-white" data-aos="fade-up">Apa Kata Pelanggan Kami</h2>
-         <div class="swiper-container-wrapper relative max-w-6xl mx-auto"> <?php // Wrapper penting untuk overflow:hidden ?>
-             <div class="swiper-container testimonial-slider-v2 relative" data-aos="fade-up" data-aos-delay="100">
-                 <div class="swiper-wrapper pb-16">
-                      <?php // Contoh slide testimonial ?>
-                     <div class="swiper-slide">
-                         <div class="bg-bg-dark rounded-lg shadow-xl p-8 text-center border border-border-dark relative">
-                             <img loading="lazy" src="<?= UrlHelper::baseUrl('images/experience-illustration-1.jpg') ?>"
-                                  alt="Avatar Pelanggan 1"
-                                  class="w-20 h-20 rounded-full mx-auto mb-5 border-4 border-bg-dark-secondary absolute -top-10 left-1/2 transform -translate-x-1/2 shadow-md"
-                                  onerror="this.onerror=null; this.src='<?= $placeholderImage ?>';">
-                                  <div class="pt-12">
-                                    <i class="fas fa-quote-left text-accent-primary text-3xl mb-4 opacity-70"></i>
-                                     <p class="italic mb-6 text-lg leading-relaxed">"Kedai kopi terbaik di Malang! Tempat sempurna untuk bersantai atau menyelesaikan pekerjaan. Stafnya juga super ramah."</p>
-                                      <p class="font-semibold text-base text-white">Aisha N.</p>
-                                      <p class="text-xs text-text-dark-secondary">Pengunjung Setia</p>
-                                      <div class="flex justify-center mt-4 text-accent-primary text-sm"> <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i> </div>
-                                 </div>
-                         </div>
-                     </div>
-                     <div class="swiper-slide">
-                         <div class="bg-bg-dark relative rounded-lg shadow-xl p-8 text-center border border-border-dark relative">
-                             <img loading="lazy" src="<?= UrlHelper::baseUrl('images/experience-illustration-1.jpg') ?>"
-                                  alt="Avatar Pelanggan 2"
-                                  class="w-20 h-20 rounded-full mx-auto mb-5 border-4 border-bg-dark-secondary
-                                         absolute -top-10 left-1/2 transform -translate-x-1/2 shadow-md">
-                              <div class="pt-12">
-                                 <i class="fas fa-quote-left text-accent-primary text-3xl mb-4 opacity-70"></i>
-                                 <p class="italic mb-6 text-lg leading-relaxed">"Pilihan manual brew-nya luar biasa. Baristanya sangat paham kopi dan senang merekomendasikan biji terbaik."</p>
-                                  <p class="font-semibold text-base text-white">Budi S.</p>
-                                  <p class="text-xs text-text-dark-secondary">Pecinta Kopi</p>
-                                  <div class="flex justify-center mt-4 text-accent-primary text-sm"> <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i> </div>
-                              </div>
-                         </div>
-                     </div>
-                     <div class="swiper-slide">
-                         <div class="bg-bg-dark relative rounded-lg shadow-xl p-8 text-center border border-border-dark relative">
-                             <img loading="lazy" src="<?= UrlHelper::baseUrl('images/experience-illustration-1.jpg') ?>"
-                                  alt="Avatar Pelanggan 2"
-                                  class="w-20 h-20 rounded-full mx-auto mb-5 border-4 border-bg-dark-secondary
-                                         absolute -top-10 left-1/2 transform -translate-x-1/2 shadow-md">
-                              <div class="pt-12">
-                                 <i class="fas fa-quote-left text-accent-primary text-3xl mb-4 opacity-70"></i>
-                                 <p class="italic mb-6 text-lg leading-relaxed">"Pilihan manual brew-nya luar biasa. Baristanya sangat paham kopi dan senang merekomendasikan biji terbaik."</p>
-                                  <p class="font-semibold text-base text-white">Budi S.</p>
-                                  <p class="text-xs text-text-dark-secondary">Pecinta Kopi</p>
-                                  <div class="flex justify-center mt-4 text-accent-primary text-sm"> <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i> </div>
-                              </div>
-                         </div>
-                     </div>
-                     <div class="swiper-slide">
-                         <div class="bg-bg-dark relative rounded-lg shadow-xl p-8 text-center border border-border-dark relative">
-                             <img loading="lazy" src="<?= UrlHelper::baseUrl('images/experience-illustration-1.jpg') ?>"
-                                  alt="Avatar Pelanggan 2"
-                                  class="w-20 h-20 rounded-full mx-auto mb-5 border-4 border-bg-dark-secondary
-                                         absolute -top-10 left-1/2 transform -translate-x-1/2 shadow-md">
-                              <div class="pt-12">
-                                 <i class="fas fa-quote-left text-accent-primary text-3xl mb-4 opacity-70"></i>
-                                 <p class="italic mb-6 text-lg leading-relaxed">"Pilihan manual brew-nya luar biasa. Baristanya sangat paham kopi dan senang merekomendasikan biji terbaik."</p>
-                                  <p class="font-semibold text-base text-white">Budi S.</p>
-                                  <p class="text-xs text-text-dark-secondary">Pecinta Kopi</p>
-                                  <div class="flex justify-center mt-4 text-accent-primary text-sm"> <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i> </div>
-                              </div>
-                         </div>
-                     </div>
-                     </div>
-                 <div class="swiper-pagination !bottom-0 !relative !mt-8"></div>
-             </div>
-         </div> <?php // Akhir swiper-container-wrapper relative ?>
-    </div>
-</section>
-
-<section id="location" class="section-padding bg-bg-dark-primary">
-     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid lg:grid-cols-2 gap-16 items-center">
-            <?php // Kolom Kiri Lokasi dengan AOS ?>
-            <div data-aos="fade-right" data-aos-duration="800">
-                <h2 class="text-4xl md:text-5xl font-bold mb-6 text-white">Temukan Kami Disini</h2>
-                <p class="text-lg text-text-dark-secondary mb-8">Berlokasi strategis di kabupaten Malang, kami siap menyambut Anda.</p>
-                <div class="space-y-5 mb-8 text-sm">
-                    <p class="flex items-start"><i class="fas fa-map-marker-alt w-5 mt-1 mr-4 text-accent-primary flex-shrink-0"></i> <span class="flex-1 text-text-dark-secondary"><?= $cafeAddress ?></span></p>
-                    <p class="flex items-start"><i class="fas fa-phone-alt w-5 mt-1 mr-4 text-accent-primary flex-shrink-0"></i> <a href="tel:<?= SanitizeHelper::html(str_replace('-', '', $cafePhone)) ?>" class="hover:text-accent-primary transition text-text-dark-secondary"><?= $cafePhone ?></a></p>
-                    <p class="flex items-start"><i class="fas fa-envelope w-5 mt-1 mr-4 text-accent-primary flex-shrink-0"></i> <a href="mailto:info@namakafeanda.com" class="hover:text-accent-primary transition text-text-dark-secondary">info@namakafe.com</a></p>
-                    <p class="flex items-start"><i class="fas fa-clock w-5 mt-1 mr-4 text-accent-primary flex-shrink-0"></i> <span class="flex-1 text-text-dark-secondary">Senin - Minggu : 10:00 - 23:00 WIB</span></p>
                 </div>
-                 <a href="https://maps.app.goo.gl/YxhZAfuerRJn7Hm57" target="_blank" rel="noopener noreferrer" class="btn btn-accent inline-flex items-center px-7 py-3 rounded-full font-semibold transition text-base transform hover:scale-105">
-                    <i class="fas fa-directions mr-2"></i> Lihat Peta & Arah
-                 </a>
             </div>
-             <?php // Kolom Kanan Lokasi dengan AOS ?>
-            <div class="rounded-lg overflow-hidden shadow-xl border-2 border-border-dark" data-aos="zoom-in-down" data-aos-duration="800" data-aos-delay="200">
-                 <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3212.4867603811585!2d112.64182154115723!3d-8.171733991975637!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2dd61f6b0266c8c3%3A0xe868ece3ca3050d8!2sStay%20With%20Me%20Coffee!5e0!3m2!1sid!2sid!4v1745879756956!5m2!1sid!2sid" width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Peta Lokasi Kafe"></iframe>
+        <?php endif; ?>
+    </div>
+</section>
+
+<!-- 4. SPACES (Horizontal Scroll Gallery - Awwwards Grade) -->
+<section id="gallery" class="relative bg-[#020202] overflow-hidden" style="height: 100vh;">
+    <!-- Pinned Container -->
+    <div id="gallery-pin-container" class="h-screen flex items-center">
+        <!-- Horizontal Track -->
+        <div id="gallery-track" class="flex gap-8 md:gap-16 px-[10vw] h-full items-center w-max">
+            
+            <!-- Title Panel -->
+            <div class="flex-shrink-0 w-[80vw] md:w-[40vw] flex flex-col justify-center pr-12">
+                <span class="font-sans text-xs text-primary uppercase tracking-[0.4em] mb-6 block flex items-center gap-4">
+                    <span class="w-8 h-[1px] bg-primary/50"></span>
+                    Momen
+                </span>
+                <h2 class="font-display text-5xl md:text-7xl lg:text-8xl text-white mb-8 leading-[0.9] tracking-tighter">
+                    Visual <br><i class="text-primary font-light">Jurnal.</i>
+                </h2>
+                <p class="font-sans text-on-surface-variant text-lg font-light leading-relaxed max-w-md">
+                    Eksplorasi sudut-sudut arsitektur brutalis kami. Sebuah suaka visual yang dirancang untuk merayakan keheningan dan setiap detail proses penyeduhan artisan.
+                </p>
             </div>
+
+            <!-- Image Panel 1 -->
+            <div class="flex-shrink-0 w-[70vw] md:w-[45vw] h-[50vh] md:h-[65vh] relative glass-panel overflow-hidden rounded-sm group">
+                <div class="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 z-10 pointer-events-none"></div>
+                <div class="gallery-img-container w-full h-full relative overflow-hidden">
+                    <img src="<?= UrlHelper::baseUrl('images/experience-illustration-1.jpg') ?>" class="absolute inset-0 w-[130%] h-full object-cover saturate-50 group-hover:saturate-100 transition-all duration-700" alt="Main Sanctuary" data-speed="0.8">
+                </div>
+                <div class="absolute bottom-6 left-6 z-20 overflow-hidden">
+                    <p class="font-sans text-xs uppercase tracking-widest text-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-500">01 / Main Sanctuary</p>
+                </div>
+            </div>
+
+            <!-- Image Panel 2 -->
+            <div class="flex-shrink-0 w-[60vw] md:w-[35vw] h-[40vh] md:h-[55vh] relative glass-panel overflow-hidden rounded-sm group transform translate-y-12 md:translate-y-24">
+                <div class="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 z-10 pointer-events-none"></div>
+                <div class="gallery-img-container w-full h-full relative overflow-hidden">
+                    <img src="<?= UrlHelper::baseUrl('images/menu.jpg') ?>" class="absolute inset-0 w-[130%] h-full object-cover saturate-50 group-hover:saturate-100 transition-all duration-700" alt="Artisan Tools" data-speed="0.8">
+                </div>
+                <div class="absolute bottom-6 left-6 z-20 overflow-hidden">
+                    <p class="font-sans text-xs uppercase tracking-widest text-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-500">02 / Artisan Tools</p>
+                </div>
+            </div>
+
+            <!-- Image Panel 3 -->
+            <div class="flex-shrink-0 w-[75vw] md:w-[50vw] h-[55vh] md:h-[70vh] relative glass-panel overflow-hidden rounded-sm group transform -translate-y-8 md:-translate-y-12">
+                <div class="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 z-10 pointer-events-none"></div>
+                <div class="gallery-img-container w-full h-full relative overflow-hidden">
+                    <img src="<?= UrlHelper::baseUrl('images/experience-illustration-1.jpg') ?>" class="absolute inset-0 w-[130%] h-full object-cover saturate-50 group-hover:saturate-100 transition-all duration-700" alt="Brutalist Textures" data-speed="0.8">
+                </div>
+                <div class="absolute bottom-6 left-6 z-20 overflow-hidden">
+                    <p class="font-sans text-xs uppercase tracking-widest text-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-500">03 / Brutalist Textures</p>
+                </div>
+            </div>
+
+            <!-- End Spacer -->
+            <div class="flex-shrink-0 w-[10vw]"></div>
+            
         </div>
     </div>
 </section>
 
-<?php // Pastikan section yang sebelumnya dikomentari sudah aktif kembali ?>
+<script>
+// We need to wait for the main layout's GSAP to load and initialize.
+// The public_layout.php has a DOMContentLoaded listener that registers ScrollTrigger.
+// We will add another listener here that runs slightly after to ensure ScrollTrigger is ready.
+window.addEventListener('load', () => {
+    if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+        const gallerySection = document.getElementById('gallery');
+        const track = document.getElementById('gallery-track');
+        
+        if (gallerySection && track) {
+            // Calculate total scroll distance based on track width vs viewport width
+            const scrollDistance = track.scrollWidth - window.innerWidth;
+            
+            // Create the horizontal scroll animation
+            let scrollTween = gsap.to(track, {
+                x: -scrollDistance,
+                ease: "none",
+                scrollTrigger: {
+                    trigger: gallerySection,
+                    pin: true,
+                    scrub: 1, // Smooth scrubbing taking 1 second to catch up
+                    start: "top top",
+                    end: () => "+=" + scrollDistance, // Pin for the duration of the scroll width
+                    invalidateOnRefresh: true
+                }
+            });
+
+            // Add parallax effect to images inside the horizontal scroll
+            // Since they are moving horizontally, we animate them in the opposite direction
+            gsap.utils.toArray('.gallery-img-container img').forEach(img => {
+                gsap.to(img, {
+                    xPercent: -20, // Move image 20% to the left while container moves left
+                    ease: "none",
+                    scrollTrigger: {
+                        trigger: img.closest('.flex-shrink-0'),
+                        containerAnimation: scrollTween,
+                        start: "left right", // When the left of the image container enters from the right
+                        end: "right left",   // When the right of the image container leaves to the left
+                        scrub: true
+                    }
+                });
+            });
+        }
+    }
+});
+</script>

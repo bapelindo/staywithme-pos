@@ -3,7 +3,7 @@ module.exports = {
   // 1. Konfigurasi Konten (PENTING untuk Purging)
   //    Tailwind akan memindai file-file ini untuk mencari kelas yang digunakan.
   content: [
-    "./app/Views/**/*.php",   // Mencakup semua file view PHP Anda
+    "./app/views/**/*.php",   // Mencakup semua file view PHP Anda
     "./public/js/**/*.js",    // Mencakup semua file JavaScript Anda
   ],
 

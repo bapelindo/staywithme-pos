@@ -11,6 +11,7 @@ if (!isset($router) || !($router instanceof App\Core\Router)) {
 
 // ... Rute Publik ...
 $router->addRoute('GET', '/', 'Public\\HomeController@index');
+$router->addRoute('GET', '/menu', 'Public\\MenuController@index');
 $router->addRoute('GET', '/menu/table/{qr_identifier}', 'Public\\MenuController@show');
 $router->addRoute('POST', '/order/place', 'Public\\OrderController@placeOrder');
 $router->addRoute('GET', '/order/status/{order_id}', 'Public\\OrderController@showStatus');
