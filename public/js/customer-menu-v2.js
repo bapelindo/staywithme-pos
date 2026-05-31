@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Fungsi Keranjang (Memuat & Menyimpan) ---
     function loadCart() {
-        const storedCart = localStorage.getItem('bacelor_cart');
+        const storedCart = localStorage.getItem('yours_cart');
         if (storedCart) {
             try {
                 const parsedCart = JSON.parse(storedCart);
@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else { throw new Error("Data keranjang tersimpan bukan objek valid."); }
             } catch (e) {
                 console.error("Gagal parse keranjang dari localStorage atau data tidak valid:", e);
-                localStorage.removeItem('bacelor_cart'); // Hapus data korup
+                localStorage.removeItem('yours_cart'); // Hapus data korup
                 return {};
             }
         }
@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function saveCart() {
         try {
-            localStorage.setItem('bacelor_cart', JSON.stringify(cart));
+            localStorage.setItem('yours_cart', JSON.stringify(cart));
         } catch (e) {
             console.error("Gagal menyimpan keranjang ke localStorage:", e);
         }
@@ -390,7 +390,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result.success) {
                 showOrderMessage('Pesanan berhasil dibuat! Mengalihkan ke halaman status...', 'success');
                 cart = {};
-                localStorage.removeItem('bacelor_cart');
+                localStorage.removeItem('yours_cart');
                 updateCartUI();
                 toggleCart(false);
                 setTimeout(() => {

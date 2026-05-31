@@ -2,7 +2,7 @@
 use App\Helpers\SanitizeHelper;
 use App\Helpers\UrlHelper;
 
-$appName = SanitizeHelper::html(APP_NAME ?? 'Bacelor Cafe');
+$appName = SanitizeHelper::html(APP_NAME ?? 'Yours Cafe');
 $cafeAddress = SanitizeHelper::html(CAFE_ADDRESS ?? 'Jl. Raya Kopi No. 1, Malang');
 $cafePhone = SanitizeHelper::html(CAFE_PHONE ?? '+62 822-2911-4960');
 $baseUrl = rtrim(UrlHelper::baseUrl(), '/');
@@ -170,7 +170,7 @@ $baseUrl = rtrim(UrlHelper::baseUrl(), '/');
         id="main-nav">
         <div class="flex justify-between items-center h-20 px-8 md:px-12 max-w-[1600px] mx-auto">
             <a class="font-display text-2xl tracking-widest text-on-surface uppercase group" href="<?= $baseUrl ?>/">
-                <span class="text-primary group-hover:text-white transition-colors duration-500">Bacelor</span> Cafes
+                <span class="text-primary group-hover:text-white transition-colors duration-500">Yours</span> Cafes
             </a>
             <div class="hidden md:flex space-x-12">
                 <?php $currentUri = $_SERVER['REQUEST_URI'] ?? ''; ?>

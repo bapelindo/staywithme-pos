@@ -1,6 +1,6 @@
 <?php
 /**
- * Bacelor Cafe - POS QR Ordering System
+ * Yours Cafe - POS QR Ordering System
  *
  * Entry Point Aplikasi (Front Controller).
  * Semua request publik masuk melalui file ini.

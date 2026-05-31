@@ -1,5 +1,5 @@
 <?php
-// File: bacelor-pos/app/Controllers/Public/OrderController.php
+// File: yours-pos/app/Controllers/Public/OrderController.php
 namespace App\Controllers\Public;
 
 use App\Core\Controller;

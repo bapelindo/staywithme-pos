@@ -16,7 +16,7 @@ if (empty($categories)) {
 }
 if (empty($menuItems)) {
     $menuItems = [
-        ['category_id' => 1, 'name' => 'Bacelor Cafe Latte', 'description' => 'Espresso house blend, secret syrup, steamed oat milk, bubuk emas eksklusif.', 'price' => 55000, 'image_path' => 'images/menu-v2.jpg'],
+        ['category_id' => 1, 'name' => 'Yours Cafe Latte', 'description' => 'Espresso house blend, secret syrup, steamed oat milk, bubuk emas eksklusif.', 'price' => 55000, 'image_path' => 'images/menu-v2.jpg'],
         ['category_id' => 2, 'name' => 'Ethiopia Yirgacheffe V60', 'description' => 'Kopi seduh manual dengan profil rasa floral, jasmine, bergamot, dan sentuhan black tea yang menyegarkan.', 'price' => 40000, 'image_path' => 'images/experience-illustration-1-v2.jpg'],
         ['category_id' => 3, 'name' => 'Almond Butter Croissant', 'description' => 'Croissant panggang dua kali yang renyah di luar, diisi penuh dengan frangipane dan taburan almond panggang.', 'price' => 35000, 'image_path' => 'images/menu-v2.jpg'],
     ];
@@ -78,7 +78,7 @@ function getCatName($item, $map)
         <h1
             class="reveal-up reveal-delay-1 font-display text-5xl md:text-8xl lg:text-9xl font-bold text-white leading-[0.9] mb-8 tracking-tighter mix-blend-screen drop-shadow-2xl">
             <span class="text-primary italic font-light drop-shadow-[0_0_30px_rgba(233,193,118,0.4)]">
-                <font color="#ffffff"><span style="font-style: normal;"><b>Karya&nbsp;</b></span></font>BacelorCafe.
+                <font color="#ffffff"><span style="font-style: normal;"><b>Karya&nbsp;</b></span></font>YoursCafe.
             </span>
             <br>Cita Rasa <i class="text-primary font-light">Berkelas.</i>
         </h1>

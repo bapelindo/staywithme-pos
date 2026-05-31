@@ -30,7 +30,7 @@ class MenuController extends Controller {
             'table' => null, // Tidak ada meja
             'categories' => $categories,
             'menuItemsByCategory' => $menuItemsByCategory,
-            'pageTitle' => 'Koleksi Menu - Bacelor Cafe'
+            'pageTitle' => 'Koleksi Menu - Yours Cafe'
         ]);
     }
 

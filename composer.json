@@ -1,6 +1,6 @@
 {
-    "name": "bapel/bacelor-pos",
-    "description": "POS QR Code Ordering System for Bacelor Cafe",
+    "name": "bapel/yours-pos",
+    "description": "POS QR Code Ordering System for Yours Cafe",
     "type": "project",
     "require": {
         "php": ">=8.4",

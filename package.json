@@ -1,20 +1,20 @@
 {
-  "name": "bacelor-pos",
+  "name": "yours-pos",
   "version": "1.0.0",
   "main": "index.js",
 "scripts": {
 },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/bapelindo/bacelor-pos.git"
+    "url": "git+https://github.com/bapelindo/yours-pos.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/bapelindo/bacelor-pos/issues"
+    "url": "https://github.com/bapelindo/yours-pos/issues"
   },
-  "homepage": "https://github.com/bapelindo/bacelor-pos#readme",
+  "homepage": "https://github.com/bapelindo/yours-pos#readme",
   "description": "",
   "devDependencies": {
     "@tailwindcss/aspect-ratio": "^0.4.2",

@@ -13,7 +13,7 @@ $pageTitle = $pageTitle ?? 'Kitchen Display System';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="refresh" content="180">
-    <title><?= SanitizeHelper::html($pageTitle) ?> - Bacelor Cafe</title>
+    <title><?= SanitizeHelper::html($pageTitle) ?> - Yours Cafe</title>
     <link rel="stylesheet" href="<?= \App\Helpers\UrlHelper::baseUrl('css/admin_output.css') ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

@@ -5,7 +5,7 @@ ini_set('display_errors', '1');
 echo "=== URL PARSING TEST ===\n\n";
 
 // Simulate production environment
-$_SERVER['HTTP_HOST'] = 'bacelor.bapel.my.id';
+$_SERVER['HTTP_HOST'] = 'yours.bapel.my.id';
 $_SERVER['HTTP_X_FORWARDED_PROTO'] = 'https';
 $_SERVER['REQUEST_URI'] = '/login';
 $_SERVER['REQUEST_METHOD'] = 'GET';
