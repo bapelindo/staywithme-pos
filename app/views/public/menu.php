@@ -10,7 +10,7 @@ $categories = $categories ?? [];
 $menuItemsByCategory = $menuItemsByCategory ?? [];
 
 $pageTitle = "Menu " . ($table ? "- Meja " . SanitizeHelper::html($table['table_number']) : "Utama");
-$placeholderImage = UrlHelper::baseUrl('images/menu-placeholder.jpg');
+$placeholderImage = UrlHelper::baseUrl('images/menu-placeholder-v2.jpg');
 ?>
 
 <div class="bg-[#050505] min-h-[100svh] pb-40 font-sans text-white relative pt-20">
@@ -19,7 +19,7 @@ $placeholderImage = UrlHelper::baseUrl('images/menu-placeholder.jpg');
     <div class="relative w-full py-16 overflow-hidden">
         <div class="absolute inset-0 bg-gradient-to-b from-[#050505] via-[#050505]/80 to-[#050505] z-10"></div>
         <img alt="Menu Cover" class="absolute inset-0 w-full h-full object-cover opacity-30 animate-pulse-slow"
-            src="<?= UrlHelper::baseUrl('images/experience-illustration-1.jpg') ?>">
+            src="<?= UrlHelper::baseUrl('images/experience-illustration-1-v2.jpg') ?>">
         <div class="relative z-20 container mx-auto px-6 lg:px-12 flex flex-col items-center">
             <span
                 class="text-[10px] text-primary uppercase tracking-[0.4em] mb-4 block flex items-center justify-center gap-4 reveal-up">

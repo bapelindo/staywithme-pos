@@ -16,9 +16,9 @@ if (empty($categories)) {
 }
 if (empty($menuItems)) {
     $menuItems = [
-        ['category_id' => 1, 'name' => 'Bacelor Cafe Latte', 'description' => 'Espresso house blend, secret syrup, steamed oat milk, bubuk emas eksklusif.', 'price' => 55000, 'image_path' => 'images/menu.jpg'],
-        ['category_id' => 2, 'name' => 'Ethiopia Yirgacheffe V60', 'description' => 'Kopi seduh manual dengan profil rasa floral, jasmine, bergamot, dan sentuhan black tea yang menyegarkan.', 'price' => 40000, 'image_path' => 'images/experience-illustration-1.jpg'],
-        ['category_id' => 3, 'name' => 'Almond Butter Croissant', 'description' => 'Croissant panggang dua kali yang renyah di luar, diisi penuh dengan frangipane dan taburan almond panggang.', 'price' => 35000, 'image_path' => 'images/menu.jpg'],
+        ['category_id' => 1, 'name' => 'Bacelor Cafe Latte', 'description' => 'Espresso house blend, secret syrup, steamed oat milk, bubuk emas eksklusif.', 'price' => 55000, 'image_path' => 'images/menu-v2.jpg'],
+        ['category_id' => 2, 'name' => 'Ethiopia Yirgacheffe V60', 'description' => 'Kopi seduh manual dengan profil rasa floral, jasmine, bergamot, dan sentuhan black tea yang menyegarkan.', 'price' => 40000, 'image_path' => 'images/experience-illustration-1-v2.jpg'],
+        ['category_id' => 3, 'name' => 'Almond Butter Croissant', 'description' => 'Croissant panggang dua kali yang renyah di luar, diisi penuh dengan frangipane dan taburan almond panggang.', 'price' => 35000, 'image_path' => 'images/menu-v2.jpg'],
     ];
 }
 
@@ -32,7 +32,7 @@ $item1 = $menuItems[0] ?? null;
 $item2 = $menuItems[1] ?? null;
 $item3 = $menuItems[2] ?? null;
 
-$placeholderImage = UrlHelper::baseUrl('images/menu-placeholder.jpg');
+$placeholderImage = UrlHelper::baseUrl('images/menu-placeholder-v2.jpg');
 
 function getImageUrl($item, $placeholder)
 {
@@ -55,7 +55,7 @@ function getCatName($item, $map)
     <div class="absolute inset-0 z-0">
         <div class="absolute inset-0 bg-gradient-to-b from-[#050505]/80 via-[#050505]/40 to-[#050505] z-10"></div>
         <img alt="Interior Cafe" class="w-full h-full object-cover opacity-60 scale-105 animate-pulse-slow"
-            src="<?= UrlHelper::baseUrl('images/experience-illustration-1.jpg') ?>">
+            src="<?= UrlHelper::baseUrl('images/experience-illustration-1-v2.jpg') ?>">
     </div>
 
     <!-- Huge Background Typography -->
@@ -241,7 +241,7 @@ function getCatName($item, $map)
             <div class="flex-shrink-0 w-[70vw] md:w-[45vw] h-[50vh] md:h-[65vh] relative glass-panel overflow-hidden rounded-sm group">
                 <div class="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 z-10 pointer-events-none"></div>
                 <div class="gallery-img-container w-full h-full relative overflow-hidden">
-                    <img src="<?= UrlHelper::baseUrl('images/experience-illustration-1.jpg') ?>" class="absolute inset-0 w-[130%] h-full object-cover saturate-50 group-hover:saturate-100 transition-all duration-700" alt="Main Sanctuary" data-speed="0.8">
+                    <img src="<?= UrlHelper::baseUrl('images/experience-illustration-1-v2.jpg') ?>" class="absolute inset-0 w-[130%] h-full object-cover saturate-50 group-hover:saturate-100 transition-all duration-700" alt="Main Sanctuary" data-speed="0.8">
                 </div>
                 <div class="absolute bottom-6 left-6 z-20 overflow-hidden">
                     <p class="font-sans text-xs uppercase tracking-widest text-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-500">01 / Main Sanctuary</p>
@@ -252,7 +252,7 @@ function getCatName($item, $map)
             <div class="flex-shrink-0 w-[60vw] md:w-[35vw] h-[40vh] md:h-[55vh] relative glass-panel overflow-hidden rounded-sm group transform translate-y-12 md:translate-y-24">
                 <div class="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 z-10 pointer-events-none"></div>
                 <div class="gallery-img-container w-full h-full relative overflow-hidden">
-                    <img src="<?= UrlHelper::baseUrl('images/menu.jpg') ?>" class="absolute inset-0 w-[130%] h-full object-cover saturate-50 group-hover:saturate-100 transition-all duration-700" alt="Artisan Tools" data-speed="0.8">
+                    <img src="<?= UrlHelper::baseUrl('images/menu-v2.jpg') ?>" class="absolute inset-0 w-[130%] h-full object-cover saturate-50 group-hover:saturate-100 transition-all duration-700" alt="Artisan Tools" data-speed="0.8">
                 </div>
                 <div class="absolute bottom-6 left-6 z-20 overflow-hidden">
                     <p class="font-sans text-xs uppercase tracking-widest text-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-500">02 / Artisan Tools</p>
@@ -263,7 +263,7 @@ function getCatName($item, $map)
             <div class="flex-shrink-0 w-[75vw] md:w-[50vw] h-[55vh] md:h-[70vh] relative glass-panel overflow-hidden rounded-sm group transform -translate-y-8 md:-translate-y-12">
                 <div class="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 z-10 pointer-events-none"></div>
                 <div class="gallery-img-container w-full h-full relative overflow-hidden">
-                    <img src="<?= UrlHelper::baseUrl('images/experience-illustration-1.jpg') ?>" class="absolute inset-0 w-[130%] h-full object-cover saturate-50 group-hover:saturate-100 transition-all duration-700" alt="Brutalist Textures" data-speed="0.8">
+                    <img src="<?= UrlHelper::baseUrl('images/experience-illustration-1-v2.jpg') ?>" class="absolute inset-0 w-[130%] h-full object-cover saturate-50 group-hover:saturate-100 transition-all duration-700" alt="Brutalist Textures" data-speed="0.8">
                 </div>
                 <div class="absolute bottom-6 left-6 z-20 overflow-hidden">
                     <p class="font-sans text-xs uppercase tracking-widest text-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-500">03 / Brutalist Textures</p>

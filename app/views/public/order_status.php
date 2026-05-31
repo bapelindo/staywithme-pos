@@ -47,7 +47,7 @@ $isCancelled = ($currentStatusKey === 'cancelled');
     <div class="fixed inset-0 z-0 pointer-events-none">
         <div class="absolute inset-0 bg-gradient-to-b from-[#050505]/95 via-[#050505]/90 to-[#050505] z-10"></div>
         <img alt="Interior Cafe" class="w-full h-full object-cover opacity-30 scale-105 animate-pulse-slow"
-            src="<?= UrlHelper::baseUrl('images/experience-illustration-1.jpg') ?>">
+            src="<?= UrlHelper::baseUrl('images/experience-illustration-1-v2.jpg') ?>">
     </div>
 
     <!-- Huge Background Typography -->
@@ -191,7 +191,7 @@ $isCancelled = ($currentStatusKey === 'cancelled');
                                     <?php
                                     $itemImage = !empty($item['image_path'])
                                         ? UrlHelper::baseUrl(SanitizeHelper::html($item['image_path']))
-                                        : UrlHelper::baseUrl('images/menu-placeholder.jpg');
+                                        : UrlHelper::baseUrl('images/menu-placeholder-v2.jpg');
                                     ?>
                                     <div
                                         class="w-16 h-16 sm:w-20 sm:h-20 rounded-sm overflow-hidden relative border border-white/10 flex-shrink-0">
@@ -200,7 +200,7 @@ $isCancelled = ($currentStatusKey === 'cancelled');
                                         </div>
                                         <img src="<?= $itemImage ?>" alt="<?= SanitizeHelper::html($item['menu_item_name']) ?>"
                                             class="w-full h-full object-cover saturate-50 group-hover:saturate-100 transition-all duration-500 group-hover:scale-110"
-                                            onerror="this.onerror=null; this.src='<?= UrlHelper::baseUrl('images/menu-placeholder.jpg') ?>';">
+                                            onerror="this.onerror=null; this.src='<?= UrlHelper::baseUrl('images/menu-placeholder-v2.jpg') ?>';">
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <p
